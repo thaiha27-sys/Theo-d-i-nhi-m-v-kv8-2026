@@ -58,6 +58,7 @@ button{font-family:inherit;cursor:pointer;border:none;border-radius:7px;padding:
     <button class="btn-navy np" onclick="openAddModal()" style="font-size:13px;padding:7px 16px;display:flex;align-items:center;gap:6px">
       ➕ Thêm nhiệm vụ mới
     </button>
+        <button class="btn-navy" onclick="openBatchModal()" style="display:flex;align-items:center;gap:5px;padding:8px 14px"><span>📥</span><span>Nhập từ Excel</span></button>
   </div>
 </nav>
 
@@ -234,6 +235,87 @@ button{font-family:inherit;cursor:pointer;border:none;border-radius:7px;padding:
   </div>
 </div>
 
+
+<!-- ========== MODAL NHẬP HÀNG LOẠT TỪ EXCEL ========== -->
+<div id="modal-batch" class="modal-overlay" onclick="closeModal('modal-batch',event)">
+  <div class="modal-box" style="max-width:800px">
+    <div class="modal-hd">
+      <span>📥 Nhập hàng loạt từ Excel</span>
+      <button onclick="closeModal('modal-batch')" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div class="modal-bd">
+      <!-- Step 1: Upload -->
+      <div id="batch-step1">
+        <div style="background:#E8EEF7;border-radius:8px;padding:12px;font-size:13px;color:#1A3A6B;line-height:1.6">
+          <b>Hướng dẫn:</b><br>
+          1. Tải file mẫu Excel, điền nhiệm vụ từ dòng 5 trở đi.<br>
+          2. Upload file đã điền → Hệ thống preview và kiểm tra trùng.<br>
+          3. Chọn các dòng hợp lệ → Xác nhận nhập vào bảng theo dõi.
+          <div style="margin-top:8px">
+            <a id="download-template-link" href="#" onclick="downloadTemplate();return false;" style="color:#C8960C;font-weight:700;text-decoration:underline">⬇ Tải file mẫu Excel (MAU_NHAP_NHIEM_VU_KV8.xlsx)</a>
+          </div>
+        </div>
+        <div style="border:2px dashed #1A3A6B;border-radius:10px;padding:28px;text-align:center;background:#F8FAFD;cursor:pointer" 
+             onclick="document.getElementById('file-excel-input').click()" id="drop-zone">
+          <div style="font-size:36px;margin-bottom:8px">📂</div>
+          <div style="font-weight:700;color:#1A3A6B;font-size:14px">Kéo thả hoặc click để chọn file Excel</div>
+          <div style="font-size:12px;color:#888;margin-top:4px">Chấp nhận: .xlsx, .xls (tối đa 5MB)</div>
+          <input type="file" id="file-excel-input" accept=".xlsx,.xls" style="display:none" onchange="handleFileUpload(event)">
+        </div>
+        <div id="batch-file-name" style="font-size:12px;color:#1A3A6B;margin-top:6px;font-weight:600"></div>
+      </div>
+
+      <!-- Step 2: Preview -->
+      <div id="batch-step2" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-weight:700;color:#1A3A6B;font-size:14px" id="batch-summary"></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-ghost" onclick="resetBatch()" style="font-size:12px;padding:5px 10px">↩ Chọn lại file</button>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;color:#1A3A6B;font-weight:600">
+              <input type="checkbox" id="chk-select-all" onchange="toggleSelectAll(this.checked)" style="width:auto;cursor:pointer"> Chọn tất cả hợp lệ
+            </label>
+          </div>
+        </div>
+        <div style="overflow-x:auto;max-height:350px;overflow-y:auto;border:1px solid #E8EEF7;border-radius:8px">
+          <table style="font-size:11.5px;min-width:700px">
+            <thead>
+              <tr style="background:#1A3A6B;color:#fff;position:sticky;top:0">
+                <th style="padding:7px 8px;width:32px">✓</th>
+                <th style="padding:7px 8px;min-width:200px">Nhiệm vụ</th>
+                <th style="padding:7px 8px;min-width:130px">Đơn vị</th>
+                <th style="padding:7px 8px;min-width:130px">Lãnh đạo PT</th>
+                <th style="padding:7px 8px;white-space:nowrap">Thời hạn</th>
+                <th style="padding:7px 8px;min-width:120px">Sản phẩm</th>
+                <th style="padding:7px 8px;min-width:80px">Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody id="batch-preview-body"></tbody>
+          </table>
+        </div>
+        <div id="batch-legend" style="display:flex;gap:16px;margin-top:8px;font-size:11.5px;flex-wrap:wrap">
+          <span>🟢 Hợp lệ - có thể nhập</span>
+          <span>🟡 Cảnh báo tương tự - có thể nhập</span>
+          <span>🔴 Trùng chính xác - không thể nhập</span>
+          <span>⚠ Thiếu dữ liệu bắt buộc</span>
+        </div>
+      </div>
+
+      <div id="batch-error" style="display:none;color:#C0392B;font-size:13px;font-weight:600;padding:8px 12px;background:#FBE5E2;border-radius:7px;margin-top:6px"></div>
+      <div id="batch-progress" style="display:none;margin-top:8px">
+        <div style="background:#E8EEF7;border-radius:6px;height:10px;overflow:hidden">
+          <div id="batch-progress-bar" style="height:100%;background:#1A3A6B;width:0%;transition:width 0.3s"></div>
+        </div>
+        <div id="batch-progress-text" style="font-size:12px;color:#666;margin-top:4px;text-align:center"></div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+        <button class="btn-ghost" onclick="closeModal('modal-batch')">Hủy</button>
+        <button class="btn-gold" onclick="submitBatch()" id="btn-batch-submit" style="display:none">💾 Nhập các nhiệm vụ đã chọn</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div id="toast" style="display:none;position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#1A3A6B;color:#fff;padding:11px 22px;border-radius:10px;font-size:13.5px;box-shadow:0 4px 18px rgba(0,0,0,.2);z-index:500;max-width:440px;text-align:center"></div>
 
@@ -336,7 +418,394 @@ async function submitAdd(){
     if(j.ok){
       closeModal("modal-add");
       showToast("✅ Đã thêm nhiệm vụ mới. Đang tải lại dữ liệu...");
+      await 
+// ===== BATCH IMPORT FROM EXCEL =====
+// Requires SheetJS (xlsx) loaded from CDN
+let batchData = []; // parsed rows from Excel
+let batchSelected = []; // booleans
+
+function openBatchModal() {
+  resetBatch();
+  document.getElementById('modal-batch').classList.add('open');
+}
+
+function resetBatch() {
+  batchData = [];
+  batchSelected = [];
+  document.getElementById('batch-step1').style.display = 'block';
+  document.getElementById('batch-step2').style.display = 'none';
+  document.getElementById('btn-batch-submit').style.display = 'none';
+  document.getElementById('batch-error').style.display = 'none';
+  document.getElementById('batch-progress').style.display = 'none';
+  document.getElementById('file-excel-input').value = '';
+  document.getElementById('batch-file-name').textContent = '';
+}
+
+function downloadTemplate() {
+  // Tạo link download file mẫu từ base64 nếu có, hoặc redirect
+  showToast('📥 Đang chuẩn bị tải file mẫu...', 2000);
+  // File mẫu sẽ được generate bằng SheetJS
+  generateTemplatXLSX();
+}
+
+function generateTemplatXLSX() {
+  if (typeof XLSX === 'undefined') {
+    loadSheetJS(() => generateTemplatXLSX());
+    return;
+  }
+  const wb = XLSX.utils.book_new();
+  const headerRow = ['Nhiệm vụ *', 'Căn cứ / Nguồn chỉ đạo', 'Đơn vị chủ trì *', 'Lãnh đạo phụ trách', 'Thời hạn * (DD/MM/YYYY)', 'Yêu cầu sản phẩm đầu ra', 'Người thực hiện', 'Ghi chú'];
+  const exRows = [
+    ['Tổng hợp báo cáo 6 tháng 2026', 'KL GB T6/2026', 'Văn phòng', 'Bùi Ngọc Lợi - PCCT', '30/6/2026', 'Báo cáo tổng hợp', 'Tống Thị Thái Hà', 'Ví dụ - xóa dòng này'],
+    ['Xây dựng KH kiểm tra nội bộ Q3', 'CTCT T6/2026', 'Tổ Tham mưu Đảng', 'Phạm Quốc Hưng - CCT', '20/6/2026', 'Kế hoạch', '', 'Ví dụ - xóa dòng này'],
+  ];
+  const ws_data = [
+    ['MẪU NHẬP HÀNG LOẠT NHIỆM VỤ - HỆ THỐNG THEO DÕI KV8'],
+    ['⚡ Điền từ dòng 5 trở đi. (*) bắt buộc. Thời hạn: DD/MM/YYYY'],
+    ['🔵 Đơn vị hợp lệ: Văn phòng | Phòng TCCB | Phòng NV hải quan | Phòng QLRR | Phòng CNTT | Đội PT&KTSTQ | Đội KS hải quan | Tổ Tham mưu Đảng | HQCK Móng Cái | HQCK Hoành Mô | HQCK Bắc Phong Sinh | HQCK cảng Hòn Gai | HQCK cảng Cẩm Phả | HQCK cảng Vạn Gia'],
+    headerRow,
+    ...exRows,
+    ...Array(25).fill(new Array(8).fill(''))
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  ws['!cols'] = [{wch:55},{wch:35},{wch:25},{wch:28},{wch:15},{wch:30},{wch:22},{wch:25}];
+  XLSX.utils.book_append_sheet(wb, ws, 'NHAP_NHIEM_VU');
+  XLSX.writeFile(wb, 'MAU_NHAP_NHIEM_VU_KV8.xlsx');
+  showToast('✅ Đã tải file mẫu thành công');
+}
+
+function loadSheetJS(callback) {
+  if (typeof XLSX !== 'undefined') { callback(); return; }
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload = callback;
+  document.head.appendChild(s);
+}
+
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const maxSize = 5 * 1024 * 1024;
+  if (file.size > maxSize) { showToast('⚠ File quá lớn (tối đa 5MB)'); return; }
+  document.getElementById('batch-file-name').textContent = '📄 ' + file.name;
+
+  loadSheetJS(() => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: 'array', cellDates: true });
+        // Try to find the main sheet
+        let wsName = wb.SheetNames.find(n => n.includes('NHAP') || n.includes('nhap') || n.includes('Sheet')) || wb.SheetNames[0];
+        const ws = wb.Sheets[wsName];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+        parseExcelRows(rows);
+      } catch(err) {
+        showErrBatch('Không đọc được file. Vui lòng kiểm tra định dạng .xlsx/.xls');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// Drag & drop support
+document.addEventListener('DOMContentLoaded', () => {
+  const dz = document.getElementById('drop-zone');
+  if (!dz) return;
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.background='#E8EEF7'; });
+  dz.addEventListener('dragleave', () => { dz.style.background='#F8FAFD'; });
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.style.background='#F8FAFD';
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      document.getElementById('file-excel-input').files; // not settable
+      // simulate
+      document.getElementById('batch-file-name').textContent = '📄 ' + file.name;
+      loadSheetJS(() => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const data = new Uint8Array(ev.target.result);
+            const wb = XLSX.read(data, { type: 'array', cellDates: true });
+            let wsName = wb.SheetNames.find(n => n.includes('NHAP') || n.includes('nhap') || n.includes('Sheet')) || wb.SheetNames[0];
+            const ws = wb.Sheets[wsName];
+            const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+            parseExcelRows(rows);
+          } catch(err) {
+            showErrBatch('Không đọc được file. Vui lòng kiểm tra định dạng .xlsx/.xls');
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    }
+  });
+});
+
+function parseExcelRows(rows) {
+  // Find header row (row with "Nhiệm vụ" or index 3/4)
+  let dataStart = 4; // default: row 5 (0-indexed = 4)
+  for (let i = 0; i < Math.min(rows.length, 8); i++) {
+    const r = rows[i];
+    if (r.some(c => String(c||'').includes('Nhiệm vụ') || String(c||'').includes('nhiệm vụ'))) {
+      dataStart = i + 1;
+      break;
+    }
+  }
+
+  const parsed = [];
+  for (let i = dataStart; i < rows.length; i++) {
+    const r = rows[i];
+    const nhiemVu = String(r[0] || '').trim();
+    if (!nhiemVu || nhiemVu.length < 3) continue; // skip empty
+
+    // Skip example rows
+    const ghiChu = String(r[7] || '').trim();
+    if (ghiChu.includes('Ví dụ') || ghiChu.includes('vi du') || ghiChu.includes('xóa dòng')) continue;
+
+    // Parse date - try to normalize DD/MM/YYYY or YYYY-MM-DD
+    let thoiHan = String(r[4] || '').trim();
+    thoiHan = normalizeDate(thoiHan);
+
+    parsed.push({
+      nhiemVu,
+      canCu: String(r[1] || '').trim(),
+      donViChuTri: String(r[2] || '').trim(),
+      lanhDao: String(r[3] || '').trim(),
+      thoiHan,
+      sanPham: String(r[5] || '').trim(),
+      nguoiThucHien: String(r[6] || '').trim(),
+      ketQua: ghiChu
+    });
+  }
+
+  if (parsed.length === 0) {
+    showErrBatch('Không tìm thấy dữ liệu hợp lệ trong file. Vui lòng kiểm tra lại từ dòng 5 trở đi.');
+    return;
+  }
+  if (parsed.length > 30) {
+    showErrBatch('File có quá nhiều dòng (' + parsed.length + '). Tối đa 30 nhiệm vụ mỗi lần nhập.');
+    return;
+  }
+
+  batchData = parsed;
+  checkDupBatch();
+}
+
+function normalizeDate(str) {
+  if (!str) return '';
+  // DD/MM/YYYY or D/M/YYYY
+  const m1 = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (m1) {
+    let [,d,mo,y] = m1;
+    if (y.length === 2) y = '20' + y;
+    return y + '-' + mo.padStart(2,'0') + '-' + d.padStart(2,'0');
+  }
+  // YYYY-MM-DD
+  const m2 = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if (m2) {
+    let [,y,mo,d] = m2;
+    return y + '-' + mo.padStart(2,'0') + '-' + d.padStart(2,'0');
+  }
+  // SheetJS date serial - already handled by raw:false
+  return str;
+}
+
+function checkDupBatch() {
+  const results = batchData.map(row => {
+    const nv = row.nhiemVu.toLowerCase();
+    const dv = row.donViChuTri;
+    let status = 'ok'; // ok | warn | dup | missing
+    let dupInfo = '';
+
+    // Missing required fields
+    if (!row.nhiemVu || !row.donViChuTri) {
+      status = 'missing';
+      dupInfo = 'Thiếu: ' + (!row.nhiemVu ? 'Nhiệm vụ' : '') + (!row.donViChuTri ? ' Đơn vị' : '');
+      return { ...row, status, dupInfo };
+    }
+
+    // Check exact dup
+    const exact = allTasks.find(t =>
+      t.nhiemVu.trim().toLowerCase() === nv && t.donVi === dv
+    );
+    if (exact) {
+      status = 'dup';
+      dupInfo = 'Trùng #' + exact.tt;
+      return { ...row, status, dupInfo };
+    }
+
+    // Check similar
+    const similar = allTasks.filter(t =>
+      t.donVi === dv && (
+        t.nhiemVu.trim().toLowerCase().includes(nv.substring(0, Math.min(nv.length, 20))) ||
+        nv.includes(t.nhiemVu.trim().toLowerCase().substring(0, Math.min(t.nhiemVu.length, 20)))
+      ) && t.nhiemVu.trim().toLowerCase() !== nv
+    );
+    if (similar.length) {
+      status = 'warn';
+      dupInfo = 'Tương tự #' + similar[0].tt;
+    }
+
+    return { ...row, status, dupInfo };
+  });
+
+  batchData = results;
+  batchSelected = results.map(r => r.status === 'ok' || r.status === 'warn');
+  renderBatchPreview();
+}
+
+function renderBatchPreview() {
+  const tbody = document.getElementById('batch-preview-body');
+  const ok = batchData.filter(r => r.status === 'ok').length;
+  const warn = batchData.filter(r => r.status === 'warn').length;
+  const dup = batchData.filter(r => r.status === 'dup').length;
+  const missing = batchData.filter(r => r.status === 'missing').length;
+  const selectable = ok + warn;
+
+  document.getElementById('batch-summary').innerHTML =
+    `Tổng <b>${batchData.length}</b> dòng: ` +
+    `<span style="color:#1F9D55">🟢 ${ok} hợp lệ</span> · ` +
+    `<span style="color:#C8960C">🟡 ${warn} cảnh báo</span> · ` +
+    `<span style="color:#C0392B">🔴 ${dup} trùng</span>` +
+    (missing ? ` · <span style="color:#888">⚠ ${missing} thiếu</span>` : '');
+
+  let html = '';
+  batchData.forEach((row, i) => {
+    const checked = batchSelected[i];
+    const canSelect = row.status === 'ok' || row.status === 'warn';
+    let rowBg = '';
+    let badge = '';
+    if (row.status === 'ok') { rowBg = '#F0FBF4'; badge = '<span style="color:#1F9D55;font-weight:700">🟢</span>'; }
+    else if (row.status === 'warn') { rowBg = '#FFFDF0'; badge = `<span style="color:#C8960C;font-weight:700">🟡 ${row.dupInfo}</span>`; }
+    else if (row.status === 'dup') { rowBg = '#FBE5E2'; badge = `<span style="color:#C0392B;font-weight:700">🔴 ${row.dupInfo}</span>`; }
+    else { rowBg = '#F8F8F8'; badge = `<span style="color:#888">⚠ ${row.dupInfo}</span>`; }
+
+    const thoiHanDisplay = row.thoiHan ? (() => {
+      const [y,m,d] = row.thoiHan.split('-');
+      return (d||'?')+'/'+(m||'?')+'/'+(y||'?');
+    })() : '—';
+
+    html += `<tr style="background:${rowBg};border-bottom:1px solid #E8EEF7">
+      <td style="padding:6px 8px;text-align:center">
+        <input type="checkbox" ${checked?'checked':''} ${!canSelect?'disabled':''} 
+          onchange="batchSelected[${i}]=this.checked;updateBatchBtn()"
+          style="cursor:${canSelect?'pointer':'not-allowed'};width:auto">
+      </td>
+      <td style="padding:6px 8px;font-size:12px"><b>${row.nhiemVu.substring(0,80)}${row.nhiemVu.length>80?'...':''}</b>
+        ${row.canCu?`<br><span style="font-size:10.5px;color:#888">${row.canCu.substring(0,50)}</span>`:''}
+      </td>
+      <td style="padding:6px 8px;font-size:12px">${row.donViChuTri||'—'}</td>
+      <td style="padding:6px 8px;font-size:12px">${row.lanhDao||'—'}</td>
+      <td style="padding:6px 8px;font-size:12px;white-space:nowrap">${thoiHanDisplay}</td>
+      <td style="padding:6px 8px;font-size:12px">${row.sanPham||'—'}</td>
+      <td style="padding:6px 8px">${badge}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+
+  document.getElementById('batch-step1').style.display = 'none';
+  document.getElementById('batch-step2').style.display = 'block';
+  document.getElementById('batch-error').style.display = 'none';
+
+  // Auto-check "select all" if all selectable are checked
+  document.getElementById('chk-select-all').checked = selectable > 0 && batchSelected.every((v, i) => {
+    const r = batchData[i];
+    return (r.status !== 'ok' && r.status !== 'warn') || v;
+  });
+
+  updateBatchBtn();
+}
+
+function toggleSelectAll(checked) {
+  batchData.forEach((r, i) => {
+    if (r.status === 'ok' || r.status === 'warn') batchSelected[i] = checked;
+  });
+  renderBatchPreview();
+}
+
+function updateBatchBtn() {
+  const count = batchSelected.filter((v,i) => v && (batchData[i].status==='ok'||batchData[i].status==='warn')).length;
+  const btn = document.getElementById('btn-batch-submit');
+  if (count > 0) {
+    btn.style.display = 'inline-block';
+    btn.textContent = `💾 Nhập ${count} nhiệm vụ đã chọn`;
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+async function submitBatch() {
+  const toSubmit = batchData.filter((r,i) => batchSelected[i] && (r.status==='ok'||r.status==='warn'));
+  if (toSubmit.length === 0) { showToast('⚠ Chưa chọn nhiệm vụ nào để nhập'); return; }
+
+  const btn = document.getElementById('btn-batch-submit');
+  btn.disabled = true;
+  btn.textContent = '⏳ Đang nhập...';
+
+  const progress = document.getElementById('batch-progress');
+  const progressBar = document.getElementById('batch-progress-bar');
+  const progressText = document.getElementById('batch-progress-text');
+  progress.style.display = 'block';
+
+  let success = 0, errors = 0;
+  for (let idx = 0; idx < toSubmit.length; idx++) {
+    const row = toSubmit[idx];
+    const pct = Math.round((idx / toSubmit.length) * 100);
+    progressBar.style.width = pct + '%';
+    progressText.textContent = `Đang nhập ${idx+1}/${toSubmit.length}: ${row.nhiemVu.substring(0,40)}...`;
+
+    try {
+      const payload = {
+        action: 'add',
+        payload: {
+          nhiemVu: row.nhiemVu,
+          nguonChiDao: row.canCu,
+          donViChuTri: row.donViChuTri,
+          ldChiCuc: row.lanhDao,
+          ldDonVi: '',
+          thoiHan: row.thoiHan,
+          sanPham: row.sanPham,
+          nguoiThucHien: row.nguoiThucHien,
+          ketQua: row.ketQua || ''
+        }
+      };
+      const r = await fetch(API, { method: 'POST', body: JSON.stringify(payload) });
+      const j = await r.json();
+      if (j.ok) success++;
+      else errors++;
+    } catch(e) {
+      errors++;
+    }
+
+    // Small delay to avoid rate limiting
+    if (idx < toSubmit.length - 1) await new Promise(res => setTimeout(res, 300));
+  }
+
+  progressBar.style.width = '100%';
+  progressText.textContent = `Hoàn thành: ${success} thành công, ${errors} lỗi`;
+
+  btn.disabled = false;
+  btn.textContent = '💾 Nhập nhiệm vụ';
+
+  if (success > 0) {
+    setTimeout(async () => {
+      closeModal('modal-batch');
+      showToast(`✅ Đã nhập thành công ${success} nhiệm vụ. Đang tải lại...`);
       await loadData();
+    }, 1500);
+  } else {
+    showErrBatch(`Không thể nhập nhiệm vụ. Kiểm tra kết nối hoặc thử lại.`);
+  }
+}
+
+function showErrBatch(msg) {
+  const el = document.getElementById('batch-error');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+}
+
+
+loadData();
     }else{
       errEl.textContent="⚠ "+j.error;errEl.style.display="block";
     }
