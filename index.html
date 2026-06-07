@@ -764,55 +764,62 @@ async function submitBatch() {
   const progressBar = document.getElementById('batch-progress-bar');
   const progressText = document.getElementById('batch-progress-text');
   progress.style.display = 'block';
+  progressBar.style.width = '30%';
+  progressText.textContent = `Đang gửi ${toSubmit.length} nhiệm vụ lên máy chủ...`;
 
-  let success = 0, errors = 0;
-  for (let idx = 0; idx < toSubmit.length; idx++) {
-    const row = toSubmit[idx];
-    const pct = Math.round((idx / toSubmit.length) * 100);
-    progressBar.style.width = pct + '%';
-    progressText.textContent = `Đang nhập ${idx+1}/${toSubmit.length}: ${row.nhiemVu.substring(0,40)}...`;
+  try {
+    // Gửi toàn bộ mảng 1 lần duy nhất qua action addBatch
+    const payload = {
+      action: 'addBatch',
+      rows: toSubmit.map(row => ({
+        nhiemVu: row.nhiemVu,
+        nguonChiDao: row.canCu,
+        donViChuTri: row.donViChuTri,
+        ldChiCuc: row.lanhDao,
+        ldDonVi: '',
+        thoiHan: row.thoiHan,
+        sanPham: row.sanPham,
+        nguoiThucHien: row.nguoiThucHien,
+        ketQua: row.ketQua || ''
+      }))
+    };
 
-    try {
-      const payload = {
-        action: 'add',
-        payload: {
-          nhiemVu: row.nhiemVu,
-          nguonChiDao: row.canCu,
-          donViChuTri: row.donViChuTri,
-          ldChiCuc: row.lanhDao,
-          ldDonVi: '',
-          thoiHan: row.thoiHan,
-          sanPham: row.sanPham,
-          nguoiThucHien: row.nguoiThucHien,
-          ketQua: row.ketQua || ''
-        }
-      };
-      const r = await fetch(API, { method: 'POST', body: JSON.stringify(payload) });
-      const j = await r.json();
-      if (j.ok) success++;
-      else errors++;
-    } catch(e) {
-      errors++;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000); // timeout 60s
+
+    const r = await fetch(API, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+
+    const j = await r.json();
+
+    progressBar.style.width = '100%';
+
+    if (j.ok) {
+      const success = j.successCount || toSubmit.length;
+      const errors = j.errorCount || 0;
+      progressText.textContent = `Hoàn thành: ${success} thành công${errors ? ', ' + errors + ' lỗi' : ''}`;
+      setTimeout(async () => {
+        closeModal('modal-batch');
+        showToast(`✅ Đã nhập thành công ${success} nhiệm vụ. Đang tải lại...`);
+        await loadData();
+      }, 1200);
+    } else {
+      progressText.textContent = 'Gửi thất bại.';
+      showErrBatch(j.error || 'Không thể nhập nhiệm vụ. Kiểm tra kết nối hoặc thử lại.');
     }
-
-    // Small delay to avoid rate limiting
-    if (idx < toSubmit.length - 1) await new Promise(res => setTimeout(res, 300));
-  }
-
-  progressBar.style.width = '100%';
-  progressText.textContent = `Hoàn thành: ${success} thành công, ${errors} lỗi`;
-
-  btn.disabled = false;
-  btn.textContent = '💾 Nhập nhiệm vụ';
-
-  if (success > 0) {
-    setTimeout(async () => {
-      closeModal('modal-batch');
-      showToast(`✅ Đã nhập thành công ${success} nhiệm vụ. Đang tải lại...`);
-      await loadData();
-    }, 1500);
-  } else {
-    showErrBatch(`Không thể nhập nhiệm vụ. Kiểm tra kết nối hoặc thử lại.`);
+  } catch(e) {
+    progressBar.style.width = '0%';
+    const msg = e.name === 'AbortError'
+      ? 'Hết thời gian chờ (60s). Kiểm tra kết nối hoặc thử lại với ít nhiệm vụ hơn.'
+      : 'Lỗi kết nối: ' + e.message;
+    showErrBatch(msg);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '💾 Nhập nhiệm vụ';
   }
 }
 
