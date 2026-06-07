@@ -55,6 +55,7 @@ button{font-family:inherit;cursor:pointer;border:none;border-radius:7px;padding:
 <nav class="np" style="background:#fff;border-bottom:2px solid #E8EEF7;padding:0 22px;display:flex;gap:4px;align-items:center">
   <button class="tab-btn tab-active" id="tab-dash" onclick="switchTab('dashboard')">📊 Bảng điều khiển</button>
   <button class="tab-btn" id="tab-table" onclick="switchTab('table')">📋 Bảng theo dõi</button>
+  <button class="tab-btn" id="tab-phanich" onclick="switchTab('phanich')">📈 Phân tích</button>
   <div style="margin-left:auto;padding:8px 0">
     <button class="btn-navy np" onclick="openAddModal()" style="font-size:13px;padding:7px 16px;display:flex;align-items:center;gap:6px">
       ➕ Thêm nhiệm vụ mới
@@ -82,6 +83,27 @@ button{font-family:inherit;cursor:pointer;border:none;border-radius:7px;padding:
       <div id="progress-bars"></div>
       <div style="display:flex;gap:16px;margin-top:12px;font-size:12px;color:#666;flex-wrap:wrap">
         <span>🟢 Hoàn thành</span><span>🔵 Tiến hành</span><span>🟡 Sắp hết hạn</span><span>🔴 Trễ hạn</span>
+      </div>
+    </div>
+
+    <!-- Bảng lãnh đạo phụ trách -->
+    <div style="background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-top:16px">
+      <div style="font-weight:700;color:#1A3A6B;margin-bottom:14px">👤 Tiến độ theo lãnh đạo phụ trách</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="background:#E8EEF7">
+              <th style="padding:9px 12px;text-align:left;font-weight:700;color:#1A3A6B;white-space:nowrap">Lãnh đạo phụ trách</th>
+              <th style="padding:9px 8px;text-align:center;font-weight:700;color:#555">Tổng</th>
+              <th style="padding:9px 8px;text-align:center;font-weight:700;color:#1F9D55">✅ Hoàn thành</th>
+              <th style="padding:9px 8px;text-align:center;font-weight:700;color:#1A3A6B">🔵 Tiến hành</th>
+              <th style="padding:9px 8px;text-align:center;font-weight:700;color:#C8960C">🟡 Sắp hạn</th>
+              <th style="padding:9px 8px;text-align:center;font-weight:700;color:#C0392B">🔴 Trễ hạn</th>
+              <th style="padding:9px 12px;text-align:left;font-weight:700;color:#1A3A6B;min-width:130px">Tiến độ</th>
+            </tr>
+          </thead>
+          <tbody id="ld-table-body"></tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -130,6 +152,10 @@ button{font-family:inherit;cursor:pointer;border:none;border-radius:7px;padding:
     <div style="font-size:13px;color:#888;margin-top:8px">Bảng T6-2026 · Chi cục Hải quan khu vực VIII</div>
   </div>
 </main>
+
+<div id="view-phanich" style="display:none;padding:0 0 30px">
+  <div id="pa-content"></div>
+</div>
 
 <!-- ========== MODAL THÊM NHIỆM VỤ ========== -->
 <div id="modal-add" class="modal-overlay" onclick="closeModal('modal-add',event)">
@@ -867,7 +893,7 @@ async function loadData(forceRefresh=false){
 
   if(cached && !forceRefresh){
     allTasks = JSON.parse(cached);
-    buildFilters(); renderDashboard(); renderTable();
+    buildFilters(); renderDashboard(); renderTable(); if(curTab==="phanich")renderPhanich();
     document.getElementById("loading").style.display="none";
     document.getElementById("view-"+curTab).style.display="block";
     const ageMin = Math.round(cacheAge/60000);
@@ -899,7 +925,7 @@ async function loadData(forceRefresh=false){
       // Lưu vào cache
       localStorage.setItem(CACHE_KEY, JSON.stringify(j.data));
       localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
-      buildFilters(); renderDashboard(); renderTable();
+      buildFilters(); renderDashboard(); renderTable(); if(curTab==="phanich")renderPhanich();
       document.getElementById("loading").style.display="none";
       document.getElementById("view-"+curTab).style.display="block";
       document.getElementById("sync-status").textContent=
@@ -982,12 +1008,26 @@ function kpiBox(label,val,color,sub){
     <div style="font-size:38px;font-weight:800;color:${color};line-height:1.1;margin-top:5px">${val}</div>
     ${sub?`<div style="font-size:12px;color:#999;margin-top:2px">${sub}</div>`:""}</div>`;
 }
+// Tính tình trạng hiển thị: bảo toàn "Hoàn thành" từ Sheet, tự tính "Trễ hạn"/"SẮP HẾT HẠN" theo ngày
+function effectiveStatus(task){
+  if(task.tinhTrang==="Hoàn thành") return "Hoàn thành";
+  if(!task.thoiHan) return task.tinhTrang||"Tiến hành";
+  const today=new Date(); today.setHours(0,0,0,0);
+  const parts=task.thoiHan.split("-");
+  if(parts.length!==3) return task.tinhTrang||"Tiến hành";
+  const deadline=new Date(Number(parts[0]),Number(parts[1])-1,Number(parts[2]));
+  const diffDays=Math.round((deadline-today)/(86400000));
+  if(diffDays<0) return "Trễ hạn";
+  if(diffDays<=3) return "SẮP HẾT HẠN";
+  return "Tiến hành";
+}
+
 function renderDashboard(){
   const t=allTasks,total=t.length,
-    ht=t.filter(x=>x.tinhTrang==="Hoàn thành").length,
-    dl=t.filter(x=>x.tinhTrang==="Tiến hành").length,
-    sap=t.filter(x=>x.tinhTrang==="SẮP HẾT HẠN").length,
-    tre=t.filter(x=>x.tinhTrang==="Trễ hạn").length,
+    ht=t.filter(x=>effectiveStatus(x)==="Hoàn thành").length,
+    dl=t.filter(x=>effectiveStatus(x)==="Tiến hành").length,
+    sap=t.filter(x=>effectiveStatus(x)==="SẮP HẾT HẠN").length,
+    tre=t.filter(x=>effectiveStatus(x)==="Trễ hạn").length,
     pct=total?Math.round(ht/total*100):0;
   document.getElementById("kpi-row").innerHTML=
     kpiBox("Tổng nhiệm vụ",total,NAVY)+
@@ -996,7 +1036,7 @@ function renderDashboard(){
     kpiBox("Sắp hết hạn",sap,"#C8960C")+
     kpiBox("Trễ hạn",tre,"#C0392B");
   let alerts="";
-  t.filter(x=>x.tinhTrang==="Trễ hạn").forEach(x=>{
+  t.filter(x=>effectiveStatus(x)==="Trễ hạn").forEach(x=>{
     if(!alerts)alerts=`<div style="background:#FBE5E2;border:1px solid #E8A89F;border-radius:12px;padding:16px;margin-bottom:18px"><div style="font-weight:700;color:#C0392B;margin-bottom:10px">⚠ NHIỆM VỤ TRỄ HẠN — cần đôn đốc ngay</div>`;
     alerts+=`<div style="font-size:13px;padding:6px 0;border-top:1px dashed #E8A89F;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center">
       <span><b>${x.tt}. ${x.nhiemVu}</b> — ${x.donVi}</span>
@@ -1006,7 +1046,7 @@ function renderDashboard(){
       </div></div>`;
   });
   if(alerts)alerts+="</div>";
-  t.filter(x=>x.tinhTrang==="SẮP HẾT HẠN").forEach(x=>{
+  t.filter(x=>effectiveStatus(x)==="SẮP HẾT HẠN").forEach(x=>{
     if(!alerts.includes("SẮP HẾT"))alerts+=`<div style="background:#FEF9E7;border:1px solid #F5CBA7;border-radius:12px;padding:14px;margin-bottom:18px"><div style="font-weight:700;color:#C8960C;margin-bottom:8px">🟡 NHIỆM VỤ SẮP HẾT HẠN</div>`;
     alerts+=`<div style="font-size:13px;padding:5px 0;border-top:1px dashed #F5CBA7;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;align-items:center">
       <span><b>${x.tt}. ${x.nhiemVu}</b> — ${x.donVi}</span>
@@ -1017,9 +1057,10 @@ function renderDashboard(){
   document.getElementById("alert-box").innerHTML=alerts;
   const map={};
   t.forEach(x=>{const k=x.donVi||"?";if(!map[k])map[k]={ht:0,dl:0,sap:0,tre:0,total:0};map[k].total++;
-    if(x.tinhTrang==="Hoàn thành")map[k].ht++;
-    else if(x.tinhTrang==="Trễ hạn")map[k].tre++;
-    else if(x.tinhTrang==="SẮP HẾT HẠN")map[k].sap++;
+    const es=effectiveStatus(x);
+    if(es==="Hoàn thành")map[k].ht++;
+    else if(es==="Trễ hạn")map[k].tre++;
+    else if(es==="SẮP HẾT HẠN")map[k].sap++;
     else map[k].dl++;
   });
   let bars="";
@@ -1034,13 +1075,51 @@ function renderDashboard(){
       </div></div>`;
   });
   document.getElementById("progress-bars").innerHTML=bars||"<div style='color:#aaa;font-size:13px'>Chưa có dữ liệu.</div>";
+
+  // ===== BẢNG THEO DÕI THEO LÃNH ĐẠO PHỤ TRÁCH =====
+  const ldMap={};
+  t.forEach(x=>{
+    const ld=x.lanhDao||"Chưa phân công";
+    if(!ldMap[ld])ldMap[ld]={ht:0,dl:0,sap:0,tre:0,total:0};
+    ldMap[ld].total++;
+    const es=effectiveStatus(x);
+    if(es==="Hoàn thành")ldMap[ld].ht++;
+    else if(es==="Trễ hạn")ldMap[ld].tre++;
+    else if(es==="SẮP HẾT HẠN")ldMap[ld].sap++;
+    else ldMap[ld].dl++;
+  });
+  let ldRows="";
+  Object.entries(ldMap).sort((a,b)=>b[1].total-a[1].total).forEach(([ld,s])=>{
+    const p=s.total?Math.round(s.ht/s.total*100):0;
+    const pct_s=s.total?Math.round(s.sap/s.total*100):0;
+    const pct_t=s.total?Math.round(s.tre/s.total*100):0;
+    ldRows+=`<tr style="border-bottom:1px solid #E8EEF7">
+      <td style="padding:9px 12px;font-weight:600;font-size:13px">${ld}</td>
+      <td style="padding:9px 12px;text-align:center;font-size:13px">${s.total}</td>
+      <td style="padding:9px 12px;text-align:center;color:#1F9D55;font-weight:700">${s.ht}</td>
+      <td style="padding:9px 12px;text-align:center;color:${NAVY};font-weight:600">${s.dl}</td>
+      <td style="padding:9px 12px;text-align:center;color:#C8960C;font-weight:600">${s.sap}</td>
+      <td style="padding:9px 12px;text-align:center;color:#C0392B;font-weight:700">${s.tre}</td>
+      <td style="padding:9px 12px;min-width:120px">
+        <div style="height:8px;background:#E8EEF7;border-radius:6px;overflow:hidden;display:flex">
+          <div style="width:${p}%;background:#1F9D55"></div>
+          <div style="width:${s.total?(s.dl/s.total*100):0}%;background:${NAVY}"></div>
+          <div style="width:${pct_s}%;background:#C8960C"></div>
+          <div style="width:${pct_t}%;background:#C0392B"></div>
+        </div>
+        <div style="font-size:11px;color:#888;margin-top:2px">${p}% hoàn thành</div>
+      </td>
+    </tr>`;
+  });
+  const ldEl=document.getElementById("ld-table-body");
+  if(ldEl)ldEl.innerHTML=ldRows||"<tr><td colspan='7' style='padding:20px;text-align:center;color:#aaa'>Chưa có dữ liệu</td></tr>";
 }
 
 // ===== TABLE =====
 function renderTable(){
   const rows=getFiltered();let html="";
   rows.forEach(t=>{
-    const tt=ttColor(t.tinhTrang||"");
+    const tt=ttColor(effectiveStatus(t));
     const hasKQ=t.ghiChu&&t.ghiChu.trim();
     html+=`<tr class="rh" style="border-bottom:1px solid ${LIGHT}">
       <td style="color:#888">${t.tt||""}</td>
@@ -1050,7 +1129,7 @@ function renderTable(){
       <td style="white-space:nowrap;font-weight:600;color:${NAVY};font-size:12px">${t.lanhDao||""}</td>
       <td style="white-space:nowrap;font-size:12px">${fmtDate(t.thoiHan)}</td>
       <td style="font-size:12px;color:#555">${t.sanPham||""}</td>
-      <td><span style="background:${tt.bg};color:${tt.c};padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap">${t.tinhTrang||"—"}</span></td>
+      <td><span style="background:${tt.bg};color:${tt.c};padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap">${effectiveStatus(t)||"—"}</span></td>
       <td style="font-size:12px;color:#666">${t.nguoiTH||""}</td>
       <td style="font-size:12px;color:#555">${hasKQ?'<span style="color:#1F9D55">✓</span> '+t.ghiChu:"<span style='color:#aaa'>Chưa có</span>"}</td>
       <td class="np"><div style="display:flex;gap:5px">
@@ -1070,8 +1149,11 @@ function switchTab(tab){
   curTab=tab;
   document.getElementById("view-dashboard").style.display=tab==="dashboard"?"block":"none";
   document.getElementById("view-table").style.display=tab==="table"?"block":"none";
+  document.getElementById("view-phanich").style.display=tab==="phanich"?"block":"none";
   document.getElementById("tab-dash").className="tab-btn"+(tab==="dashboard"?" tab-active":"");
   document.getElementById("tab-table").className="tab-btn"+(tab==="table"?" tab-active":"");
+  document.getElementById("tab-phanich").className="tab-btn"+(tab==="phanich"?" tab-active":"");
+  if(tab==="phanich") renderPhanich();
 }
 function exportCSV(){
   const rows=getFiltered();
@@ -1080,6 +1162,163 @@ function exportCSV(){
   const csv="\uFEFF"+[h,...data].map(r=>r.map(c=>'"'+(String(c||"").replace(/"/g,'""'))+'"').join(",")).join("\n");
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));
   a.download="NhiemVu_KV8.csv";a.click();
+}
+
+// ===== TAB PHÂN TÍCH =====
+function renderPhanich(){
+  const t=allTasks;
+  if(!t.length){
+    document.getElementById("pa-content").innerHTML="<div style='padding:40px;text-align:center;color:#aaa'>Chưa có dữ liệu.</div>";
+    return;
+  }
+
+  // Tổng quan
+  const total=t.length;
+  const ht=t.filter(x=>effectiveStatus(x)==="Hoàn thành").length;
+  const tre=t.filter(x=>effectiveStatus(x)==="Trễ hạn").length;
+  const sap=t.filter(x=>effectiveStatus(x)==="SẮP HẾT HẠN").length;
+  const dl=t.filter(x=>effectiveStatus(x)==="Tiến hành").length;
+  const pctHT=total?Math.round(ht/total*100):0;
+
+  // Phân tích theo đơn vị — bảng đầy đủ
+  const dvMap={};
+  t.forEach(x=>{
+    const k=x.donVi||"(Chưa xác định)";
+    if(!dvMap[k])dvMap[k]={ht:0,dl:0,sap:0,tre:0,total:0,tasks:[]};
+    dvMap[k].total++;dvMap[k].tasks.push(x);
+    const es=effectiveStatus(x);
+    if(es==="Hoàn thành")dvMap[k].ht++;
+    else if(es==="Trễ hạn")dvMap[k].tre++;
+    else if(es==="SẮP HẾT HẠN")dvMap[k].sap++;
+    else dvMap[k].dl++;
+  });
+
+  // Phân tích theo lãnh đạo
+  const ldMap={};
+  t.forEach(x=>{
+    const k=x.lanhDao||"(Chưa phân công)";
+    if(!ldMap[k])ldMap[k]={ht:0,dl:0,sap:0,tre:0,total:0};
+    ldMap[k].total++;
+    const es=effectiveStatus(x);
+    if(es==="Hoàn thành")ldMap[k].ht++;
+    else if(es==="Trễ hạn")ldMap[k].tre++;
+    else if(es==="SẮP HẾT HẠN")ldMap[k].sap++;
+    else ldMap[k].dl++;
+  });
+
+  // Helper: mini bar
+  function miniBar(s){
+    const p=s.total?s.ht/s.total*100:0;
+    const pd=s.total?s.dl/s.total*100:0;
+    const ps=s.total?s.sap/s.total*100:0;
+    const pt=s.total?s.tre/s.total*100:0;
+    return `<div style="height:9px;background:#E8EEF7;border-radius:6px;overflow:hidden;display:flex;min-width:100px">
+      <div style="width:${p}%;background:#1F9D55"></div><div style="width:${pd}%;background:#1A3A6B"></div>
+      <div style="width:${ps}%;background:#C8960C"></div><div style="width:${pt}%;background:#C0392B"></div>
+    </div><div style="font-size:10.5px;color:#888;margin-top:1px">${Math.round(p)}%</div>`;
+  }
+
+  function tableRows(map, sortField='total'){
+    return Object.entries(map)
+      .sort((a,b)=>b[1][sortField]-a[1][sortField])
+      .map(([k,s])=>`<tr style="border-bottom:1px solid #E8EEF7;font-size:13px">
+        <td style="padding:8px 12px;font-weight:600">${k}</td>
+        <td style="padding:8px 8px;text-align:center">${s.total}</td>
+        <td style="padding:8px 8px;text-align:center;color:#1F9D55;font-weight:700">${s.ht}</td>
+        <td style="padding:8px 8px;text-align:center;color:#1A3A6B;font-weight:600">${s.dl}</td>
+        <td style="padding:8px 8px;text-align:center;color:#C8960C;font-weight:700">${s.sap}</td>
+        <td style="padding:8px 8px;text-align:center;color:#C0392B;font-weight:700">${s.tre}</td>
+        <td style="padding:8px 12px">${miniBar(s)}</td>
+      </tr>`).join('');
+  }
+
+  const thHtml=`<thead><tr style="background:#E8EEF7">
+    <th style="padding:9px 12px;text-align:left;font-weight:700;color:#1A3A6B">Tên</th>
+    <th style="padding:9px 8px;text-align:center;color:#555;font-weight:700">Tổng</th>
+    <th style="padding:9px 8px;text-align:center;color:#1F9D55;font-weight:700">✅ HT</th>
+    <th style="padding:9px 8px;text-align:center;color:#1A3A6B;font-weight:700">🔵 TH</th>
+    <th style="padding:9px 8px;text-align:center;color:#C8960C;font-weight:700">🟡 SH</th>
+    <th style="padding:9px 8px;text-align:center;color:#C0392B;font-weight:700">🔴 TH</th>
+    <th style="padding:9px 12px;text-align:left;font-weight:700;color:#1A3A6B;min-width:120px">Tiến độ</th>
+  </tr></thead>`;
+
+  // Nhiệm vụ trễ + sắp hạn details
+  const treList=t.filter(x=>effectiveStatus(x)==="Trễ hạn").sort((a,b)=>(a.thoiHan||"").localeCompare(b.thoiHan||""));
+  const sapList=t.filter(x=>effectiveStatus(x)==="SẮP HẾT HẠN").sort((a,b)=>(a.thoiHan||"").localeCompare(b.thoiHan||""));
+
+  function detailRows(arr,color){
+    return arr.map(x=>`<tr style="border-bottom:1px solid #E8EEF7;font-size:12.5px">
+      <td style="padding:7px 10px;color:#888">${x.tt}</td>
+      <td style="padding:7px 10px;font-weight:600">${x.nhiemVu.length>80?x.nhiemVu.substring(0,80)+'…':x.nhiemVu}</td>
+      <td style="padding:7px 10px;color:#555">${x.donVi||'—'}</td>
+      <td style="padding:7px 10px;color:${NAVY};font-weight:600;white-space:nowrap">${x.lanhDao||'—'}</td>
+      <td style="padding:7px 10px;color:${color};font-weight:700;white-space:nowrap">${fmtDate(x.thoiHan)}</td>
+      <td style="padding:7px 5px"><button onclick="openKQModal(${x.row})" style="background:${GOLD};color:${NAVY};padding:3px 8px;border-radius:5px;border:none;cursor:pointer;font-size:11.5px;font-weight:600;white-space:nowrap">📝 Nhập KQ</button></td>
+    </tr>`).join('');
+  }
+
+  function card(title, color, content){
+    return `<div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:18px">
+      <div style="font-weight:700;color:${color||'#1A3A6B'};font-size:15px;margin-bottom:14px">${title}</div>
+      ${content}
+    </div>`;
+  }
+
+  // Build output
+  let html = '';
+
+  // Summary cards row
+  html += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px">
+    ${kpiBox("Tổng nhiệm vụ",total,NAVY)}
+    ${kpiBox("Hoàn thành",ht,"#1F9D55",pctHT+"% tiến độ")}
+    ${kpiBox("Đang tiến hành",dl,NAVY)}
+    ${kpiBox("Sắp hết hạn",sap,"#C8960C")}
+    ${kpiBox("Trễ hạn",tre,"#C0392B")}
+  </div>`;
+
+  // By unit
+  html += card("🏢 Phân tích theo đơn vị chủ trì","#1A3A6B",
+    `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">${thHtml}<tbody>${tableRows(dvMap,'total')}</tbody></table></div>`
+  );
+
+  // By lãnh đạo
+  html += card("👤 Phân tích theo lãnh đạo phụ trách","#1A3A6B",
+    `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">${thHtml}<tbody>${tableRows(ldMap,'total')}</tbody></table></div>`
+  );
+
+  // Trễ hạn detail
+  if(treList.length){
+    html += card("🔴 Chi tiết nhiệm vụ trễ hạn ("+treList.length+" nhiệm vụ)","#C0392B",
+      `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:#FBE5E2"><th style="padding:8px 10px;text-align:left;font-size:12px;color:#C0392B">#</th>
+          <th style="padding:8px 10px;text-align:left;font-size:12px;color:#C0392B">Nhiệm vụ</th>
+          <th style="padding:8px 10px;text-align:left;font-size:12px;color:#C0392B">Đơn vị</th>
+          <th style="padding:8px 10px;text-align:left;font-size:12px;color:#C0392B">Lãnh đạo</th>
+          <th style="padding:8px 10px;text-align:left;font-size:12px;color:#C0392B">Hạn</th>
+          <th style="padding:8px 5px"></th>
+        </tr></thead>
+        <tbody>${detailRows(treList,'#C0392B')}</tbody>
+      </table></div>`
+    );
+  }
+
+  // Sắp hạn detail
+  if(sapList.length){
+    html += card("🟡 Chi tiết nhiệm vụ sắp hết hạn ("+sapList.length+" nhiệm vụ)","#C8960C",
+      `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:#FEF9E7"><th style="padding:8px 10px;text-align:left;font-size:12px;color:#C8960C">#</th>
+          <th style="padding:8px 10px;text-align:left;font-size:12px;color:#C8960C">Nhiệm vụ</th>
+          <th style="padding:8px 10px;text-align:left;font-size:12px;color:#C8960C">Đơn vị</th>
+          <th style="padding:8px 10px;text-align:left;font-size:12px;color:#C8960C">Lãnh đạo</th>
+          <th style="padding:8px 10px;text-align:left;font-size:12px;color:#C8960C">Hạn</th>
+          <th style="padding:8px 5px"></th>
+        </tr></thead>
+        <tbody>${detailRows(sapList,'#C8960C')}</tbody>
+      </table></div>`
+    );
+  }
+
+  document.getElementById("pa-content").innerHTML=html;
 }
 
 loadData();
