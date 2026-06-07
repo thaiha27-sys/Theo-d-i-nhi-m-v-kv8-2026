@@ -13,18 +13,23 @@ table{border-collapse:collapse;width:100%}
 th,td{text-align:left;padding:8px 7px;vertical-align:top}
 .rh:hover{background:#E8EEF7}
 input,select,textarea{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid #ddd;border-radius:7px;background:#fff;width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#1A3A6B;box-shadow:0 0 0 2px #E8EEF7}
 button{font-family:inherit;cursor:pointer;border:none;border-radius:7px;padding:7px 14px;font-size:13px}
 .btn-gold{background:#C8960C;color:#1A3A6B;font-weight:700}
+.btn-navy{background:#1A3A6B;color:#fff;font-weight:700}
 .btn-ghost{background:#fff;color:#1A3A6B;border:1px solid #1A3A6B;font-weight:600}
+.btn-red{background:#C0392B;color:#fff;font-weight:700}
 .tab-btn{background:none;border:none;padding:13px 18px;font-size:13.5px;font-weight:600;color:#888;border-bottom:3px solid transparent;cursor:pointer}
 .tab-active{color:#1A3A6B;border-bottom:3px solid #C8960C}
-/* Modal */
-#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
-#modal-overlay.open{display:flex}
-#modal-box{background:#fff;border-radius:14px;width:100%;max-width:520px;margin-top:20px}
-#modal-header{background:#1A3A6B;color:#fff;padding:14px 20px;border-radius:14px 14px 0 0;display:flex;justify-content:space-between;align-items:center}
-#modal-body{padding:20px;display:flex;flex-direction:column;gap:14px}
 .field-label{font-size:12.5px;font-weight:600;color:#1A3A6B;display:block;margin-bottom:4px}
+.warn-box{background:#FEF9E7;border:1px solid #F5CBA7;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#C8960C;margin-top:6px;display:none}
+.err-box{background:#FBE5E2;border:1px solid #E8A89F;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#C0392B;margin-top:6px;display:none}
+/* Modal chung */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:flex-start;justify-content:center;padding:30px 16px;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal-box{background:#fff;border-radius:14px;width:100%;max-width:560px;margin-top:10px}
+.modal-hd{background:#1A3A6B;color:#fff;padding:14px 20px;border-radius:14px 14px 0 0;display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.modal-bd{padding:20px;display:flex;flex-direction:column;gap:13px}
 @media print{.np{display:none!important}}
 </style>
 </head>
@@ -38,7 +43,7 @@ button{font-family:inherit;cursor:pointer;border:none;border-radius:7px;padding:
     <div style="font-size:17px;font-weight:700">THEO DÕI NHIỆM VỤ KV8 — QUẢNG NINH</div>
     <div style="font-size:12px;opacity:.9">Chi cục Hải quan khu vực VIII · Văn phòng chủ trì · Chuẩn "7 RÕ"</div>
   </div>
-  <div class="np" style="display:flex;align-items:center;gap:10px;position:relative;z-index:1;font-size:12px">
+  <div class="np" style="display:flex;align-items:center;gap:10px;position:relative;z-index:1;font-size:12px;flex-wrap:wrap">
     <span id="sync-status" style="opacity:.9">⏳ Đang tải...</span>
     <button onclick="loadData()" id="btn-refresh" style="background:none;border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 10px;border-radius:6px;font-size:12px">🔄 Làm mới</button>
     <span style="opacity:.9">🔔 8h00 → dangbohqqn@gmail.com</span>
@@ -46,9 +51,14 @@ button{font-family:inherit;cursor:pointer;border:none;border-radius:7px;padding:
 </header>
 
 <!-- TABS -->
-<nav class="np" style="background:#fff;border-bottom:2px solid #E8EEF7;padding:0 22px;display:flex;gap:4px">
+<nav class="np" style="background:#fff;border-bottom:2px solid #E8EEF7;padding:0 22px;display:flex;gap:4px;align-items:center">
   <button class="tab-btn tab-active" id="tab-dash" onclick="switchTab('dashboard')">📊 Bảng điều khiển</button>
   <button class="tab-btn" id="tab-table" onclick="switchTab('table')">📋 Bảng theo dõi</button>
+  <div style="margin-left:auto;padding:8px 0">
+    <button class="btn-navy np" onclick="openAddModal()" style="font-size:13px;padding:7px 16px;display:flex;align-items:center;gap:6px">
+      ➕ Thêm nhiệm vụ mới
+    </button>
+  </div>
 </nav>
 
 <!-- MAIN -->
@@ -77,8 +87,8 @@ button{font-family:inherit;cursor:pointer;border:none;border-radius:7px;padding:
   <!-- TABLE -->
   <div id="view-table" style="display:none">
     <div class="np" style="background:#fff;border-radius:12px 12px 0 0;padding:14px;border-bottom:1px solid #E8EEF7;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <input id="search" type="text" placeholder="🔍 Tìm nhiệm vụ, lãnh đạo, căn cứ..." style="flex:1 1 220px;width:auto" oninput="renderTable()">
-      <select id="f-donvi" onchange="renderTable()" style="max-width:200px;width:auto"><option value="">— Tất cả đơn vị —</option></select>
+      <input id="search" type="text" placeholder="🔍 Tìm nhiệm vụ, lãnh đạo, căn cứ..." style="flex:1 1 200px;width:auto" oninput="renderTable()">
+      <select id="f-donvi" onchange="renderTable()" style="max-width:190px;width:auto"><option value="">— Tất cả đơn vị —</option></select>
       <select id="f-tt" onchange="renderTable()" style="width:auto">
         <option value="">— Tình trạng —</option>
         <option value="Hoàn thành">✅ Hoàn thành</option>
@@ -86,22 +96,23 @@ button{font-family:inherit;cursor:pointer;border:none;border-radius:7px;padding:
         <option value="SẮP HẾT HẠN">🟡 Sắp hết hạn</option>
         <option value="Trễ hạn">🔴 Trễ hạn</option>
       </select>
-      <select id="f-ld" onchange="renderTable()" style="max-width:200px;width:auto"><option value="">— Lãnh đạo PT —</option></select>
-      <div style="margin-left:auto;display:flex;gap:6px">
+      <select id="f-ld" onchange="renderTable()" style="max-width:190px;width:auto"><option value="">— Lãnh đạo PT —</option></select>
+      <div style="display:flex;gap:6px">
         <button class="btn-ghost" onclick="exportCSV()">📊 Excel</button>
         <button class="btn-ghost" onclick="window.print()">🖨️ In/PDF</button>
       </div>
     </div>
+    <div id="dup-banner" style="display:none;background:#FBE5E2;border-left:4px solid #C0392B;padding:10px 16px;font-size:13px;color:#C0392B;font-weight:600"></div>
     <div style="background:#fff;border-radius:0 0 12px 12px;overflow-x:auto;box-shadow:0 1px 4px rgba(0,0,0,.06)">
       <table id="main-table" style="font-size:12.5px">
         <thead>
           <tr style="background:#1A3A6B;color:#fff">
-            <th>TT</th><th style="min-width:220px">Nhiệm vụ</th><th style="min-width:120px">Căn cứ</th>
+            <th>TT</th><th style="min-width:220px">Nhiệm vụ</th><th style="min-width:110px">Căn cứ</th>
             <th>Đơn vị</th><th style="white-space:nowrap">Lãnh đạo PT</th>
             <th style="white-space:nowrap">Hạn</th><th>Sản phẩm</th>
             <th>Tình trạng</th><th>Người TH</th>
-            <th style="min-width:150px">Kết quả / Ghi chú</th>
-            <th class="np" style="min-width:120px">Thao tác</th>
+            <th style="min-width:140px">Kết quả / Ghi chú</th>
+            <th class="np" style="min-width:130px">Thao tác</th>
           </tr>
         </thead>
         <tbody id="table-body"></tbody>
@@ -114,119 +125,261 @@ button{font-family:inherit;cursor:pointer;border:none;border-radius:7px;padding:
   <div id="loading" style="text-align:center;padding:60px;color:#1A3A6B">
     <div class="spin" style="font-size:32px;margin-bottom:16px">⟳</div>
     <div style="font-size:15px;font-weight:600">Đang tải dữ liệu từ Google Sheet...</div>
-    <div style="font-size:13px;color:#888;margin-top:8px">Bảng T6-2026 · 205 nhiệm vụ</div>
+    <div style="font-size:13px;color:#888;margin-top:8px">Bảng T6-2026 · Chi cục Hải quan khu vực VIII</div>
   </div>
 </main>
 
-<!-- MODAL NHẬP KẾT QUẢ -->
-<div id="modal-overlay" onclick="closeModal(event)">
-  <div id="modal-box">
-    <div id="modal-header">
-      <span style="font-weight:700" id="modal-title">Nhập kết quả thực hiện</span>
-      <button onclick="closeModal()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer">✕</button>
+<!-- ========== MODAL THÊM NHIỆM VỤ ========== -->
+<div id="modal-add" class="modal-overlay" onclick="closeModal('modal-add',event)">
+  <div class="modal-box">
+    <div class="modal-hd">
+      <span>➕ Thêm nhiệm vụ mới</span>
+      <button onclick="closeModal('modal-add')" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer">✕</button>
     </div>
-    <div id="modal-body">
-      <div>
-        <div id="modal-task-info" style="background:#E8EEF7;border-radius:8px;padding:12px;font-size:13px;color:#1A3A6B;margin-bottom:4px"></div>
+    <div class="modal-bd">
+      <div style="font-size:12px;color:#888;background:#E8EEF7;padding:8px 12px;border-radius:7px">
+        ⚡ Hệ thống tự kiểm tra trùng lặp (cùng tên nhiệm vụ + cùng đơn vị) trước khi lưu.
       </div>
+      <div>
+        <label class="field-label">1 · Rõ nhiệm vụ *</label>
+        <textarea id="add-nhiemvu" rows="3" placeholder="Nhập tên/nội dung nhiệm vụ..." oninput="checkDup()"></textarea>
+        <div id="dup-warn" class="warn-box"></div>
+        <div id="dup-err" class="err-box"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label class="field-label">2 · Người thực hiện</label>
+          <input id="add-nguoith" type="text" placeholder="Họ tên cán bộ thực hiện">
+        </div>
+        <div>
+          <label class="field-label">3 · Đơn vị chủ trì *</label>
+          <select id="add-donvi" onchange="checkDup()">
+            <option value="">— Chọn đơn vị —</option>
+            <option value="Văn phòng">Văn phòng</option>
+<option value="Phòng Tổ chức cán bộ">Phòng Tổ chức cán bộ</option>
+<option value="Phòng Nghiệp vụ hải quan">Phòng Nghiệp vụ hải quan</option>
+<option value="Phòng Quản lý rủi ro">Phòng Quản lý rủi ro</option>
+<option value="Phòng Công nghệ thông tin">Phòng Công nghệ thông tin</option>
+<option value="Đội Phúc tập và Kiểm tra sau thông quan">Đội Phúc tập và Kiểm tra sau thông quan</option>
+<option value="Đội Kiểm soát Hải quan">Đội Kiểm soát Hải quan</option>
+<option value="Hải quan cửa khẩu quốc tế Móng Cái">Hải quan cửa khẩu quốc tế Móng Cái</option>
+<option value="Hải quan cửa khẩu Hoành Mô">Hải quan cửa khẩu Hoành Mô</option>
+<option value="Hải quan cửa khẩu Bắc Phong Sinh">Hải quan cửa khẩu Bắc Phong Sinh</option>
+<option value="Hải quan cửa khẩu cảng Hòn Gai">Hải quan cửa khẩu cảng Hòn Gai</option>
+<option value="Hải quan cửa khẩu cảng Cẩm Phả">Hải quan cửa khẩu cảng Cẩm Phả</option>
+<option value="Hải quan cửa khẩu cảng Vạn Gia">Hải quan cửa khẩu cảng Vạn Gia</option>
+<option value="Tổ Tham mưu Đảng">Tổ Tham mưu Đảng</option>
+<option value="Đoàn Thanh niên">Đoàn Thanh niên</option>
+<option value="Hội Cựu chiến binh">Hội Cựu chiến binh</option>
+<option value="Chi hội Luật gia">Chi hội Luật gia</option>
+<option value="Các ban chỉ đạo">Các ban chỉ đạo</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label class="field-label">4a · Lãnh đạo Chi cục</label>
+          <input id="add-ldcc" type="text" placeholder="VD: Phạm Quốc Hưng - CCT">
+        </div>
+        <div>
+          <label class="field-label">4b · Lãnh đạo đơn vị</label>
+          <input id="add-lddv" type="text" placeholder="VD: Nguyễn Văn A - TP">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label class="field-label">5 · Thời hạn hoàn thành *</label>
+          <input id="add-thoihan" type="date">
+        </div>
+        <div>
+          <label class="field-label">6 · Yêu cầu sản phẩm đầu ra</label>
+          <input id="add-sanpham" type="text" placeholder="VD: Báo cáo, Kế hoạch, Văn bản...">
+        </div>
+      </div>
+      <div>
+        <label class="field-label">7 · Căn cứ / Nguồn chỉ đạo</label>
+        <input id="add-cancu" type="text" placeholder="VD: CTCT T6/2026; KL họp NV 2279/TB ngày 15/5/2026">
+      </div>
+      <div id="add-error" style="display:none;color:#C0392B;font-size:13px;font-weight:600;padding:8px 12px;background:#FBE5E2;border-radius:7px"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px">
+        <button class="btn-ghost" onclick="closeModal('modal-add')">Hủy</button>
+        <button class="btn-navy" onclick="submitAdd()" id="btn-add-submit">💾 Lưu nhiệm vụ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODAL NHẬP KẾT QUẢ ========== -->
+<div id="modal-kq" class="modal-overlay" onclick="closeModal('modal-kq',event)">
+  <div class="modal-box">
+    <div class="modal-hd">
+      <span id="kq-title">📝 Nhập kết quả thực hiện</span>
+      <button onclick="closeModal('modal-kq')" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div class="modal-bd">
+      <div id="kq-task-info" style="background:#E8EEF7;border-radius:8px;padding:12px;font-size:13px;color:#1A3A6B"></div>
       <div>
         <label class="field-label">Kết quả thực hiện *</label>
-        <textarea id="input-ketqua" rows="4" placeholder="Nhập kết quả, sản phẩm đã hoàn thành, ngày nộp..."></textarea>
+        <textarea id="kq-input" rows="4" placeholder="Nhập kết quả, sản phẩm đã hoàn thành, ngày nộp..."></textarea>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <input type="checkbox" id="chk-hoan-thanh" style="width:auto;cursor:pointer">
-        <label for="chk-hoan-thanh" style="font-size:13px;cursor:pointer;color:#1F9D55;font-weight:600">✅ Đánh dấu hoàn thành luôn</label>
+        <input type="checkbox" id="kq-chk" style="width:auto;cursor:pointer">
+        <label for="kq-chk" style="font-size:13px;cursor:pointer;color:#1F9D55;font-weight:600">✅ Đánh dấu Hoàn thành</label>
       </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px">
-        <button class="btn-ghost" onclick="closeModal()">Hủy</button>
-        <button class="btn-gold" onclick="submitKetQua()" id="btn-submit">💾 Lưu kết quả</button>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn-ghost" onclick="closeModal('modal-kq')">Hủy</button>
+        <button class="btn-gold" onclick="submitKQ()" id="btn-kq-submit">💾 Lưu kết quả</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- TOAST -->
-<div id="toast" style="display:none;position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#1A3A6B;color:#fff;padding:11px 22px;border-radius:10px;font-size:13.5px;box-shadow:0 4px 18px rgba(0,0,0,.2);z-index:400;max-width:440px;text-align:center"></div>
+<div id="toast" style="display:none;position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#1A3A6B;color:#fff;padding:11px 22px;border-radius:10px;font-size:13.5px;box-shadow:0 4px 18px rgba(0,0,0,.2);z-index:500;max-width:440px;text-align:center"></div>
 
 <script>
 const API="https://script.google.com/macros/s/AKfycbwOyphGykPI5fMK2CwZn2ghzbwM8pPI80SBowVPkLU0Xw6X9-cj7YIbnc-o_IBLWJ3N/exec";
 const NAVY="#1A3A6B",GOLD="#C8960C",LIGHT="#E8EEF7";
-let allTasks=[],curTab="dashboard",curRow=null;
+let allTasks=[],curTab="dashboard",curKQRow=null;
 
 // ===== TOAST =====
 function showToast(m,d=3500){const t=document.getElementById("toast");t.textContent=m;t.style.display="block";setTimeout(()=>t.style.display="none",d);}
 
-// ===== MODAL NHẬP KẾT QUẢ =====
-function openModal(row){
-  const t=allTasks.find(x=>x.row===row);
-  if(!t)return;
-  curRow=row;
-  document.getElementById("modal-title").textContent="Nhập kết quả — Nhiệm vụ #"+t.tt;
-  document.getElementById("modal-task-info").innerHTML=
-    "<b>"+t.tt+". "+t.nhiemVu+"</b><br>"+
-    "<span style='opacity:.8'>Đơn vị: "+t.donVi+" · Hạn: "+fmtDate(t.thoiHan)+" · "+t.lanhDao+"</span>";
-  document.getElementById("input-ketqua").value=t.ghiChu||"";
-  document.getElementById("chk-hoan-thanh").checked=(t.tinhTrang==="Hoàn thành");
-  document.getElementById("modal-overlay").classList.add("open");
-  setTimeout(()=>document.getElementById("input-ketqua").focus(),100);
+// ===== MODAL =====
+function openAddModal(){
+  ["add-nhiemvu","add-nguoith","add-ldcc","add-lddv","add-sanpham","add-cancu"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("add-donvi").value="";
+  document.getElementById("add-thoihan").value="";
+  document.getElementById("dup-warn").style.display="none";
+  document.getElementById("dup-err").style.display="none";
+  document.getElementById("add-error").style.display="none";
+  document.getElementById("modal-add").classList.add("open");
+  setTimeout(()=>document.getElementById("add-nhiemvu").focus(),100);
 }
-
-function closeModal(e){
-  if(e && e.target!==document.getElementById("modal-overlay"))return;
-  document.getElementById("modal-overlay").classList.remove("open");
-  curRow=null;
+function openKQModal(row){
+  const t=allTasks.find(x=>x.row===row);if(!t)return;
+  curKQRow=row;
+  document.getElementById("kq-title").textContent="📝 Nhập kết quả — Nhiệm vụ #"+t.tt;
+  document.getElementById("kq-task-info").innerHTML="<b>"+t.tt+". "+t.nhiemVu+"</b><br><span style='opacity:.8'>"+t.donVi+" · Hạn: "+fmtDate(t.thoiHan)+" · "+t.lanhDao+"</span>";
+  document.getElementById("kq-input").value=t.ghiChu||"";
+  document.getElementById("kq-chk").checked=(t.tinhTrang==="Hoàn thành");
+  document.getElementById("modal-kq").classList.add("open");
+  setTimeout(()=>document.getElementById("kq-input").focus(),100);
 }
+function closeModal(id,e){
+  if(e&&e.target!==document.getElementById(id))return;
+  document.getElementById(id).classList.remove("open");
+  if(id==="modal-kq")curKQRow=null;
+}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal("modal-add");closeModal("modal-kq");}});
 
-async function submitKetQua(){
-  const ketqua=document.getElementById("input-ketqua").value.trim();
-  const hoanThanh=document.getElementById("chk-hoan-thanh").checked;
-  if(!ketqua){showToast("⚠ Vui lòng nhập kết quả thực hiện");return;}
-  
-  const btn=document.getElementById("btn-submit");
-  btn.textContent="⏳ Đang lưu...";btn.disabled=true;
-  
-  try{
-    // Ghi kết quả vào cột Ghi chú (J)
-    await fetch(API,{method:"POST",body:JSON.stringify({action:"ghiChu",row:curRow,giaTri:ketqua})});
-    
-    // Nếu tick hoàn thành → cập nhật tình trạng
-    if(hoanThanh){
-      await fetch(API,{method:"POST",body:JSON.stringify({action:"hoanThanh",row:curRow})});
-    }
-    
-    // Cập nhật local
-    const t=allTasks.find(x=>x.row===curRow);
-    if(t){
-      t.ghiChu=ketqua;
-      if(hoanThanh)t.tinhTrang="Hoàn thành";
-    }
-    
-    renderDashboard();renderTable();
-    closeModal();
-    showToast(hoanThanh?"✅ Đã lưu kết quả và đánh dấu hoàn thành":"✅ Đã lưu kết quả thực hiện");
-  }catch(e){
-    showToast("⚠ Lỗi khi lưu: "+e.message);
+// ===== KIỂM TRA TRÙNG REALTIME =====
+function checkDup(){
+  const nv=(document.getElementById("add-nhiemvu").value||"").trim().toLowerCase();
+  const dv=(document.getElementById("add-donvi").value||"").trim();
+  const warnEl=document.getElementById("dup-warn");
+  const errEl=document.getElementById("dup-err");
+  if(!nv||!dv){warnEl.style.display="none";errEl.style.display="none";return;}
+
+  // So khớp chính xác (cùng tên + cùng đơn vị)
+  const exact=allTasks.find(t=>t.nhiemVu.trim().toLowerCase()===nv&&t.donVi===dv);
+  if(exact){
+    errEl.innerHTML="⛔ <b>Trùng chính xác</b> với nhiệm vụ #"+exact.tt+" ("+exact.donVi+") — Hạn: "+fmtDate(exact.thoiHan);
+    errEl.style.display="block";warnEl.style.display="none";return;
   }
+  // So khớp tương tự (tên chứa nhau > 80% ký tự, cùng đơn vị)
+  const similar=allTasks.filter(t=>t.donVi===dv&&(
+    t.nhiemVu.trim().toLowerCase().includes(nv)||nv.includes(t.nhiemVu.trim().toLowerCase())
+  )&&t.nhiemVu.trim().toLowerCase()!==nv);
+  if(similar.length){
+    warnEl.innerHTML="⚠ Có "+similar.length+" nhiệm vụ <b>tương tự</b> trong cùng đơn vị:<br>"+
+      similar.slice(0,3).map(t=>"• #"+t.tt+": "+t.nhiemVu.substring(0,60)+(t.nhiemVu.length>60?"...":"")).join("<br>");
+    warnEl.style.display="block";errEl.style.display="none";
+  }else{warnEl.style.display="none";errEl.style.display="none";}
+}
+
+// ===== THÊM NHIỆM VỤ =====
+async function submitAdd(){
+  const nhiemVu=(document.getElementById("add-nhiemvu").value||"").trim();
+  const donVi=(document.getElementById("add-donvi").value||"").trim();
+  const errEl=document.getElementById("add-error");
+  errEl.style.display="none";
+
+  if(!nhiemVu){errEl.textContent="⚠ Vui lòng nhập tên nhiệm vụ";errEl.style.display="block";return;}
+  if(!donVi){errEl.textContent="⚠ Vui lòng chọn đơn vị chủ trì";errEl.style.display="block";return;}
+
+  // Chặn nếu trùng chính xác
+  const exact=allTasks.find(t=>t.nhiemVu.trim().toLowerCase()===nhiemVu.toLowerCase()&&t.donVi===donVi);
+  if(exact){errEl.textContent="⛔ Trùng với nhiệm vụ #"+exact.tt+" — không thể lưu";errEl.style.display="block";return;}
+
+  const btn=document.getElementById("btn-add-submit");
+  btn.textContent="⏳ Đang lưu...";btn.disabled=true;
+
+  const payload={
+    action:"add",
+    payload:{
+      nhiemVu:nhiemVu,
+      nguoiThucHien:(document.getElementById("add-nguoith").value||"").trim(),
+      donViChuTri:donVi,
+      ldChiCuc:(document.getElementById("add-ldcc").value||"").trim(),
+      ldDonVi:(document.getElementById("add-lddv").value||"").trim(),
+      thoiHan:(document.getElementById("add-thoihan").value||"").trim(),
+      sanPham:(document.getElementById("add-sanpham").value||"").trim(),
+      nguonChiDao:(document.getElementById("add-cancu").value||"").trim(),
+      ketQua:""
+    }
+  };
+
+  try{
+    const r=await fetch(API,{method:"POST",body:JSON.stringify(payload)});
+    const j=await r.json();
+    if(j.ok){
+      closeModal("modal-add");
+      showToast("✅ Đã thêm nhiệm vụ mới. Đang tải lại dữ liệu...");
+      await loadData();
+    }else{
+      errEl.textContent="⚠ "+j.error;errEl.style.display="block";
+    }
+  }catch(e){
+    errEl.textContent="⚠ Lỗi kết nối: "+e.message;errEl.style.display="block";
+  }
+  btn.textContent="💾 Lưu nhiệm vụ";btn.disabled=false;
+}
+
+// ===== NHẬP KẾT QUẢ =====
+async function submitKQ(){
+  const kq=(document.getElementById("kq-input").value||"").trim();
+  const ht=document.getElementById("kq-chk").checked;
+  if(!kq){showToast("⚠ Vui lòng nhập kết quả thực hiện");return;}
+  const btn=document.getElementById("btn-kq-submit");
+  btn.textContent="⏳ Đang lưu...";btn.disabled=true;
+  try{
+    await fetch(API,{method:"POST",body:JSON.stringify({action:"ghiChu",row:curKQRow,giaTri:kq})});
+    if(ht) await fetch(API,{method:"POST",body:JSON.stringify({action:"hoanThanh",row:curKQRow})});
+    const t=allTasks.find(x=>x.row===curKQRow);
+    if(t){t.ghiChu=kq;if(ht)t.tinhTrang="Hoàn thành";}
+    renderDashboard();renderTable();
+    closeModal("modal-kq");
+    showToast(ht?"✅ Đã lưu kết quả và đánh dấu Hoàn thành":"✅ Đã lưu kết quả thực hiện");
+  }catch(e){showToast("⚠ Lỗi: "+e.message);}
   btn.textContent="💾 Lưu kết quả";btn.disabled=false;
 }
 
-// ===== LOAD DỮ LIỆU =====
+// ===== LOAD =====
 async function loadData(){
   document.getElementById("loading").style.display="block";
   document.getElementById("view-dashboard").style.display="none";
   document.getElementById("view-table").style.display="none";
   document.getElementById("btn-refresh").textContent="⏳...";
   try{
-    const r=await fetch(API);
-    const j=await r.json();
+    const r=await fetch(API);const j=await r.json();
     if(j.ok&&j.data){
-      allTasks=j.data;
-      buildFilters();renderDashboard();renderTable();
+      allTasks=j.data;buildFilters();renderDashboard();renderTable();
       document.getElementById("loading").style.display="none";
       document.getElementById("view-"+curTab).style.display="block";
       document.getElementById("sync-status").textContent="✅ Sync "+new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"});
-      showToast("✓ Đã đồng bộ "+allTasks.length+" nhiệm vụ từ Google Sheet");
-    }else throw new Error(j.error||"Lỗi không xác định");
+      showToast("✓ Đã đồng bộ "+allTasks.length+" nhiệm vụ");
+    }else throw new Error(j.error||"Lỗi");
   }catch(e){
     document.getElementById("loading").style.display="none";
     document.getElementById("view-"+curTab).style.display="block";
@@ -236,7 +389,7 @@ async function loadData(){
   document.getElementById("btn-refresh").textContent="🔄 Làm mới";
 }
 
-// ===== FILTER =====
+// ===== FILTERS =====
 function buildFilters(){
   const dvSet=new Set(),ldSet=new Set();
   allTasks.forEach(t=>{if(t.donVi)dvSet.add(t.donVi);if(t.lanhDao)ldSet.add(t.lanhDao);});
@@ -247,7 +400,6 @@ function buildFilters(){
   ld.innerHTML='<option value="">— Lãnh đạo PT —</option>';
   [...ldSet].sort().forEach(l=>ld.add(new Option(l,l)));
 }
-
 function getFiltered(){
   const s=document.getElementById("search").value.toLowerCase();
   const fDv=document.getElementById("f-donvi").value;
@@ -257,6 +409,26 @@ function getFiltered(){
     (!s||(t.nhiemVu||"").toLowerCase().includes(s)||(t.lanhDao||"").toLowerCase().includes(s)||(t.canCu||"").toLowerCase().includes(s)||(t.nguoiTH||"").toLowerCase().includes(s))&&
     (!fDv||t.donVi===fDv)&&(!fTt||t.tinhTrang===fTt)&&(!fLd||t.lanhDao===fLd)
   );
+}
+
+// ===== KIỂM TRA TRÙNG TOÀN BẢNG =====
+function kiemTraTrungToanBang(){
+  const seen={};const dups=[];
+  allTasks.forEach(t=>{
+    const key=t.nhiemVu.trim().toLowerCase()+"|"+t.donVi;
+    if(seen[key]){
+      if(!dups.find(d=>d.key===key))dups.push({key,rows:[seen[key]]});
+      dups.find(d=>d.key===key).rows.push(t);
+    }else seen[key]=t;
+  });
+  const banner=document.getElementById("dup-banner");
+  if(dups.length===0){banner.style.display="none";showToast("✅ Không phát hiện nhiệm vụ trùng trong toàn bảng");}
+  else{
+    banner.style.display="block";
+    banner.innerHTML="⛔ Phát hiện "+dups.length+" nhóm nhiệm vụ trùng:<br>"+
+      dups.map(d=>d.rows.map(r=>"#"+r.tt).join(", ")+" — "+d.rows[0].nhiemVu.substring(0,50)+" ("+d.rows[0].donVi+")").join("<br>");
+    showToast("⚠ Có "+dups.length+" nhóm nhiệm vụ trùng — xem chi tiết trên bảng",6000);
+  }
 }
 
 // ===== DASHBOARD =====
@@ -277,52 +449,41 @@ function kpiBox(label,val,color,sub){
     <div style="font-size:38px;font-weight:800;color:${color};line-height:1.1;margin-top:5px">${val}</div>
     ${sub?`<div style="font-size:12px;color:#999;margin-top:2px">${sub}</div>`:""}</div>`;
 }
-
 function renderDashboard(){
-  const t=allTasks;
-  const total=t.length,ht=t.filter(x=>x.tinhTrang==="Hoàn thành").length,
-        dl=t.filter(x=>x.tinhTrang==="Tiến hành").length,
-        sap=t.filter(x=>x.tinhTrang==="SẮP HẾT HẠN").length,
-        tre=t.filter(x=>x.tinhTrang==="Trễ hạn").length,
-        pct=total?Math.round(ht/total*100):0;
+  const t=allTasks,total=t.length,
+    ht=t.filter(x=>x.tinhTrang==="Hoàn thành").length,
+    dl=t.filter(x=>x.tinhTrang==="Tiến hành").length,
+    sap=t.filter(x=>x.tinhTrang==="SẮP HẾT HẠN").length,
+    tre=t.filter(x=>x.tinhTrang==="Trễ hạn").length,
+    pct=total?Math.round(ht/total*100):0;
   document.getElementById("kpi-row").innerHTML=
     kpiBox("Tổng nhiệm vụ",total,NAVY)+
     kpiBox("Đã hoàn thành",ht,"#1F9D55",pct+"% tiến độ")+
     kpiBox("Đang tiến hành",dl,NAVY)+
     kpiBox("Sắp hết hạn",sap,"#C8960C")+
     kpiBox("Trễ hạn",tre,"#C0392B");
-
   let alerts="";
-  const treList=t.filter(x=>x.tinhTrang==="Trễ hạn");
-  const sapList=t.filter(x=>x.tinhTrang==="SẮP HẾT HẠN");
-  if(treList.length){
-    alerts+=`<div style="background:#FBE5E2;border:1px solid #E8A89F;border-radius:12px;padding:16px;margin-bottom:18px">
-      <div style="font-weight:700;color:#C0392B;margin-bottom:10px">⚠ ${treList.length} NHIỆM VỤ TRỄ HẠN — cần đôn đốc ngay</div>`;
-    treList.forEach(x=>{alerts+=`<div style="font-size:13px;padding:6px 0;border-top:1px dashed #E8A89F;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center">
-      <span><b>${x.tt}. ${x.nhiemVu}</b> — ${x.donVi||""}</span>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <span style="color:#C0392B;font-size:12px">Hạn: ${fmtDate(x.thoiHan)} · ${x.lanhDao||""}</span>
-        <button onclick="openModal(${x.row})" style="background:#C8960C;color:#1A3A6B;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;border:none;font-weight:600">📝 Nhập kết quả</button>
-      </div></div>`;
-    });
-    alerts+="</div>";
-  }
-  if(sapList.length){
-    alerts+=`<div style="background:#FEF9E7;border:1px solid #F5CBA7;border-radius:12px;padding:14px;margin-bottom:18px">
-      <div style="font-weight:700;color:#C8960C;margin-bottom:8px">🟡 ${sapList.length} nhiệm vụ sắp hết hạn (3 ngày tới)</div>`;
-    sapList.forEach(x=>{alerts+=`<div style="font-size:13px;padding:5px 0;border-top:1px dashed #F5CBA7;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;align-items:center">
-      <span><b>${x.tt}. ${x.nhiemVu}</b> — ${x.donVi||""}</span>
+  t.filter(x=>x.tinhTrang==="Trễ hạn").forEach(x=>{
+    if(!alerts)alerts=`<div style="background:#FBE5E2;border:1px solid #E8A89F;border-radius:12px;padding:16px;margin-bottom:18px"><div style="font-weight:700;color:#C0392B;margin-bottom:10px">⚠ NHIỆM VỤ TRỄ HẠN — cần đôn đốc ngay</div>`;
+    alerts+=`<div style="font-size:13px;padding:6px 0;border-top:1px dashed #E8A89F;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center">
+      <span><b>${x.tt}. ${x.nhiemVu}</b> — ${x.donVi}</span>
       <div style="display:flex;gap:8px;align-items:center">
-        <span style="color:#C8960C;font-size:12px">Hạn: ${fmtDate(x.thoiHan)}</span>
-        <button onclick="openModal(${x.row})" style="background:#C8960C;color:#1A3A6B;padding:3px 9px;border-radius:6px;font-size:11.5px;cursor:pointer;border:none;font-weight:600">📝 Nhập KQ</button>
+        <span style="color:#C0392B;font-size:12px">Hạn: ${fmtDate(x.thoiHan)} · ${x.lanhDao}</span>
+        <button onclick="openKQModal(${x.row})" style="background:#C8960C;color:#1A3A6B;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;border:none;font-weight:600">📝 Nhập KQ</button>
       </div></div>`;
-    });
-    alerts+="</div>";
-  }
+  });
+  if(alerts)alerts+="</div>";
+  t.filter(x=>x.tinhTrang==="SẮP HẾT HẠN").forEach(x=>{
+    if(!alerts.includes("SẮP HẾT"))alerts+=`<div style="background:#FEF9E7;border:1px solid #F5CBA7;border-radius:12px;padding:14px;margin-bottom:18px"><div style="font-weight:700;color:#C8960C;margin-bottom:8px">🟡 NHIỆM VỤ SẮP HẾT HẠN</div>`;
+    alerts+=`<div style="font-size:13px;padding:5px 0;border-top:1px dashed #F5CBA7;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;align-items:center">
+      <span><b>${x.tt}. ${x.nhiemVu}</b> — ${x.donVi}</span>
+      <div style="display:flex;gap:8px;align-items:center"><span style="color:#C8960C;font-size:12px">Hạn: ${fmtDate(x.thoiHan)}</span>
+      <button onclick="openKQModal(${x.row})" style="background:#C8960C;color:#1A3A6B;padding:3px 9px;border-radius:6px;font-size:11.5px;cursor:pointer;border:none;font-weight:600">📝 Nhập KQ</button></div></div>`;
+  });
+  if(alerts&&alerts.includes("SẮP HẾT"))alerts+="</div>";
   document.getElementById("alert-box").innerHTML=alerts;
-
   const map={};
-  t.forEach(x=>{const k=x.donVi||"(Chưa rõ)";if(!map[k])map[k]={ht:0,dl:0,sap:0,tre:0,total:0};map[k].total++;
+  t.forEach(x=>{const k=x.donVi||"?";if(!map[k])map[k]={ht:0,dl:0,sap:0,tre:0,total:0};map[k].total++;
     if(x.tinhTrang==="Hoàn thành")map[k].ht++;
     else if(x.tinhTrang==="Trễ hạn")map[k].tre++;
     else if(x.tinhTrang==="SẮP HẾT HẠN")map[k].sap++;
@@ -331,16 +492,12 @@ function renderDashboard(){
   let bars="";
   Object.entries(map).sort((a,b)=>b[1].tre-a[1].tre).forEach(([dv,s])=>{
     const p=s.total?Math.round(s.ht/s.total*100):0;
-    bars+=`<div style="margin-bottom:13px">
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
-        <span style="font-weight:600">${dv}</span>
-        <span style="color:#666">${s.ht}/${s.total} ✓${s.sap>0?" · <span style='color:#C8960C;font-weight:600'>"+s.sap+" sắp hạn</span>":""}${s.tre>0?" · <span style='color:#C0392B;font-weight:600'>"+s.tre+" trễ</span>":""}</span>
-      </div>
+    bars+=`<div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+      <span style="font-weight:600">${dv}</span>
+      <span style="color:#666">${s.ht}/${s.total} ✓${s.sap>0?" · <span style='color:#C8960C;font-weight:600'>"+s.sap+" sắp hạn</span>":""}${s.tre>0?" · <span style='color:#C0392B;font-weight:600'>"+s.tre+" trễ</span>":""}</span></div>
       <div style="height:8px;background:${LIGHT};border-radius:6px;overflow:hidden;display:flex">
-        <div style="width:${p}%;background:#1F9D55"></div>
-        <div style="width:${s.total?(s.dl/s.total*100):0}%;background:${NAVY}"></div>
-        <div style="width:${s.total?(s.sap/s.total*100):0}%;background:#C8960C"></div>
-        <div style="width:${s.total?(s.tre/s.total*100):0}%;background:#C0392B"></div>
+        <div style="width:${p}%;background:#1F9D55"></div><div style="width:${s.total?(s.dl/s.total*100):0}%;background:${NAVY}"></div>
+        <div style="width:${s.total?(s.sap/s.total*100):0}%;background:#C8960C"></div><div style="width:${s.total?(s.tre/s.total*100):0}%;background:#C0392B"></div>
       </div></div>`;
   });
   document.getElementById("progress-bars").innerHTML=bars||"<div style='color:#aaa;font-size:13px'>Chưa có dữ liệu.</div>";
@@ -348,8 +505,7 @@ function renderDashboard(){
 
 // ===== TABLE =====
 function renderTable(){
-  const rows=getFiltered();
-  let html="";
+  const rows=getFiltered();let html="";
   rows.forEach(t=>{
     const tt=ttColor(t.tinhTrang||"");
     const hasKQ=t.ghiChu&&t.ghiChu.trim();
@@ -364,24 +520,17 @@ function renderTable(){
       <td><span style="background:${tt.bg};color:${tt.c};padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap">${t.tinhTrang||"—"}</span></td>
       <td style="font-size:12px;color:#666">${t.nguoiTH||""}</td>
       <td style="font-size:12px;color:#555">${hasKQ?'<span style="color:#1F9D55">✓</span> '+t.ghiChu:"<span style='color:#aaa'>Chưa có</span>"}</td>
-      <td class="np">
-        <button onclick="openModal(${t.row})" style="background:${GOLD};color:${NAVY};padding:5px 10px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap">
-          📝 ${hasKQ?"Cập nhật":"Nhập KQ"}
+      <td class="np"><div style="display:flex;gap:5px">
+        <button onclick="openKQModal(${t.row})" style="background:${GOLD};color:${NAVY};padding:4px 9px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap">
+          📝 ${hasKQ?"Cập nhật KQ":"Nhập KQ"}
         </button>
-      </td>
+      </div></td>
     </tr>`;
   });
-  document.getElementById("table-body").innerHTML=html||'<tr><td colspan="11" style="padding:40px;text-align:center;color:#aaa">'+
-    (allTasks.length===0?"Chưa có dữ liệu. Bấm Làm mới.":"Không có nhiệm vụ phù hợp.")+'</td></tr>';
-  document.getElementById("table-footer").textContent="Hiển thị "+rows.length+"/"+allTasks.length+" nhiệm vụ · Google Sheet T6-2026";
+  document.getElementById("table-body").innerHTML=html||'<tr><td colspan="11" style="padding:40px;text-align:center;color:#aaa">'+(allTasks.length===0?"Chưa có dữ liệu.":"Không có nhiệm vụ phù hợp.")+'</td></tr>';
+  document.getElementById("table-footer").innerHTML=`Hiển thị ${rows.length}/${allTasks.length} nhiệm vụ &nbsp;·&nbsp;
+    <button onclick="kiemTraTrungToanBang()" style="background:none;border:none;color:#1A3A6B;cursor:pointer;font-size:12px;font-weight:600;text-decoration:underline">🔍 Kiểm tra trùng toàn bảng</button>`;
   document.getElementById("tab-table").textContent="📋 Bảng theo dõi ("+allTasks.length+")";
-}
-
-async function markDone(row){
-  await fetch(API,{method:"POST",body:JSON.stringify({action:"hoanThanh",row:row})});
-  const t=allTasks.find(x=>x.row===row);if(t)t.tinhTrang="Hoàn thành";
-  renderDashboard();renderTable();
-  showToast("✅ Đã đánh dấu hoàn thành");
 }
 
 function switchTab(tab){
@@ -391,7 +540,6 @@ function switchTab(tab){
   document.getElementById("tab-dash").className="tab-btn"+(tab==="dashboard"?" tab-active":"");
   document.getElementById("tab-table").className="tab-btn"+(tab==="table"?" tab-active":"");
 }
-
 function exportCSV(){
   const rows=getFiltered();
   const h=["TT","Nhiệm vụ","Căn cứ","Đơn vị","Lãnh đạo PT","Thời hạn","Sản phẩm","Tình trạng","Người TH","Kết quả/Ghi chú"];
@@ -400,9 +548,6 @@ function exportCSV(){
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));
   a.download="NhiemVu_KV8.csv";a.click();
 }
-
-// Phím tắt Escape đóng modal
-document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
 
 loadData();
 </script>
