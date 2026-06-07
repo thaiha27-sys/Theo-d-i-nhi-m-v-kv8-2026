@@ -419,7 +419,20 @@ async function submitAdd(){
     if(j.ok){
       closeModal("modal-add");
       showToast("✅ Đã thêm nhiệm vụ mới. Đang tải lại dữ liệu...");
-      await 
+      await loadData();
+    } else {
+      errEl.textContent = "⚠ Lỗi: " + (j.msg || "Không lưu được");
+      errEl.style.display = "block";
+    }
+  } catch(e) {
+    errEl.textContent = "⚠ Lỗi kết nối: " + e.message;
+    errEl.style.display = "block";
+  } finally {
+    btn.textContent = "💾 Lưu nhiệm vụ";
+    btn.disabled = false;
+  }
+}
+
 // ===== BATCH IMPORT FROM EXCEL =====
 // Requires SheetJS (xlsx) loaded from CDN
 let batchData = []; // parsed rows from Excel
