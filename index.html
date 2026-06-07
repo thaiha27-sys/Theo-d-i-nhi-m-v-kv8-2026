@@ -56,6 +56,7 @@ button{font-family:inherit;cursor:pointer;border:none;border-radius:7px;padding:
   <button class="tab-btn tab-active" id="tab-dash" onclick="switchTab('dashboard')">📊 Bảng điều khiển</button>
   <button class="tab-btn" id="tab-table" onclick="switchTab('table')">📋 Bảng theo dõi</button>
   <button class="tab-btn" id="tab-phanich" onclick="switchTab('phanich')">📈 Phân tích</button>
+  <button class="tab-btn" id="tab-nsnn" onclick="switchTab('nsnn')">💰 Thu ngân sách</button>
   <div style="margin-left:auto;padding:8px 0">
     <button class="btn-navy np" onclick="openAddModal()" style="font-size:13px;padding:7px 16px;display:flex;align-items:center;gap:6px">
       ➕ Thêm nhiệm vụ mới
@@ -86,25 +87,10 @@ button{font-family:inherit;cursor:pointer;border:none;border-radius:7px;padding:
       </div>
     </div>
 
-    <!-- Bảng lãnh đạo phụ trách -->
+    <!-- Thẻ lãnh đạo phụ trách -->
     <div style="background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-top:16px">
-      <div style="font-weight:700;color:#1A3A6B;margin-bottom:14px">👤 Tiến độ theo lãnh đạo phụ trách</div>
-      <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead>
-            <tr style="background:#E8EEF7">
-              <th style="padding:9px 12px;text-align:left;font-weight:700;color:#1A3A6B;white-space:nowrap">Lãnh đạo phụ trách</th>
-              <th style="padding:9px 8px;text-align:center;font-weight:700;color:#555">Tổng</th>
-              <th style="padding:9px 8px;text-align:center;font-weight:700;color:#1F9D55">✅ Hoàn thành</th>
-              <th style="padding:9px 8px;text-align:center;font-weight:700;color:#1A3A6B">🔵 Tiến hành</th>
-              <th style="padding:9px 8px;text-align:center;font-weight:700;color:#C8960C">🟡 Sắp hạn</th>
-              <th style="padding:9px 8px;text-align:center;font-weight:700;color:#C0392B">🔴 Trễ hạn</th>
-              <th style="padding:9px 12px;text-align:left;font-weight:700;color:#1A3A6B;min-width:130px">Tiến độ</th>
-            </tr>
-          </thead>
-          <tbody id="ld-table-body"></tbody>
-        </table>
-      </div>
+      <div style="font-weight:700;color:#1A3A6B;margin-bottom:14px">👤 Tiến độ theo lãnh đạo Chi cục phụ trách</div>
+      <div id="ld-cards"></div>
     </div>
   </div>
 
@@ -152,6 +138,26 @@ button{font-family:inherit;cursor:pointer;border:none;border-radius:7px;padding:
     <div style="font-size:13px;color:#888;margin-top:8px">Bảng T6-2026 · Chi cục Hải quan khu vực VIII</div>
   </div>
 </main>
+
+<div id="view-nsnn" style="display:none;padding:0 0 30px">
+  <div id="nsnn-content">
+    <div style="text-align:center;padding:60px 20px;color:#aaa">
+      <div style="font-size:40px;margin-bottom:12px">💰</div>
+      <div style="font-size:15px;font-weight:600;color:#1A3A6B;margin-bottom:8px">Chưa có dữ liệu thu ngân sách</div>
+      <div style="font-size:13px">Thêm tab <b>THU-NSNN</b> vào Google Sheet theo hướng dẫn bên dưới</div>
+    </div>
+  </div>
+  <div id="nsnn-guide" style="margin-top:8px;background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+    <div style="font-weight:700;color:#1A3A6B;margin-bottom:12px">📋 Hướng dẫn thiết lập bảng thu ngân sách</div>
+    <div style="font-size:13px;color:#444;line-height:1.8">
+      Trong Google Sheet, tạo tab mới đặt tên <b>THU-NSNN</b> với cấu trúc cột:<br><br>
+      <div style="background:#E8EEF7;border-radius:8px;padding:12px;font-family:monospace;font-size:12px">
+        A: STT &nbsp;|&nbsp; B: Chỉ tiêu/Khoản thu &nbsp;|&nbsp; C: Đơn vị tính &nbsp;|&nbsp; D: KH Năm &nbsp;|&nbsp; E: TH Lũy kế &nbsp;|&nbsp; F: Tháng hiện tại KH &nbsp;|&nbsp; G: Tháng hiện tại TH &nbsp;|&nbsp; H: Ghi chú
+      </div><br>
+      Sau khi tạo xong, bấm <b>Làm mới</b> để hệ thống tự đọc dữ liệu.
+    </div>
+  </div>
+</div>
 
 <div id="view-phanich" style="display:none;padding:0 0 30px">
   <div id="pa-content"></div>
@@ -1009,6 +1015,35 @@ function kpiBox(label,val,color,sub){
     ${sub?`<div style="font-size:12px;color:#999;margin-top:2px">${sub}</div>`:""}</div>`;
 }
 // Tính tình trạng hiển thị: bảo toàn "Hoàn thành" từ Sheet, tự tính "Trễ hạn"/"SẮP HẾT HẠN" theo ngày
+// Chuẩn hóa tên lãnh đạo — map các biến thể về 4 tên chuẩn
+const LD_MAP = [
+  { key:"Phạm Quốc Hưng",  patterns:["hưng","phạm quốc hưng","chi cục trưởng","cct"] },
+  { key:"Bùi Ngọc Lợi",    patterns:["lợi","bùi ngọc lợi","phó chi cục trưởng"] },
+  { key:"Ngô Tùng Dương",  patterns:["dương","ngô tùng dương","pcct","dương - pcct"] },
+  { key:"Nguyễn Cảnh Thắng", patterns:["thắng","nguyễn cảnh thắng","thắng - pcct"] },
+];
+const LD_KEYS = LD_MAP.map(x=>x.key);
+
+function normLanhDao(raw){
+  if(!raw) return null;
+  const r = raw.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,""); // strip diacritics for matching
+  // Try matching raw with diacritics first (exact name check)
+  const rOrig = raw.toLowerCase();
+  for(const m of LD_MAP){
+    for(const p of m.patterns){
+      if(rOrig.includes(p.toLowerCase())) return m.key;
+    }
+  }
+  // fallback: no diacritics match
+  for(const m of LD_MAP){
+    for(const p of m.patterns){
+      const pNorm = p.normalize("NFD").replace(/[̀-ͯ]/g,"");
+      if(r.includes(pNorm)) return m.key;
+    }
+  }
+  return null; // not one of the 4 leaders
+}
+
 function effectiveStatus(task){
   if(task.tinhTrang==="Hoàn thành") return "Hoàn thành";
   if(!task.thoiHan) return task.tinhTrang||"Tiến hành";
@@ -1076,43 +1111,72 @@ function renderDashboard(){
   });
   document.getElementById("progress-bars").innerHTML=bars||"<div style='color:#aaa;font-size:13px'>Chưa có dữ liệu.</div>";
 
-  // ===== BẢNG THEO DÕI THEO LÃNH ĐẠO PHỤ TRÁCH =====
-  const ldMap={};
+  // ===== 4 THẺ LÃNH ĐẠO CÁ NHÂN =====
+  const ldStats={};
+  LD_KEYS.forEach(k=>ldStats[k]={ht:0,dl:0,sap:0,tre:0,total:0});
+  let unassigned={ht:0,dl:0,sap:0,tre:0,total:0};
   t.forEach(x=>{
-    const ld=x.lanhDao||"Chưa phân công";
-    if(!ldMap[ld])ldMap[ld]={ht:0,dl:0,sap:0,tre:0,total:0};
-    ldMap[ld].total++;
+    const normed = normLanhDao(x.lanhDao);
+    const target = normed ? ldStats[normed] : unassigned;
+    target.total++;
     const es=effectiveStatus(x);
-    if(es==="Hoàn thành")ldMap[ld].ht++;
-    else if(es==="Trễ hạn")ldMap[ld].tre++;
-    else if(es==="SẮP HẾT HẠN")ldMap[ld].sap++;
-    else ldMap[ld].dl++;
+    if(es==="Hoàn thành")target.ht++;
+    else if(es==="Trễ hạn")target.tre++;
+    else if(es==="SẮP HẾT HẠN")target.sap++;
+    else target.dl++;
   });
-  let ldRows="";
-  Object.entries(ldMap).sort((a,b)=>b[1].total-a[1].total).forEach(([ld,s])=>{
+
+  function ldCard(name,s,role){
     const p=s.total?Math.round(s.ht/s.total*100):0;
-    const pct_s=s.total?Math.round(s.sap/s.total*100):0;
-    const pct_t=s.total?Math.round(s.tre/s.total*100):0;
-    ldRows+=`<tr style="border-bottom:1px solid #E8EEF7">
-      <td style="padding:9px 12px;font-weight:600;font-size:13px">${ld}</td>
-      <td style="padding:9px 12px;text-align:center;font-size:13px">${s.total}</td>
-      <td style="padding:9px 12px;text-align:center;color:#1F9D55;font-weight:700">${s.ht}</td>
-      <td style="padding:9px 12px;text-align:center;color:${NAVY};font-weight:600">${s.dl}</td>
-      <td style="padding:9px 12px;text-align:center;color:#C8960C;font-weight:600">${s.sap}</td>
-      <td style="padding:9px 12px;text-align:center;color:#C0392B;font-weight:700">${s.tre}</td>
-      <td style="padding:9px 12px;min-width:120px">
-        <div style="height:8px;background:#E8EEF7;border-radius:6px;overflow:hidden;display:flex">
-          <div style="width:${p}%;background:#1F9D55"></div>
-          <div style="width:${s.total?(s.dl/s.total*100):0}%;background:${NAVY}"></div>
-          <div style="width:${pct_s}%;background:#C8960C"></div>
-          <div style="width:${pct_t}%;background:#C0392B"></div>
+    const initials=name.split(" ").slice(-2).map(w=>w[0]).join("").toUpperCase();
+    const hasIssue=s.tre>0;
+    return `<div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 6px rgba(26,58,107,.09);border-left:4px solid ${hasIssue?"#C0392B":s.sap>0?"#C8960C":"#1A3A6B"}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div style="width:40px;height:40px;border-radius:50%;background:#1A3A6B;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">${initials}</div>
+        <div>
+          <div style="font-weight:700;font-size:13.5px;color:#1A3A6B">${name}</div>
+          <div style="font-size:11.5px;color:#888">${role}</div>
         </div>
-        <div style="font-size:11px;color:#888;margin-top:2px">${p}% hoàn thành</div>
-      </td>
-    </tr>`;
-  });
-  const ldEl=document.getElementById("ld-table-body");
-  if(ldEl)ldEl.innerHTML=ldRows||"<tr><td colspan='7' style='padding:20px;text-align:center;color:#aaa'>Chưa có dữ liệu</td></tr>";
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;text-align:center">
+        <div style="background:#E8EEF7;border-radius:8px;padding:6px 4px">
+          <div style="font-size:18px;font-weight:700;color:#1A3A6B">${s.total}</div>
+          <div style="font-size:10px;color:#666">Tổng</div>
+        </div>
+        <div style="background:#E3F5EA;border-radius:8px;padding:6px 4px">
+          <div style="font-size:18px;font-weight:700;color:#1F9D55">${s.ht}</div>
+          <div style="font-size:10px;color:#1F9D55">Hoàn thành</div>
+        </div>
+        <div style="background:${s.sap>0?"#FEF9E7":"#f8f9fc"};border-radius:8px;padding:6px 4px">
+          <div style="font-size:18px;font-weight:700;color:${s.sap>0?"#C8960C":"#aaa"}">${s.sap}</div>
+          <div style="font-size:10px;color:${s.sap>0?"#C8960C":"#aaa"}">Sắp hạn</div>
+        </div>
+        <div style="background:${s.tre>0?"#FBE5E2":"#f8f9fc"};border-radius:8px;padding:6px 4px">
+          <div style="font-size:18px;font-weight:700;color:${s.tre>0?"#C0392B":"#aaa"}">${s.tre}</div>
+          <div style="font-size:10px;color:${s.tre>0?"#C0392B":"#aaa"}">Trễ hạn</div>
+        </div>
+      </div>
+      <div style="height:7px;background:#E8EEF7;border-radius:6px;overflow:hidden;display:flex">
+        <div style="width:${p}%;background:#1F9D55;transition:width .4s"></div>
+        <div style="width:${s.total?(s.dl/s.total*100):0}%;background:#1A3A6B"></div>
+        <div style="width:${s.total?(s.sap/s.total*100):0}%;background:#C8960C"></div>
+        <div style="width:${s.total?(s.tre/s.total*100):0}%;background:#C0392B"></div>
+      </div>
+      <div style="font-size:11px;color:#888;margin-top:4px;text-align:right">${p}% hoàn thành</div>
+    </div>`;
+  }
+
+  const LD_ROLES={
+    "Phạm Quốc Hưng":"Chi cục trưởng",
+    "Bùi Ngọc Lợi":"Phó Chi cục trưởng",
+    "Ngô Tùng Dương":"Phó Chi cục trưởng",
+    "Nguyễn Cảnh Thắng":"Phó Chi cục trưởng"
+  };
+  let ldCardsHtml=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px">`;
+  LD_KEYS.forEach(k=>{ ldCardsHtml+=ldCard(k,ldStats[k],LD_ROLES[k]||""); });
+  ldCardsHtml+="</div>";
+  const ldEl=document.getElementById("ld-cards");
+  if(ldEl)ldEl.innerHTML=ldCardsHtml;
 }
 
 // ===== TABLE =====
@@ -1147,13 +1211,19 @@ function renderTable(){
 
 function switchTab(tab){
   curTab=tab;
-  document.getElementById("view-dashboard").style.display=tab==="dashboard"?"block":"none";
-  document.getElementById("view-table").style.display=tab==="table"?"block":"none";
-  document.getElementById("view-phanich").style.display=tab==="phanich"?"block":"none";
-  document.getElementById("tab-dash").className="tab-btn"+(tab==="dashboard"?" tab-active":"");
-  document.getElementById("tab-table").className="tab-btn"+(tab==="table"?" tab-active":"");
-  document.getElementById("tab-phanich").className="tab-btn"+(tab==="phanich"?" tab-active":"");
+  ["dashboard","table","phanich","nsnn"].forEach(v=>{
+    const el=document.getElementById("view-"+v);
+    if(el)el.style.display=tab===v?"block":"none";
+  });
+  ["tab-dash","tab-table","tab-phanich","tab-nsnn"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.className="tab-btn";
+  });
+  const activeMap={"dashboard":"tab-dash","table":"tab-table","phanich":"tab-phanich","nsnn":"tab-nsnn"};
+  const activeEl=document.getElementById(activeMap[tab]);
+  if(activeEl)activeEl.className="tab-btn tab-active";
   if(tab==="phanich") renderPhanich();
+  if(tab==="nsnn") loadNSNN();
 }
 function exportCSV(){
   const rows=getFiltered();
@@ -1162,6 +1232,125 @@ function exportCSV(){
   const csv="\uFEFF"+[h,...data].map(r=>r.map(c=>'"'+(String(c||"").replace(/"/g,'""'))+'"').join(",")).join("\n");
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));
   a.download="NhiemVu_KV8.csv";a.click();
+}
+
+// ===== THU NGÂN SÁCH NHÀ NƯỚC =====
+let nsnnData=null;
+
+async function loadNSNN(){
+  const el=document.getElementById("nsnn-content");
+  if(!el)return;
+  el.innerHTML='<div style="text-align:center;padding:40px;color:#888"><div style="font-size:28px">⏳</div><div style="margin-top:8px">Đang tải dữ liệu thu ngân sách...</div></div>';
+  try{
+    const r=await fetch(API+"?sheet=THU-NSNN",{signal:AbortSignal.timeout(20000)});
+    const j=await r.json();
+    if(j.ok&&j.data&&j.data.length>0){
+      nsnnData=j.data;
+      renderNSNN(j.data);
+      document.getElementById("nsnn-guide").style.display="none";
+    } else {
+      el.innerHTML='<div style="text-align:center;padding:60px 20px;color:#aaa"><div style="font-size:40px">💰</div><div style="font-size:15px;font-weight:600;color:#1A3A6B;margin-bottom:8px">Chưa có dữ liệu thu ngân sách</div><div style="font-size:13px">Thêm tab <b>THU-NSNN</b> vào Google Sheet theo hướng dẫn bên dưới</div></div>';
+      document.getElementById("nsnn-guide").style.display="block";
+    }
+  }catch(e){
+    el.innerHTML='<div style="text-align:center;padding:40px;color:#C0392B">⚠ Không tải được dữ liệu: '+e.message+'</div>';
+  }
+}
+
+function renderNSNN(data){
+  const el=document.getElementById("nsnn-content");
+  if(!el||!data||!data.length)return;
+
+  // Compute totals
+  let totalKHN=0,totalTH=0,totalThangKH=0,totalThangTH=0;
+  data.forEach(r=>{
+    totalKHN+=Number(r.khNam||0);
+    totalTH+=Number(r.thLuyKe||0);
+    totalThangKH+=Number(r.thangKH||0);
+    totalThangTH+=Number(r.thangTH||0);
+  });
+  const pctLuyKe=totalKHN?Math.round(totalTH/totalKHN*100):0;
+  const pctThang=totalThangKH?Math.round(totalThangTH/totalThangKH*100):0;
+
+  function fmt(n){
+    const num=Number(n||0);
+    if(num>=1e9)return (num/1e9).toFixed(1)+" tỷ";
+    if(num>=1e6)return (num/1e6).toFixed(1)+" tr";
+    return num.toLocaleString("vi-VN");
+  }
+  function pctColor(p){ return p>=100?"#1F9D55":p>=80?"#C8960C":"#C0392B"; }
+  function pctBar(p){
+    const pp=Math.min(p,100);
+    return `<div style="height:8px;background:#E8EEF7;border-radius:6px;overflow:hidden">
+      <div style="width:${pp}%;background:${pctColor(p)};transition:width .4s"></div>
+    </div><div style="font-size:10.5px;color:${pctColor(p)};font-weight:700;margin-top:2px">${p}%</div>`;
+  }
+
+  let html=`
+    <!-- KPI tổng hợp -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px">
+      <div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 6px rgba(26,58,107,.08);border-top:3px solid #1A3A6B">
+        <div style="font-size:12px;color:#888;margin-bottom:4px">KH thu cả năm</div>
+        <div style="font-size:24px;font-weight:700;color:#1A3A6B">${fmt(totalKHN)}</div>
+      </div>
+      <div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 6px rgba(26,58,107,.08);border-top:3px solid ${pctColor(pctLuyKe)}">
+        <div style="font-size:12px;color:#888;margin-bottom:4px">TH lũy kế</div>
+        <div style="font-size:24px;font-weight:700;color:${pctColor(pctLuyKe)}">${fmt(totalTH)}</div>
+        <div style="font-size:12px;color:${pctColor(pctLuyKe)};font-weight:600">${pctLuyKe}% KH năm</div>
+      </div>
+      <div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 6px rgba(26,58,107,.08);border-top:3px solid #555">
+        <div style="font-size:12px;color:#888;margin-bottom:4px">KH tháng này</div>
+        <div style="font-size:24px;font-weight:700;color:#1A3A6B">${fmt(totalThangKH)}</div>
+      </div>
+      <div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 6px rgba(26,58,107,.08);border-top:3px solid ${pctColor(pctThang)}">
+        <div style="font-size:12px;color:#888;margin-bottom:4px">TH tháng này</div>
+        <div style="font-size:24px;font-weight:700;color:${pctColor(pctThang)}">${fmt(totalThangTH)}</div>
+        <div style="font-size:12px;color:${pctColor(pctThang)};font-weight:600">${pctThang}% KH tháng</div>
+      </div>
+    </div>
+
+    <!-- Bảng chi tiết -->
+    <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+      <div style="font-weight:700;color:#1A3A6B;font-size:15px;margin-bottom:14px">📊 Chi tiết theo khoản thu</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="background:#E8EEF7">
+              <th style="padding:10px 12px;text-align:left;color:#1A3A6B;font-weight:700">Khoản thu</th>
+              <th style="padding:10px 8px;text-align:right;color:#555;font-weight:700;white-space:nowrap">ĐVT</th>
+              <th style="padding:10px 8px;text-align:right;color:#1A3A6B;font-weight:700;white-space:nowrap">KH Năm</th>
+              <th style="padding:10px 8px;text-align:right;color:#1F9D55;font-weight:700;white-space:nowrap">TH Lũy kế</th>
+              <th style="padding:10px 8px;text-align:right;color:#1A3A6B;font-weight:700;white-space:nowrap">KH Tháng</th>
+              <th style="padding:10px 8px;text-align:right;font-weight:700;white-space:nowrap">TH Tháng</th>
+              <th style="padding:10px 12px;text-align:left;font-weight:700;min-width:140px">Tiến độ lũy kế</th>
+              <th style="padding:10px 8px;text-align:left;color:#666;font-weight:700">Ghi chú</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+  data.forEach((r,i)=>{
+    const khN=Number(r.khNam||0),th=Number(r.thLuyKe||0);
+    const khT=Number(r.thangKH||0),thT=Number(r.thangTH||0);
+    const p=khN?Math.round(th/khN*100):0;
+    const isHeader=!r.stt||String(r.stt).match(/^[IVX]+$/);
+    if(isHeader){
+      html+=`<tr style="background:#F0F4FA"><td colspan="8" style="padding:9px 12px;font-weight:700;color:#1A3A6B">${r.chiTieu||""}</td></tr>`;
+    } else {
+      html+=`<tr style="border-bottom:1px solid #E8EEF7;background:${i%2===0?"#fff":"#FAFBFD"}">
+        <td style="padding:8px 12px">${r.chiTieu||""}</td>
+        <td style="padding:8px 8px;text-align:right;color:#888;font-size:12px">${r.donViTinh||""}</td>
+        <td style="padding:8px 8px;text-align:right;font-weight:600;color:#1A3A6B">${khN?fmt(khN):"—"}</td>
+        <td style="padding:8px 8px;text-align:right;font-weight:700;color:#1F9D55">${th?fmt(th):"—"}</td>
+        <td style="padding:8px 8px;text-align:right;color:#555">${khT?fmt(khT):"—"}</td>
+        <td style="padding:8px 8px;text-align:right;font-weight:600;color:${pctColor(khT?Math.round(thT/khT*100):0)}">${thT?fmt(thT):"—"}</td>
+        <td style="padding:8px 12px">${khN?pctBar(p):""}</td>
+        <td style="padding:8px 8px;font-size:12px;color:#666">${r.ghiChu||""}</td>
+      </tr>`;
+    }
+  });
+
+  html+=`</tbody></table></div></div>`;
+  el.innerHTML=html;
 }
 
 // ===== TAB PHÂN TÍCH =====
