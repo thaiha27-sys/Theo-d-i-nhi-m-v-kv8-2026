@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Theo dõi Nhiệm vụ KV8 – Quảng Ninh</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#F4F6FA;color:#1a1a1a;min-height:100vh}
@@ -475,11 +476,15 @@ function generateTemplatXLSX() {
 }
 
 function loadSheetJS(callback) {
+  // SheetJS đã được load trong <head>, gọi callback ngay
   if (typeof XLSX !== 'undefined') { callback(); return; }
-  const s = document.createElement('script');
-  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-  s.onload = callback;
-  document.head.appendChild(s);
+  // Fallback nếu chưa load (chờ tối đa 5s)
+  let waited = 0;
+  const iv = setInterval(() => {
+    waited += 200;
+    if (typeof XLSX !== 'undefined') { clearInterval(iv); callback(); }
+    else if (waited >= 5000) { clearInterval(iv); showToast('⚠ Không load được thư viện Excel. Kiểm tra kết nối internet.'); }
+  }, 200);
 }
 
 function handleFileUpload(event) {
@@ -840,20 +845,32 @@ async function loadData(){
   document.getElementById("view-dashboard").style.display="none";
   document.getElementById("view-table").style.display="none";
   document.getElementById("btn-refresh").textContent="⏳...";
+
+  // Timeout 15 giây — tránh kẹt màn hình mãi
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),15000);
+
   try{
-    const r=await fetch(API);const j=await r.json();
+    const r=await fetch(API,{signal:controller.signal});
+    clearTimeout(timer);
+    const j=await r.json();
     if(j.ok&&j.data){
       allTasks=j.data;buildFilters();renderDashboard();renderTable();
       document.getElementById("loading").style.display="none";
       document.getElementById("view-"+curTab).style.display="block";
       document.getElementById("sync-status").textContent="✅ Sync "+new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"});
       showToast("✓ Đã đồng bộ "+allTasks.length+" nhiệm vụ");
-    }else throw new Error(j.error||"Lỗi");
+    }else throw new Error(j.error||"Lỗi phản hồi API");
   }catch(e){
+    clearTimeout(timer);
     document.getElementById("loading").style.display="none";
     document.getElementById("view-"+curTab).style.display="block";
-    document.getElementById("sync-status").textContent="⚠ Offline";
-    showToast("⚠ Không kết nối được Google Sheet",6000);
+    const isTimeout=e.name==="AbortError";
+    document.getElementById("sync-status").textContent=isTimeout?"⚠ Timeout":"⚠ Offline";
+    showToast(isTimeout
+      ?"⚠ API phản hồi quá chậm (>15s). Kiểm tra Apps Script đã Deploy chưa."
+      :"⚠ Không kết nối được Google Sheet: "+e.message
+    ,8000);
   }
   document.getElementById("btn-refresh").textContent="🔄 Làm mới";
 }
