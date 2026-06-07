@@ -831,14 +831,6 @@ function showErrBatch(msg) {
 
 
 loadData();
-    }else{
-      errEl.textContent="⚠ "+j.error;errEl.style.display="block";
-    }
-  }catch(e){
-    errEl.textContent="⚠ Lỗi kết nối: "+e.message;errEl.style.display="block";
-  }
-  btn.textContent="💾 Lưu nhiệm vụ";btn.disabled=false;
-}
 
 // ===== NHẬP KẾT QUẢ =====
 async function submitKQ(){
