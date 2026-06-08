@@ -711,7 +711,7 @@ function renderTable() {
       '<td><span class="badge" style="background:' + b.bg + ';color:' + b.c + '">' + s + '</span></td>' +
       '<td style="font-size:11px;color:var(--muted)">' + (gh||"—") + '</td>' +
       '<td><div style="display:flex;gap:4px;flex-wrap:wrap">' +
-        (s.includes("Hoàn thành") ? '' : '<button class="btn-sm btn-green" onclick="markDone(' + t.row + ',\'' + (t.nhiemVu||"").replace(/'/g,"\\'").substring(0,30) + '\')">✓</button> ') +
+        (s.includes("Hoàn thành") ? '' : s.includes("Trễ") ? '<button class="btn-sm" style="background:#E8651A;color:#fff;border:none;padding:4px 8px;border-radius:5px;cursor:pointer;font-size:11.5px;font-weight:600" title="Nhiệm vụ trễ hạn – xác nhận hoàn thành?" onclick="markDone(' + t.row + ',\'' + (t.nhiemVu||"").replace(/'/g,"\\'").substring(0,30) + '\')">⚠ Xong muộn</button> ' : '<button class="btn-sm btn-green" onclick="markDone(' + t.row + ',\'' + (t.nhiemVu||"").replace(/'/g,"\\'").substring(0,30) + '\')">✓ Xong</button> ') +
         '<button class="btn-sm btn-blue" onclick="openKQModal(' + t.row + ')">✏ KQ</button>' +
       '</div></td>' +
     '</tr>';
