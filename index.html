@@ -320,6 +320,37 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
   <div id="nsnn-loading" class="loading"><div class="spinner"></div>Đang tải chỉ tiêu...</div>
 </div>
 
+<!-- ========= BÁO CÁO KẾT QUẢ ========= -->
+<div id="tab-baocao" class="tab-content">
+  <div class="section">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+      <select class="filter-sel" id="bc-filter-donvi" onchange="renderBaoCao()">
+        <option value="">— Tất cả đơn vị —</option>
+      </select>
+      <select class="filter-sel" id="bc-filter-lanhdao" onchange="renderBaoCao()">
+        <option value="">— Tất cả lãnh đạo —</option>
+      </select>
+      <select class="filter-sel" id="bc-filter-thang" onchange="renderBaoCao()">
+        <option value="">— Tất cả tháng —</option>
+        <option value="2026-01">T1/2026</option>
+        <option value="2026-02">T2/2026</option>
+        <option value="2026-03">T3/2026</option>
+        <option value="2026-04">T4/2026</option>
+        <option value="2026-05">T5/2026</option>
+        <option value="2026-06">T6/2026</option>
+      </select>
+      <div style="display:flex;gap:6px">
+        <button class="btn-sm btn-blue" onclick="setBcView('donvi')" id="bcv-donvi">🏢 Đơn vị</button>
+        <button class="btn-sm" id="bcv-lanhdao" onclick="setBcView('lanhdao')">👤 Lãnh đạo</button>
+        <button class="btn-sm" id="bcv-thang" onclick="setBcView('thang')">📅 Tháng</button>
+        <button class="btn-sm" id="bcv-chitiet" onclick="setBcView('chitiet')">📋 Chi tiết</button>
+      </div>
+      <button class="btn btn-outline" style="font-size:12px" onclick="loadBaoCao(true)">🔄 Tải lại</button>
+    </div>
+    <div id="bc-content"><div style="text-align:center;color:var(--muted);padding:30px">Chọn tab để tải báo cáo...</div></div>
+  </div>
+</div>
+
 </div><!-- /main -->
 
 <!-- ========= MODAL THÊM NHIỆM VỤ ========= -->
@@ -393,18 +424,31 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
   </div>
 </div>
 
-<!-- ========= MODAL NHẬP KẾT QUẢ ========= -->
+<!-- ========= MODAL NHẬP KẾT QUẢ (v11) ========= -->
 <div class="modal-overlay" id="modal-kq" onclick="closeModal('modal-kq',event)">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('modal-kq')">✕</button>
-    <div class="modal-title" id="kq-title">📝 Nhập kết quả thực hiện</div>
+    <div class="modal-title" id="kq-title">📝 Cập nhật kết quả thực hiện</div>
     <div class="kq-task-info" id="kq-task-info"></div>
+    <div id="kq-muon-warn" style="display:none;background:#FEF9E7;border:1px solid #F6C343;border-radius:8px;padding:9px 12px;font-size:12.5px;color:#7a5800;margin-bottom:10px">
+      ⚠ Ngày hoàn thành thực tế đã <strong>vượt quá thời hạn</strong> quy định — kết quả sẽ ghi nhận là <strong>HOÀN THÀNH MUỘN</strong>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Số văn bản / mã sản phẩm</label>
+        <input class="form-input" id="kq-so-vb" placeholder="VD: 145/KH-HQKV8 (để trống nếu chưa có)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ngày hoàn thành thực tế *</label>
+        <input class="form-input" id="kq-ngay-th" type="date" onchange="checkKQMuon()">
+      </div>
+    </div>
     <div class="form-group">
-      <label class="form-label">Kết quả / Tiến độ thực hiện *</label>
-      <textarea class="form-textarea" id="kq-input" placeholder="Mô tả kết quả đã thực hiện, tiến độ, sản phẩm đầu ra..." style="min-height:100px"></textarea>
+      <label class="form-label">Mô tả kết quả cụ thể *</label>
+      <textarea class="form-textarea" id="kq-input" placeholder="Đã ban hành / nộp báo cáo / ký kết / hoàn thành..." style="min-height:80px"></textarea>
     </div>
     <label class="kq-done-chk">
-      <input type="checkbox" id="kq-done-chk" style="width:16px;height:16px">
+      <input type="checkbox" id="kq-done-chk" style="width:16px;height:16px" checked>
       <span>✅ Đánh dấu <strong>Hoàn thành</strong> nhiệm vụ này</span>
     </label>
     <div id="kq-error" class="form-error"></div>
@@ -419,7 +463,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
 // ============================================================
 // CẤU HÌNH
 // ============================================================
-const API = "https://script.google.com/macros/s/AKfycby_tix9OHh1ppbj2Fst3842wV41fut_bvBsEf4ng1pp--mA72f6KYrxFRb9d1RYLmeJ/exec";
+const API = "https://script.google.com/macros/s/AKfycbzIJnZsGMR7U9wJhUTfDqiqYUlQXjxbeYjDJS--xPyA29nxJWRPEDXBD2BhumJkRAXE/exec";
 const CACHE_KEY = "kv8_tasks_v2";
 const CACHE_TIME_KEY = "kv8_tasks_ts";
 const CACHE_TTL = 5 * 60 * 1000;
@@ -429,7 +473,8 @@ const LD_KEYS = ["Phạm Quốc Hưng","Bùi Ngọc Lợi","Ngô Tùng Dương",
 const LD_ROLES = {"Phạm Quốc Hưng":"Chi cục trưởng","Bùi Ngọc Lợi":"Phó Chi cục trưởng","Ngô Tùng Dương":"Phó Chi cục trưởng","Nguyễn Cảnh Thắng":"Phó Chi cục trưởng"};
 const LD_INI = {"Phạm Quốc Hưng":"PQH","Bùi Ngọc Lợi":"BNL","Ngô Tùng Dương":"NTD","Nguyễn Cảnh Thắng":"NCT"};
 
-let allTasks = [], curKQRow = null, paLoaded = false, nsnnLoaded = false;
+let allTasks = [], curKQRow = null, curKQDeadline = null, paLoaded = false, nsnnLoaded = false;
+let bcView = 'donvi', bcData = null, bcLoaded = false;
 
 // ============================================================
 // TRẠNG THÁI NHIỆM VỤ – ĐỌC TỪ CỘT GHI CHÚ (J)
@@ -510,10 +555,23 @@ function switchTab(id) {
   document.querySelectorAll(".tab-content").forEach(e => e.classList.remove("active"));
   document.querySelectorAll(".tab").forEach(e => e.classList.remove("active"));
   document.getElementById("tab-" + id).classList.add("active");
-  const tabs = ["dashboard","table","phanich","nsnn"];
+  const tabs = ["dashboard","table","phanich","nsnn","baocao"];
   document.querySelectorAll(".tab")[tabs.indexOf(id)]?.classList.add("active");
   if (id === "phanich" && !paLoaded) renderPhanich();
   if (id === "nsnn" && !nsnnLoaded) loadNSNN();
+  if (id === "baocao") {
+    // Điền đơn vị/lãnh đạo vào filter
+    const dvSel = document.getElementById("bc-filter-donvi");
+    if (dvSel.options.length <= 1) {
+      const units = [...new Set(allTasks.map(t=>t.donVi).filter(Boolean))].sort();
+      units.forEach(u => { const o = document.createElement("option"); o.value = o.textContent = u; dvSel.appendChild(o); });
+    }
+    const ldSel = document.getElementById("bc-filter-lanhdao");
+    if (ldSel.options.length <= 1) {
+      LD_KEYS.forEach(l => { const o = document.createElement("option"); o.value = o.textContent = l; ldSel.appendChild(o); });
+    }
+    if (!bcLoaded) loadBaoCao();
+  }
 }
 
 // ============================================================
@@ -920,36 +978,63 @@ function openKQModal(row) {
   const t = allTasks.find(x => x.row === row);
   if (!t) return;
   curKQRow = row;
+  curKQDeadline = t.thoiHan || null;
   document.getElementById("kq-title").textContent = "📝 Cập nhật kết quả — NV #" + t.tt;
   document.getElementById("kq-task-info").innerHTML =
     '<b>' + t.tt + '. ' + (t.nhiemVu||"") + '</b><br>' +
     '<span style="color:var(--muted)">' + (t.donVi||"") + ' · Hạn: ' + fmtDate(t.thoiHan) + ' · ' + (normLanhDao(t.lanhDao)||"") + '</span>' +
-    (t.ghiChu ? '<br><i style="color:var(--muted)">Ghi chú hiện tại: ' + t.ghiChu + '</i>' : '');
+    (t.ketQua ? '<br><span style="color:var(--green);font-size:11.5px">📌 Kết quả hiện tại: ' + t.ketQua + '</span>' : '');
   document.getElementById("kq-input").value = "";
-  document.getElementById("kq-done-chk").checked = false;
+  document.getElementById("kq-so-vb").value = "";
+  // Ngày mặc định = hôm nay
+  const today = new Date();
+  document.getElementById("kq-ngay-th").value = today.toISOString().slice(0,10);
+  document.getElementById("kq-done-chk").checked = true;
+  document.getElementById("kq-muon-warn").style.display = "none";
   document.getElementById("kq-error").style.display = "none";
   document.getElementById("modal-kq").classList.add("open");
-  setTimeout(() => document.getElementById("kq-input").focus(), 100);
+  checkKQMuon();
+  setTimeout(() => document.getElementById("kq-ngay-th").focus(), 100);
+}
+
+function checkKQMuon() {
+  const ngayTH = document.getElementById("kq-ngay-th").value;
+  const warn = document.getElementById("kq-muon-warn");
+  if (!ngayTH || !curKQDeadline) { warn.style.display = "none"; return; }
+  const dl = parseDate(curKQDeadline);
+  const th = parseDate(ngayTH);
+  if (dl && th && th > dl) { warn.style.display = "block"; }
+  else { warn.style.display = "none"; }
 }
 
 async function submitKQ() {
-  const note = (document.getElementById("kq-input").value||"").trim();
+  const ngayTH = (document.getElementById("kq-ngay-th").value||"").trim();
+  const moTa   = (document.getElementById("kq-input").value||"").trim();
+  const soVB   = (document.getElementById("kq-so-vb").value||"").trim();
   const isDone = document.getElementById("kq-done-chk").checked;
-  const errEl = document.getElementById("kq-error");
-  if (!note) { errEl.textContent = "⚠ Vui lòng nhập nội dung kết quả"; errEl.style.display = "block"; return; }
+  const errEl  = document.getElementById("kq-error");
+  if (!ngayTH) { errEl.textContent = "⚠ Vui lòng nhập ngày hoàn thành"; errEl.style.display = "block"; return; }
+  if (!moTa)   { errEl.textContent = "⚠ Vui lòng nhập mô tả kết quả"; errEl.style.display = "block"; return; }
   const btn = document.getElementById("btn-kq-submit");
   btn.textContent = "⏳ Đang lưu..."; btn.disabled = true; errEl.style.display = "none";
   try {
-    // Ghi kết quả (ghi chú)
-    await fetch(API, {method:"POST", body:JSON.stringify({action:"ghiChu", row:curKQRow, giaTri:note})});
-    // Nếu đánh dấu hoàn thành
-    if (isDone) {
-      await fetch(API, {method:"POST", body:JSON.stringify({action:"hoanThanh", row:curKQRow})});
-    }
-    closeModal("modal-kq");
-    showToast(isDone ? "✅ Đã lưu kết quả và đánh dấu Hoàn thành" : "✅ Đã cập nhật kết quả");
-    localStorage.removeItem(CACHE_KEY);
-    await loadData(true);
+    const res = await fetch(API, {method:"POST", body:JSON.stringify({
+      action: "ghiKetQua",
+      row: curKQRow,
+      soVanBan: soVB,
+      ngayTH: ngayTH,
+      moTa: moTa,
+      danhDauHT: isDone
+    })});
+    const d = await res.json();
+    if (d.ok) {
+      closeModal("modal-kq");
+      const muonMsg = d.isLate ? " ⚠ (ghi nhận HOÀN THÀNH MUỘN)" : "";
+      showToast((isDone ? "✅ Hoàn thành" : "✅ Đã lưu kết quả") + muonMsg);
+      bcLoaded = false;
+      localStorage.removeItem(CACHE_KEY);
+      await loadData(true);
+    } else { errEl.textContent = "⚠ " + (d.error||"Lỗi không xác định"); errEl.style.display = "block"; }
   } catch(e) { errEl.textContent = "⚠ Lỗi kết nối: " + e.message; errEl.style.display = "block"; }
   btn.textContent = "💾 Lưu kết quả"; btn.disabled = false;
 }
@@ -1042,6 +1127,135 @@ function exportCSV() {
   a.href = "data:text/csv;charset=utf-8,\uFEFF" + encodeURIComponent(csv);
   a.download = "NhiemVu_KV8_" + new Date().toISOString().slice(0,10) + ".csv";
   a.click();
+}
+
+// ============================================================
+// BÁO CÁO KẾT QUẢ (v11)
+// ============================================================
+let _bcViewCurrent = 'donvi';
+
+function setBcView(v) {
+  _bcViewCurrent = v;
+  ['donvi','lanhdao','thang','chitiet'].forEach(k => {
+    const el = document.getElementById('bcv-' + k);
+    if (el) el.className = 'btn-sm' + (k === v ? ' btn-blue' : '');
+  });
+  if (bcData) renderBcContent();
+}
+
+async function loadBaoCao(force) {
+  if (bcLoaded && !force) { renderBaoCao(); return; }
+  document.getElementById('bc-content').innerHTML = '<div class="loading"><div class="spinner"></div>Đang tải báo cáo...</div>';
+  const donVi   = document.getElementById('bc-filter-donvi').value || '';
+  const lanhDao = document.getElementById('bc-filter-lanhdao').value || '';
+  const thang   = document.getElementById('bc-filter-thang').value || '';
+  let url = API + '?report=summary&t=' + Date.now();
+  if (donVi)   url += '&donVi='   + encodeURIComponent(donVi);
+  if (lanhDao) url += '&lanhDao=' + encodeURIComponent(lanhDao);
+  if (thang)   url += '&thang='   + encodeURIComponent(thang);
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.ok) {
+      bcData = data; bcLoaded = true;
+      renderBcContent();
+    } else {
+      document.getElementById('bc-content').innerHTML = '<div style="color:var(--red);padding:20px">⚠ ' + (data.error||'Lỗi') + '</div>';
+    }
+  } catch(e) {
+    document.getElementById('bc-content').innerHTML = '<div style="color:var(--red);padding:20px">⚠ Lỗi kết nối: ' + e.message + '</div>';
+  }
+}
+
+function renderBaoCao() { loadBaoCao(true); }
+
+function renderBcContent() {
+  if (!bcData) return;
+  const v = _bcViewCurrent;
+  if (v === 'donvi')   renderBcTable(bcData.byDonVi,   'Đơn vị chủ trì');
+  if (v === 'lanhdao') renderBcTable(bcData.byLanhDao, 'Lãnh đạo phụ trách');
+  if (v === 'thang')   renderBcTable(bcData.byThang,   'Tháng hoàn thành');
+  if (v === 'chitiet') renderBcChiTiet(bcData.completed || []);
+}
+
+function renderBcTable(data, labelCol) {
+  const keys = Object.keys(data || {});
+  if (!keys.length) {
+    document.getElementById('bc-content').innerHTML = '<div style="color:var(--muted);padding:20px">Chưa có dữ liệu</div>';
+    return;
+  }
+  const rows = keys.map(k => {
+    const v = data[k];
+    const pct = v.tong > 0 ? Math.round(v.ht / v.tong * 100) : 0;
+    return { k, ...v, pct };
+  }).sort((a,b) => b.ht - a.ht);
+
+  // Tổng
+  const totTong = rows.reduce((s,r)=>s+r.tong,0);
+  const totHT   = rows.reduce((s,r)=>s+r.ht,0);
+  const totMuon = rows.reduce((s,r)=>s+r.muon,0);
+  const totTre  = rows.reduce((s,r)=>s+r.tre,0);
+  const totPct  = totTong > 0 ? Math.round(totHT/totTong*100) : 0;
+
+  let html = '<table class="tbl"><thead><tr>' +
+    '<th style="text-align:left">' + labelCol + '</th>' +
+    '<th style="text-align:center">Tổng NV</th>' +
+    '<th style="text-align:center">Hoàn thành</th>' +
+    '<th style="text-align:center">Tỷ lệ</th>' +
+    '<th style="text-align:center">Muộn</th>' +
+    '<th style="text-align:center">Trễ hạn</th></tr></thead><tbody>';
+
+  rows.forEach(r => {
+    const pctBar = '<div style="height:7px;background:#EDF2F7;border-radius:4px;overflow:hidden;display:inline-block;width:60px;vertical-align:middle;margin-right:4px"><div style="height:100%;background:' + NAVY + ';width:' + r.pct + '%"></div></div>';
+    html += '<tr>' +
+      '<td>' + r.k + '</td>' +
+      '<td style="text-align:center;font-weight:700">' + r.tong + '</td>' +
+      '<td style="text-align:center;color:' + COLORS.ht + ';font-weight:700">' + r.ht + '</td>' +
+      '<td>' + pctBar + '<b>' + r.pct + '%</b></td>' +
+      '<td style="text-align:center;color:' + (r.muon>0?'#E53E3E':'var(--muted)') + ';font-weight:' + (r.muon>0?'700':'400') + '">' + (r.muon||'—') + '</td>' +
+      '<td style="text-align:center;color:' + (r.tre>0?COLORS.tre:'var(--muted)') + ';font-weight:' + (r.tre>0?'700':'400') + '">' + (r.tre||'—') + '</td>' +
+    '</tr>';
+  });
+
+  // Dòng tổng
+  const totBar = '<div style="height:7px;background:#EDF2F7;border-radius:4px;overflow:hidden;display:inline-block;width:60px;vertical-align:middle;margin-right:4px"><div style="height:100%;background:' + NAVY + ';width:' + totPct + '%"></div></div>';
+  html += '<tr style="background:#E8EEF7;font-weight:700">' +
+    '<td>TỔNG CỘNG</td>' +
+    '<td style="text-align:center">' + totTong + '</td>' +
+    '<td style="text-align:center;color:' + COLORS.ht + '">' + totHT + '</td>' +
+    '<td>' + totBar + '<b>' + totPct + '%</b></td>' +
+    '<td style="text-align:center;color:' + (totMuon>0?'#E53E3E':'var(--muted)') + '">' + (totMuon||'—') + '</td>' +
+    '<td style="text-align:center;color:' + (totTre>0?COLORS.tre:'var(--muted)') + '">' + (totTre||'—') + '</td>' +
+  '</tr>';
+  html += '</tbody></table>';
+  document.getElementById('bc-content').innerHTML = html;
+}
+
+function renderBcChiTiet(completed) {
+  if (!completed.length) {
+    document.getElementById('bc-content').innerHTML = '<div style="color:var(--muted);padding:20px">Chưa có nhiệm vụ hoàn thành</div>';
+    return;
+  }
+  const muonCount = completed.filter(t=>t.muon).length;
+  let html = '<div style="font-size:13px;color:var(--muted);margin-bottom:10px">Tổng hoàn thành: <b>' + completed.length + '</b> · Muộn: <b style="color:#E53E3E">' + muonCount + '</b></div>';
+  html += '<div style="overflow-x:auto"><table class="tbl"><thead><tr>' +
+    '<th>TT</th><th>Nhiệm vụ</th><th style="width:120px">Đơn vị</th>' +
+    '<th style="width:110px">Lãnh đạo</th><th style="width:80px">Hạn</th>' +
+    '<th>Kết quả cụ thể</th><th style="width:70px">Ghi chú</th></tr></thead><tbody>';
+  completed.sort((a,b) => (a.muon===b.muon ? 0 : a.muon ? -1 : 1))
+    .forEach((t, i) => {
+      html += '<tr style="' + (t.muon?'background:#FFF5F5':'') + '">' +
+        '<td style="color:var(--muted);font-size:11px">' + (t.tt||i+1) + '</td>' +
+        '<td style="font-size:12px">' + (t.nhiemVu||'').substring(0,80) + ((t.nhiemVu||'').length>80?'…':'') + '</td>' +
+        '<td style="font-size:11.5px">' + (t.donVi||'') + '</td>' +
+        '<td style="font-size:11.5px">' + (t.lanhDao||'').replace(' - PCCT','').replace(' - CCT','') + '</td>' +
+        '<td style="font-size:12px;font-weight:600">' + (t.thoiHan||'—') + '</td>' +
+        '<td style="font-size:11.5px;color:' + COLORS.ht + ';font-style:italic">' + (t.ketQua||'<em style="color:#aaa">Chưa cập nhật</em>') + '</td>' +
+        '<td style="font-size:11px;font-weight:700;color:#E53E3E">' + (t.muon?'⚠ MUỘN':'') + '</td>' +
+      '</tr>';
+    });
+  html += '</tbody></table></div>';
+  document.getElementById('bc-content').innerHTML = html;
 }
 
 // ============================================================
