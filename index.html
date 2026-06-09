@@ -463,7 +463,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
 // ============================================================
 // CẤU HÌNH
 // ============================================================
-const API = "https://script.google.com/macros/s/AKfycbzfwbuS5ppOT9bHYgBfT-N7WzW3SDiKy0uXWz9wIo4Vks9d5RoP7kEp_C5IXfKy0bgq/exec";
+const API = "https://script.google.com/macros/s/AKfycbyKtKFF0-7GSzGV6uSfaPi47pCjBFpl_TMf0zzQzFo1CKgzuwu4NjFUV0-Se5QHFZvU/exec";
 const CACHE_KEY = "kv8_tasks_v2";
 const CACHE_TIME_KEY = "kv8_tasks_ts";
 const CACHE_TTL = 5 * 60 * 1000;
@@ -1070,49 +1070,186 @@ document.addEventListener("keydown", e => {
 // ============================================================
 // EXCEL IMPORT
 // ============================================================
+// ============================================================
+// EXCEL IMPORT – phiên bản robust
+// Xử lý: header bất kỳ dòng nào (≤10), tên cột linh hoạt,
+// ngày Excel serial number, lọc trùng ngay tại client,
+// không reset input trước khi đọc xong
+// ============================================================
+function _normHeader(s) {
+  // Bỏ dấu tiếng Việt, lowercase, bỏ khoảng trắng thừa
+  // Lưu ý: chữ Đ/đ là ký tự riêng (U+0110), không tách được bằng NFD
+  // phải replace trước rồi mới normalize
+  return String(s).toLowerCase()
+    .replace(/đ/g, "d")
+    .normalize("NFD").replace(/\p{Mn}/gu, "")
+    .replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function _excelDateToStr(v) {
+  // Excel serial → dd/MM/yyyy
+  if (typeof v === "number" && v > 1000) {
+    const d = new Date(Math.round((v - 25569) * 86400 * 1000));
+    const dd = String(d.getUTCDate()).padStart(2,"0");
+    const mm = String(d.getUTCMonth()+1).padStart(2,"0");
+    const yy = d.getUTCFullYear();
+    return dd + "/" + mm + "/" + yy;
+  }
+  return String(v || "").trim();
+}
+
+function _matchCol(headers, keywords) {
+  // Tìm cột: thử exact trước, rồi includes bất kỳ keyword
+  for (const kw of keywords) {
+    const idx = headers.findIndex(h => h === kw);
+    if (idx >= 0) return idx;
+  }
+  for (const kw of keywords) {
+    const idx = headers.findIndex(h => h.includes(kw));
+    if (idx >= 0) return idx;
+  }
+  return -1;
+}
+
 async function handleExcel(e) {
-  const file = e.target.files[0]; if (!file) return;
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Reset input NGAY để có thể chọn lại cùng file lần sau
+  // Đặt ở đây (sau khi đã lấy file) là an toàn
+  e.target.value = "";
+
   const reader = new FileReader();
+  reader.onerror = () => alert("Không đọc được file. Thử lại.");
   reader.onload = async (ev) => {
     try {
-      const wb = XLSX.read(ev.target.result, {type:"array"});
+      // --- 1. Đọc workbook ---
+      const wb = XLSX.read(ev.target.result, {type:"array", cellDates:false});
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:""});
-      let hdr = -1;
-      for (let i = 0; i < Math.min(rows.length,10); i++) {
-        if (rows[i].some(c => String(c).toLowerCase().includes("nhiệm vụ"))) { hdr = i; break; }
+      const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:"", raw:true});
+
+      // --- 2. Tìm dòng header (tìm dòng có cả "nhiệm vụ" lẫn "đơn vị") ---
+      let hdrIdx = -1;
+      for (let i = 0; i < Math.min(raw.length, 15); i++) {
+        const norm = raw[i].map(_normHeader);
+        const hasNV = norm.some(h => h.includes("nhiem vu") || h.includes("nhiem") && h.includes("vu"));
+        const hasDV = norm.some(h => h.includes("don vi"));
+        if (hasNV && hasDV) { hdrIdx = i; break; }
       }
-      if (hdr < 0) { alert("Không tìm thấy cột 'Nhiệm vụ' trong file"); return; }
-      const headers = rows[hdr].map(c => String(c).toLowerCase().trim());
+      // Fallback: chỉ cần có "nhiệm vụ"
+      if (hdrIdx < 0) {
+        for (let i = 0; i < Math.min(raw.length, 15); i++) {
+          const norm = raw[i].map(_normHeader);
+          if (norm.some(h => h.includes("nhiem vu") || (h.includes("nhiem") && h.includes("vu")))) {
+            hdrIdx = i; break;
+          }
+        }
+      }
+      if (hdrIdx < 0) {
+        alert("❌ Không tìm thấy dòng tiêu đề cột.\n\nFile cần có dòng header chứa tên cột như: 'Nhiệm vụ', 'Đơn vị chủ trì'...\nKiểm tra lại file hoặc tải file mẫu.");
+        return;
+      }
+
+      // --- 3. Map cột ---
+      const headers = raw[hdrIdx].map(_normHeader);
       const ci = {
-        nv: headers.findIndex(h=>h.includes("nhiệm vụ")),
-        dv: headers.findIndex(h=>h.includes("đơn vị")),
-        ld: headers.findIndex(h=>h.includes("lãnh đạo")),
-        th: headers.findIndex(h=>h.includes("thời hạn")||h.includes("thoi han")),
-        sp: headers.findIndex(h=>h.includes("sản phẩm")),
-        cc: headers.findIndex(h=>h.includes("căn cứ")||h.includes("nguồn")),
+        // Nhiệm vụ (B)
+        nv: _matchCol(headers, ["nhiem vu", "noi dung nhiem vu", "nhiem vu cu the"]),
+        // Đơn vị (D)
+        dv: _matchCol(headers, ["don vi chu tri", "don vi", "chu tri"]),
+        // Lãnh đạo (E)
+        ld: _matchCol(headers, ["lanh dao phu trach", "lanh dao chi cuc", "lanh dao", "phu trach"]),
+        // Thời hạn (F)
+        th: _matchCol(headers, ["thoi han hoan thanh", "thoi han", "han hoan thanh", "deadline"]),
+        // Sản phẩm (G)
+        sp: _matchCol(headers, ["yeu cau san pham dau ra", "san pham cu the", "san pham", "dau ra"]),
+        // Căn cứ (C)
+        cc: _matchCol(headers, ["can cu", "nguon chi dao", "can cu nguon", "nguon"]),
+        // Người TH (I)
+        nth: _matchCol(headers, ["nguoi thuc hien truc tiep", "nguoi thuc hien", "thuc hien"]),
       };
-      const batch = [];
-      for (let i = hdr+1; i < rows.length; i++) {
-        const r = rows[i];
-        const nv = String(r[ci.nv]||"").trim(), dv = ci.dv>=0?String(r[ci.dv]||"").trim():"";
-        if (!nv||!dv) continue;
-        let th = ci.th>=0 ? String(r[ci.th]||"").trim() : "";
-        batch.push({nhiemVu:nv, donViChuTri:dv, ldChiCuc:ci.ld>=0?String(r[ci.ld]||"").trim():"", thoiHan:th, sanPham:ci.sp>=0?String(r[ci.sp]||"").trim():"", nguonChiDao:ci.cc>=0?String(r[ci.cc]||"").trim():""});
+
+      // --- 4. Build batch, lọc trùng ngay tại client ---
+      const existKeys = new Set(
+        allTasks.map(t => (t.nhiemVu||"").trim().toLowerCase().substring(0,50) + "||" + (t.donVi||"").trim())
+      );
+      const seenKeys  = new Set(); // tránh trùng trong chính file Excel
+      const batch = [], skipped = [], noUnit = [];
+
+      for (let i = hdrIdx + 1; i < raw.length; i++) {
+        const r = raw[i];
+        const nv = ci.nv >= 0 ? String(r[ci.nv] || "").trim() : "";
+        const dv = ci.dv >= 0 ? String(r[ci.dv] || "").trim() : "";
+
+        if (!nv) continue;              // bỏ dòng trống
+        if (!dv) { noUnit.push(nv.substring(0,60)); continue; } // thiếu đơn vị
+
+        const th_raw = ci.th >= 0 ? r[ci.th] : "";
+        const th = _excelDateToStr(th_raw);
+
+        const key = nv.toLowerCase().substring(0,50) + "||" + dv;
+
+        if (existKeys.has(key) || seenKeys.has(key)) {
+          skipped.push("#" + (i - hdrIdx) + " " + nv.substring(0,50));
+          continue;
+        }
+        seenKeys.add(key);
+
+        batch.push({
+          nhiemVu:       nv,
+          donViChuTri:   dv,
+          ldChiCuc:      ci.ld  >= 0 ? String(r[ci.ld]  || "").trim() : "",
+          thoiHan:       th,
+          sanPham:       ci.sp  >= 0 ? String(r[ci.sp]  || "").trim() : "",
+          nguonChiDao:   ci.cc  >= 0 ? String(r[ci.cc]  || "").trim() : "",
+          nguoiThucHien: ci.nth >= 0 ? String(r[ci.nth] || "").trim() : "",
+        });
       }
-      if (!batch.length) { alert("Không có dữ liệu hợp lệ"); return; }
-      if (!confirm("Nhập " + batch.length + " nhiệm vụ từ Excel?")) return;
-      const res = await fetch(API, {method:"POST", body:JSON.stringify({action:"addBatch", rows:batch})});
+
+      // --- 5. Thông báo kết quả phân tích trước khi nhập ---
+      if (!batch.length && !skipped.length) {
+        let msg = "❌ Không có dữ liệu hợp lệ.\n";
+        if (noUnit.length) msg += "\n" + noUnit.length + " dòng thiếu cột Đơn vị chủ trì.";
+        msg += "\n\nCác cột tìm thấy: " + headers.filter(h=>h).join(", ");
+        alert(msg); return;
+      }
+
+      let confirmMsg = "📋 KẾT QUẢ PHÂN TÍCH FILE:\n";
+      confirmMsg += "━━━━━━━━━━━━━━━━━━━━\n";
+      confirmMsg += "✅ Sẽ nhập mới:  " + batch.length + " nhiệm vụ\n";
+      if (skipped.length)  confirmMsg += "⏭ Bỏ qua trùng: " + skipped.length + " nhiệm vụ\n";
+      if (noUnit.length)   confirmMsg += "⚠ Thiếu đơn vị: " + noUnit.length + " dòng\n";
+      if (skipped.length) {
+        confirmMsg += "\nCác NV trùng (bỏ qua):\n" +
+          skipped.slice(0,5).map(s => "  • " + s).join("\n") +
+          (skipped.length > 5 ? "\n  ...và " + (skipped.length-5) + " NV khác" : "");
+      }
+      if (!batch.length) { alert(confirmMsg + "\n\n⚠ Không có NV nào để nhập mới."); return; }
+      confirmMsg += "\n\nXác nhận nhập " + batch.length + " nhiệm vụ mới?";
+
+      if (!confirm(confirmMsg)) return;
+
+      // --- 6. Gọi API ---
+      showToast("⏳ Đang nhập " + batch.length + " nhiệm vụ...");
+      const res = await fetch(API, {
+        method: "POST",
+        body: JSON.stringify({action: "addBatch", rows: batch})
+      });
       const d = await res.json();
       if (d.ok) {
-        showToast("✅ Nhập thành công " + d.successCount + "/" + batch.length + " nhiệm vụ");
+        let toastMsg = "✅ Nhập thành công " + d.successCount + "/" + batch.length + " nhiệm vụ";
+        if (d.skipCount > 0) toastMsg += " · Bỏ qua " + d.skipCount + " trùng trên server";
+        showToast(toastMsg, 5000);
         localStorage.removeItem(CACHE_KEY);
         await loadData(true);
-      } else showToast("⚠ Lỗi: " + d.error);
-    } catch(err) { alert("Lỗi đọc file: " + err.message); }
+      } else {
+        showToast("⚠ Lỗi server: " + d.error);
+      }
+    } catch(err) {
+      alert("❌ Lỗi xử lý file: " + err.message + "\n\nThử lại hoặc kiểm tra định dạng file.");
+    }
   };
   reader.readAsArrayBuffer(file);
-  e.target.value = "";
 }
 
 // ============================================================
