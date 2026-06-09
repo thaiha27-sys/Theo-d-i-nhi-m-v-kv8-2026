@@ -500,7 +500,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
 // ============================================================
 // CẤU HÌNH
 // ============================================================
-const API = "https://script.google.com/macros/s/AKfycbyANCVTFdMq4Zvj226SOZznGMXQPRj0dN2K0pSrg1Oq9sqjA91N0-6qBwfzOZLYbB_F/exec";
+const API = "https://script.google.com/macros/s/AKfycbzyxodRZR8Hcq9a7dSgYSvJChKAlNnSGPZuqzc4zUXxFEksJWDNFeGx9ukmHYbjfxRp/exec";
 const CACHE_KEY = "kv8_tasks_v2";
 const CACHE_TIME_KEY = "kv8_tasks_ts";
 const CACHE_TTL = 5 * 60 * 1000;
@@ -1477,8 +1477,11 @@ async function confirmDedup() {
 
   const rows = checked.map(c => parseInt(c.dataset.row));
   const ok = confirm(
-    "⚠ Xác nhận xóa " + rows.length + " dòng trùng khỏi Google Sheet?\n\n" +
-    "Hành động này KHÔNG thể hoàn tác.\n" +
+    "⚠ Xác nhận xóa " + rows.length + " dòng trùng khỏi Google Sheet?
+
+" +
+    "Hành động này KHÔNG thể hoàn tác.
+" +
     "Các dòng sẽ xóa: " + rows.join(", ")
   );
   if (!ok) return;
