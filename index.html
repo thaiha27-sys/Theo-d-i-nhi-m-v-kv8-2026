@@ -1477,11 +1477,8 @@ async function confirmDedup() {
 
   const rows = checked.map(c => parseInt(c.dataset.row));
   const ok = confirm(
-    "⚠ Xác nhận xóa " + rows.length + " dòng trùng khỏi Google Sheet?
-
-" +
-    "Hành động này KHÔNG thể hoàn tác.
-" +
+    "⚠ Xác nhận xóa " + rows.length + " dòng trùng khỏi Google Sheet?\n\n" +
+    "Hành động này KHÔNG thể hoàn tác.\n" +
     "Các dòng sẽ xóa: " + rows.join(", ")
   );
   if (!ok) return;
