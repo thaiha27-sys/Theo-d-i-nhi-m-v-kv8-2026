@@ -87,6 +87,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
 .btn-sm{padding:4px 9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
 .btn-green{background:#E3F5EA;color:var(--green)}.btn-green:hover{background:#c3e6cb}
+.btn-orange{background:#FEF3E2;color:#B7581A;border-color:#F6C343}.btn-orange:hover{background:#FDDBA0}
 .btn-blue{background:#EBF5FB;color:var(--navy)}.btn-blue:hover{background:#bee3f8}
 .btn-red{background:#FEEBEA;color:var(--red)}.btn-red:hover{background:#fcd0cc}
 /* ALERT */
@@ -153,7 +154,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
 #toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:12px 18px;border-radius:10px;font-size:13.5px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.25);display:none;z-index:999;max-width:340px}
 /* ERROR */
 .form-error{color:var(--red);font-size:12px;margin-top:5px;display:none}
-@media(max-width:700px){.pa-grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.ld-grid{grid-template-columns:1fr}.header-right .btn-outline:not(:first-child){display:none}}
+@media(max-width:700px){.pa-grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.ld-grid{grid-template-columns:1fr}.header-right .btn-outline:not(:first-child):not(:nth-child(2)):not(:nth-child(3)){display:none}}
 </style>
 </head>
 <body>
@@ -176,6 +177,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
     <button class="btn btn-outline" onclick="openAddModal()">➕ Thêm NV</button>
     <button class="btn btn-outline" onclick="document.getElementById('excel-input').click()">📥 Excel</button>
     <button class="btn btn-outline" id="btn-dedup" onclick="raSoatTrung()" title="Rà soát và đánh dấu nhiệm vụ trùng nội dung + đơn vị">🔍 Rà soát trùng</button>
+    <button class="btn btn-outline btn-orange" id="btn-normalize" onclick="chuanHoaDonVi()" title="Chuẩn hóa tên đơn vị chủ trì theo danh sách 18 đơn vị KV8">⚙ Chuẩn hóa ĐV</button>
     <span style="font-size:10.5px;opacity:.7">⏰ 8h → dangbohqqn@gmail.com</span>
   </div>
 </div>
@@ -354,6 +356,23 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
 
 </div><!-- /main -->
 
+<!-- ========= MODAL CHUẨN HÓA ĐƠN VỊ ========= -->
+<div class="modal-overlay" id="modal-norm" onclick="closeModal('modal-norm',event)">
+  <div class="modal-box" style="max-width:720px">
+    <button class="modal-close" onclick="closeModal('modal-norm',event)">✕</button>
+    <h3 style="margin:0 0 14px;color:var(--navy);font-size:17px">⚙ Chuẩn hóa tên đơn vị chủ trì</h3>
+    <div id="norm-loading" style="text-align:center;padding:24px;color:var(--muted);font-size:14px">⏳ Đang phân tích...</div>
+    <div id="norm-result" style="display:none">
+      <div id="norm-summary" style="background:#FEF3E2;border:1px solid #F6C343;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;line-height:1.8"></div>
+      <div id="norm-list" style="max-height:380px;overflow-y:auto;font-size:12.5px"></div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid #eee;display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn" onclick="closeModal('modal-norm',event)" style="background:#eee;color:#333">Đóng</button>
+        <button class="btn btn-save" id="btn-norm-confirm" onclick="confirmNorm()" style="display:none;background:#1A3A6B">✅ Chuẩn hóa tất cả</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ========= MODAL RÀ SOÁT TRÙNG ========= -->
 <div class="modal-overlay" id="modal-dedup" onclick="closeModal('modal-dedup',event)">
   <div class="modal-box" style="max-width:700px">
@@ -481,7 +500,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
 // ============================================================
 // CẤU HÌNH
 // ============================================================
-const API = "https://script.google.com/macros/s/AKfycbxh_U2DCFAY1GmoaSwrZpQCkkf4KItj4aGpGZQ0VPhife0GNGg6aUH9HWIfNmCxJx3o/exec";
+const API = "https://script.google.com/macros/s/AKfycbzyxodRZR8Hcq9a7dSgYSvJChKAlNnSGPZuqzc4zUXxFEksJWDNFeGx9ukmHYbjfxRp/exec";
 const CACHE_KEY = "kv8_tasks_v2";
 const CACHE_TIME_KEY = "kv8_tasks_ts";
 const CACHE_TTL = 5 * 60 * 1000;
@@ -1127,6 +1146,236 @@ function _matchCol(headers, keywords) {
     if (idx >= 0) return idx;
   }
   return -1;
+}
+
+// ============================================================
+// DANH SÁCH 18 ĐƠN VỊ CHÍNH THỨC KV8
+// ============================================================
+const DV_CHINH_THUC = [
+  "Văn phòng",
+  "Phòng Tổ chức cán bộ",
+  "Phòng Nghiệp vụ hải quan",
+  "Phòng Quản lý rủi ro",
+  "Phòng Công nghệ thông tin",
+  "Đội Phúc tập và Kiểm tra sau thông quan",
+  "Đội Kiểm soát Hải quan",
+  "Hải quan cửa khẩu quốc tế Móng Cái",
+  "Hải quan cửa khẩu Hoành Mô",
+  "Hải quan cửa khẩu Bắc Phong Sinh",
+  "Hải quan cửa khẩu cảng Hòn Gai",
+  "Hải quan cửa khẩu cảng Cẩm Phả",
+  "Hải quan cửa khẩu cảng Vạn Gia",
+  "Tổ Tham mưu Đảng",
+  "Đoàn Thanh niên",
+  "Hội Cựu chiến binh",
+  "Chi hội Luật gia",
+  "Các ban chỉ đạo",
+];
+
+// Bảng alias: tên viết tắt / không chuẩn → tên chính thức
+const DV_ALIAS = {
+  // Văn phòng
+  "vp": "Văn phòng",
+  "văn phong": "Văn phòng",
+  // TCCB
+  "phòng tccb": "Phòng Tổ chức cán bộ",
+  "p.tccb": "Phòng Tổ chức cán bộ",
+  "tổ chức cán bộ": "Phòng Tổ chức cán bộ",
+  // NVHQ
+  "phòng nvhq": "Phòng Nghiệp vụ hải quan",
+  "p.nvhq": "Phòng Nghiệp vụ hải quan",
+  "phòng nghiệp vụ": "Phòng Nghiệp vụ hải quan",
+  "phòng nv hải quan": "Phòng Nghiệp vụ hải quan",
+  "nghiệp vụ hải quan": "Phòng Nghiệp vụ hải quan",
+  // QLRR
+  "phòng qlrr": "Phòng Quản lý rủi ro",
+  "p.qlrr": "Phòng Quản lý rủi ro",
+  "quản lý rủi ro": "Phòng Quản lý rủi ro",
+  // CNTT
+  "phòng cntt": "Phòng Công nghệ thông tin",
+  "p.cntt": "Phòng Công nghệ thông tin",
+  "công nghệ thông tin": "Phòng Công nghệ thông tin",
+  // Đội PT&KTSTQ
+  "đội pt&ktstq": "Đội Phúc tập và Kiểm tra sau thông quan",
+  "đội phúc tập ktstq": "Đội Phúc tập và Kiểm tra sau thông quan",
+  "đội ktstq": "Đội Phúc tập và Kiểm tra sau thông quan",
+  "phúc tập và kiểm tra sau thông quan": "Đội Phúc tập và Kiểm tra sau thông quan",
+  // Đội KSHQ
+  "đội kshq": "Đội Kiểm soát Hải quan",
+  "đội kiểm soát hq": "Đội Kiểm soát Hải quan",
+  "kiểm soát hải quan": "Đội Kiểm soát Hải quan",
+  // Móng Cái
+  "hqck móng cái": "Hải quan cửa khẩu quốc tế Móng Cái",
+  "hq móng cái": "Hải quan cửa khẩu quốc tế Móng Cái",
+  "móng cái": "Hải quan cửa khẩu quốc tế Móng Cái",
+  "hqck mong cai": "Hải quan cửa khẩu quốc tế Móng Cái",
+  // Hoành Mô
+  "hqck hoành mô": "Hải quan cửa khẩu Hoành Mô",
+  "hq hoành mô": "Hải quan cửa khẩu Hoành Mô",
+  "hoành mô": "Hải quan cửa khẩu Hoành Mô",
+  // Bắc Phong Sinh
+  "hqck bắc phong sinh": "Hải quan cửa khẩu Bắc Phong Sinh",
+  "hq bắc phong sinh": "Hải quan cửa khẩu Bắc Phong Sinh",
+  "bắc phong sinh": "Hải quan cửa khẩu Bắc Phong Sinh",
+  // Hòn Gai
+  "hqck cảng hòn gai": "Hải quan cửa khẩu cảng Hòn Gai",
+  "cảng hòn gai": "Hải quan cửa khẩu cảng Hòn Gai",
+  "hòn gai": "Hải quan cửa khẩu cảng Hòn Gai",
+  // Cẩm Phả
+  "hqck cảng cẩm phả": "Hải quan cửa khẩu cảng Cẩm Phả",
+  "cảng cẩm phả": "Hải quan cửa khẩu cảng Cẩm Phả",
+  "cẩm phả": "Hải quan cửa khẩu cảng Cẩm Phả",
+  // Vạn Gia
+  "hqck cảng vạn gia": "Hải quan cửa khẩu cảng Vạn Gia",
+  "cảng vạn gia": "Hải quan cửa khẩu cảng Vạn Gia",
+  "vạn gia": "Hải quan cửa khẩu cảng Vạn Gia",
+  // Tổ TM Đảng
+  "tổ tm đảng": "Tổ Tham mưu Đảng",
+  "tổ tham mưu": "Tổ Tham mưu Đảng",
+  // Đoàn Thanh niên
+  "đtn": "Đoàn Thanh niên",
+  "đoàn tn": "Đoàn Thanh niên",
+  // Hội CCB
+  "hội ccb": "Hội Cựu chiến binh",
+  "ccb": "Hội Cựu chiến binh",
+  // Chi hội Luật gia
+  "luật gia": "Chi hội Luật gia",
+  "chi hội luật": "Chi hội Luật gia",
+  // Các ban chỉ đạo
+  "ban chỉ đạo": "Các ban chỉ đạo",
+  "bcd": "Các ban chỉ đạo",
+};
+
+// Tra tên chuẩn cho một chuỗi đơn vị
+function matchDonVi(raw) {
+  if (!raw) return null;
+  const s = raw.trim();
+  // Khớp chính xác
+  if (DV_CHINH_THUC.includes(s)) return null; // đã chuẩn
+  // Khớp alias (lowercase)
+  const lower = s.toLowerCase();
+  if (DV_ALIAS[lower]) return DV_ALIAS[lower];
+  // Tìm từ khóa con trong tên chuẩn
+  for (const chinhThuc of DV_CHINH_THUC) {
+    // nếu chuỗi raw là phần bắt đầu của tên chuẩn hoặc ngược lại
+    if (chinhThuc.toLowerCase().startsWith(lower) || lower.startsWith(chinhThuc.toLowerCase())) {
+      return chinhThuc;
+    }
+  }
+  // Tìm tên chuẩn có chứa phần raw
+  const words = lower.split(/\s+/).filter(w => w.length > 2);
+  for (const chinhThuc of DV_CHINH_THUC) {
+    const ctLower = chinhThuc.toLowerCase();
+    if (words.length >= 2 && words.every(w => ctLower.includes(w))) {
+      return chinhThuc;
+    }
+  }
+  return null; // không tìm được
+}
+
+let normPlan = []; // [{row, rowOld, dvMoi}]
+
+async function chuanHoaDonVi() {
+  document.getElementById("modal-norm").classList.add("open");
+  document.getElementById("norm-loading").style.display  = "block";
+  document.getElementById("norm-result").style.display   = "none";
+  document.getElementById("btn-norm-confirm").style.display = "none";
+  normPlan = [];
+
+  let tasks = allTasks;
+  if (!tasks || tasks.length === 0) {
+    await loadData(false);
+    tasks = allTasks;
+  }
+
+  // Phân tích từng dòng
+  const changes = [], unknowns = [];
+  tasks.forEach(t => {
+    const dv = (t.donVi || "").trim();
+    const mapped = matchDonVi(dv);
+    if (mapped) {
+      changes.push({ row: t.row, dvCu: dv, dvMoi: mapped, nhiemVu: (t.nhiemVu || "").substring(0, 60) });
+      normPlan.push({ row: t.row, dvMoi: mapped });
+    } else if (!DV_CHINH_THUC.includes(dv)) {
+      unknowns.push({ dv: dv, count: 1, nhiemVu: (t.nhiemVu || "").substring(0, 50) });
+    }
+  });
+
+  document.getElementById("norm-loading").style.display = "none";
+  document.getElementById("norm-result").style.display  = "block";
+
+  const summary = document.getElementById("norm-summary");
+  const listEl  = document.getElementById("norm-list");
+
+  if (changes.length === 0 && unknowns.length === 0) {
+    summary.innerHTML = "✅ <b>Tất cả tên đơn vị đã chuẩn.</b> Không cần chỉnh sửa.";
+    listEl.innerHTML  = "";
+    return;
+  }
+
+  summary.innerHTML =
+    (changes.length > 0 ? "⚙ <b>" + changes.length + " nhiệm vụ</b> có tên đơn vị không chuẩn — sẽ được tự động chỉnh.<br>" : "") +
+    (unknowns.length > 0 ? "⚠ <b>" + unknowns.length + " nhiệm vụ</b> có đơn vị không nhận dạng được (cần kiểm tra thủ công)." : "");
+
+  let html = "";
+
+  if (changes.length > 0) {
+    html += '<div style="font-weight:700;color:var(--navy);margin-bottom:6px;font-size:13px">Sẽ chuẩn hóa tự động:</div>';
+    changes.forEach(c => {
+      html += '<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 10px;' +
+              'border:1px solid #E5E7EB;border-radius:6px;margin-bottom:5px;background:#F9FAFB">' +
+              '<div style="flex:1">' +
+              '<div style="font-size:11.5px;color:#555">Row #' + c.row + ' · ' + c.nhiemVu + '</div>' +
+              '<div style="margin-top:3px">' +
+              '<span style="color:var(--red);text-decoration:line-through">' + c.dvCu + '</span>' +
+              ' → <span style="color:var(--green);font-weight:600">' + c.dvMoi + '</span>' +
+              '</div></div></div>';
+    });
+  }
+
+  if (unknowns.length > 0) {
+    html += '<div style="font-weight:700;color:#B7581A;margin:10px 0 6px;font-size:13px">⚠ Không nhận dạng được (cần xử lý thủ công):</div>';
+    // Gom nhóm cùng tên đơn vị
+    const uMap = {};
+    unknowns.forEach(u => { uMap[u.dv] = (uMap[u.dv] || 0) + 1; });
+    Object.entries(uMap).forEach(([dv, cnt]) => {
+      html += '<div style="padding:5px 10px;border:1px solid #F6C343;border-radius:6px;margin-bottom:4px;background:#FFFBF0;font-size:12px">' +
+              '<b>' + dv + '</b> <span style="color:var(--muted)">(' + cnt + ' nhiệm vụ)</span></div>';
+    });
+  }
+
+  listEl.innerHTML = html;
+  if (changes.length > 0) {
+    document.getElementById("btn-norm-confirm").style.display = "inline-flex";
+  }
+}
+
+async function confirmNorm() {
+  if (!normPlan.length) return;
+  const ok = confirm("Xác nhận chuẩn hóa " + normPlan.length + " dòng?\nHệ thống sẽ cập nhật cột Đơn vị lên Google Sheet.");
+  if (!ok) return;
+
+  const btn = document.getElementById("btn-norm-confirm");
+  btn.textContent = "⏳ Đang cập nhật..."; btn.disabled = true;
+
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      body: JSON.stringify({ action: "chuanHoaDV", plan: normPlan })
+    });
+    const d = await res.json();
+    if (d.ok) {
+      showToast("✅ Đã chuẩn hóa " + d.updated + " dòng đơn vị");
+      closeModal("modal-norm");
+      localStorage.removeItem(CACHE_KEY);
+      await loadData(true);
+    } else {
+      showToast("⚠ Lỗi: " + (d.error || "Không xác định"));
+    }
+  } catch(e) {
+    showToast("⚠ Lỗi kết nối: " + e.message);
+  }
+  btn.textContent = "✅ Chuẩn hóa tất cả"; btn.disabled = false;
 }
 
 // ============================================================
