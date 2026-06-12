@@ -156,6 +156,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
 .form-error{color:var(--red);font-size:12px;margin-top:5px;display:none}
 @media(max-width:700px){.pa-grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.ld-grid{grid-template-columns:1fr}.header-right .btn-outline:not(:first-child):not(:nth-child(2)):not(:nth-child(3)){display:none}}
 </style>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -244,19 +245,31 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
         <option value="">— Lãnh đạo —</option>
       </select>
       <span id="table-count" style="font-size:12.5px;color:var(--muted);white-space:nowrap"></span>
-      <button class="btn btn-outline" style="background:var(--navy);color:#fff;font-size:12px" onclick="exportCSV()">📊 CSV</button>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <div style="position:relative;display:inline-block">
+          <button class="btn" style="background:var(--navy);color:#fff;font-size:12px;padding:6px 12px;border:none;border-radius:6px;cursor:pointer" onclick="toggleExportMenu()">⬇ Kết xuất ▾</button>
+          <div id="export-menu" style="display:none;position:absolute;right:0;top:110%;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);z-index:999;min-width:210px;padding:4px 0">
+            <div style="padding:6px 14px;font-size:11px;font-weight:700;color:var(--muted);border-bottom:1px solid #f0f0f0">KHAI THÁC DANH SÁCH</div>
+            <div onclick="exportExcel('all')" style="padding:9px 16px;cursor:pointer;font-size:12.5px;display:flex;align-items:center;gap:8px" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">📊 Excel – Toàn bộ (đang lọc)</div>
+            <div onclick="exportExcel('ton')" style="padding:9px 16px;cursor:pointer;font-size:12.5px;display:flex;align-items:center;gap:8px" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">📋 Excel – Nhiệm vụ tồn/chậm/trễ</div>
+            <div style="padding:6px 14px;font-size:11px;font-weight:700;color:var(--muted);border-top:1px solid #f0f0f0;border-bottom:1px solid #f0f0f0;margin-top:2px">KHAI THÁC KẾT QUẢ THÁNG</div>
+            <div onclick="promptExportThang()" style="padding:9px 16px;cursor:pointer;font-size:12.5px;display:flex;align-items:center;gap:8px" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">📅 Excel – Kết quả theo tháng</div>
+            <div onclick="exportCSV()" style="padding:9px 16px;cursor:pointer;font-size:12.5px;display:flex;align-items:center;gap:8px;border-top:1px solid #f0f0f0" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">📄 CSV – Dữ liệu thô</div>
+          </div>
+        </div>
+      </div>
     </div>
     <div style="overflow-x:auto">
       <table class="tbl">
         <thead><tr>
           <th style="width:36px">TT</th>
-          <th>Nhiệm vụ</th>
-          <th style="width:150px">Đơn vị</th>
-          <th style="width:130px">Lãnh đạo PT</th>
+          <th style="min-width:220px">Nhiệm vụ</th>
+          <th style="width:150px">Căn cứ</th>
+          <th style="width:130px">Đơn vị CT</th>
+          <th style="width:110px">Lãnh đạo PT</th>
+          <th style="width:100px">Người TH</th>
           <th style="width:90px">Hạn</th>
-          <th style="width:110px">Tình trạng</th>
-          <th style="width:100px">Ghi chú</th>
-          <th style="width:110px">Thao tác</th>
+          <th style="width:160px">Tình trạng / Thao tác</th>
         </tr></thead>
         <tbody id="table-body"></tbody>
       </table>
@@ -500,7 +513,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
 // ============================================================
 // CẤU HÌNH
 // ============================================================
-const API = "https://script.google.com/macros/s/AKfycbzMpvihJ9eWR94quB2VwxTAZLnz6tkDx8e9pFjYrNesOY1QgOBwM2Bye6oX8XgCVuoD/exec";
+const API = "https://script.google.com/macros/s/AKfycbz74Hvk1H2fQyyf4UmLpG_6nBT4c_iGCXp7Xck1SsuEyV85CfyaG30xF1UcPCJl5t_n/exec";
 const CACHE_KEY = "kv8_tasks_v2";
 const CACHE_TIME_KEY = "kv8_tasks_ts";
 const CACHE_TTL = 5 * 60 * 1000;
@@ -511,6 +524,12 @@ const LD_ROLES = {"Phạm Quốc Hưng":"Chi cục trưởng","Bùi Ngọc Lợi
 const LD_INI = {"Phạm Quốc Hưng":"PQH","Bùi Ngọc Lợi":"BNL","Ngô Tùng Dương":"NTD","Nguyễn Cảnh Thắng":"NCT"};
 
 let allTasks = [], curKQRow = null, curKQDeadline = null, paLoaded = false, nsnnLoaded = false;
+
+// ADMIN: đặt email admin ở đây (hoặc để '*' cho phép tất cả xóa)
+const ADMIN_EMAILS = ['dangbohqqn@gmail.com', 'thaiha27@gmail.com'];
+// Lấy email hiện tại từ header nếu có (sẽ set sau khi loadData)
+let currentUserEmail = '';
+let IS_ADMIN = false;
 let bcView = 'donvi', bcData = null, bcLoaded = false;
 
 // ============================================================
@@ -631,6 +650,9 @@ async function loadData(forceRefresh = false) {
     const data = await res.json();
     if (data.ok && data.rows) {
       allTasks = data.rows;
+      // Kiểm tra admin
+      if (data.email) { currentUserEmail = data.email; IS_ADMIN = ADMIN_EMAILS.includes(data.email); }
+      else { IS_ADMIN = true; } // local/dev mode: cho phép xóa
       localStorage.setItem(CACHE_KEY, JSON.stringify(allTasks));
       localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
       document.getElementById("sync-label").textContent = "✓ " + new Date().toLocaleTimeString("vi-VN") + " · " + allTasks.length + " NV";
@@ -795,20 +817,39 @@ function renderTable() {
     const s = t._s;
     const b = badgeStyle(s);
     const rowCls = s.includes("Trễ") ? "row-late" : s.includes("Sắp") ? "row-soon" : s.includes("Hoàn thành") ? "row-done" : "";
-    const gh = (t.ghiChu||"").substring(0,40) + (t.ghiChu&&t.ghiChu.length>40?"...":"");
+    // Kết quả đã có hay chưa
+    const hasKQ = !!(t.ketQua && t.ketQua.trim());
+    const kqShort = hasKQ ? t.ketQua.substring(0,60) + (t.ketQua.length>60?'…':'') : '';
+    const canCuShort = (t.canCu||'').substring(0,50) + ((t.canCu||'').length>50?'…':'');
+    const nguoiShort = (t.nguoiTH||'—').substring(0,30);
+    // Cột tình trạng + thao tác gộp
+    let statusCell;
+    if (s.includes("Hoàn thành")) {
+      statusCell = '<div><span class="badge" style="background:' + b.bg + ';color:' + b.c + ';display:block;margin-bottom:3px">' + s + '</span>' +
+        (hasKQ ? '<div style="font-size:10.5px;color:#2e7d32;line-height:1.4;margin-top:2px">' + kqShort + '</div>' : '') +
+        '<div style="display:flex;gap:3px;margin-top:4px"><button class="btn-sm btn-blue" style="font-size:10.5px" onclick="openKQModal(' + t.row + ')">✏ Sửa KQ</button>' +
+        (IS_ADMIN ? '<button class="btn-sm" style="background:#c62828;color:#fff;border:none;padding:3px 7px;border-radius:4px;cursor:pointer;font-size:10.5px" onclick="deleteTask(' + t.row + ',\'' + (t.nhiemVu||"").replace(/'/g,"\\'").substring(0,30) + '\')">🗑</button>' : '') +
+        '</div></div>';
+    } else {
+      const btnXong = s.includes("Trễ")
+        ? '<button class="btn-sm" style="background:#E8651A;color:#fff;border:none;padding:4px 8px;border-radius:5px;cursor:pointer;font-size:11px;font-weight:600" onclick="markDone(' + t.row + ',\'' + (t.nhiemVu||"").replace(/'/g,"\\'").substring(0,30) + '\')">⚠ Xong muộn</button>'
+        : '<button class="btn-sm btn-green" style="font-size:11px" onclick="markDone(' + t.row + ',\'' + (t.nhiemVu||"").replace(/'/g,"\\'").substring(0,30) + '\')">✓ Xong</button>';
+      statusCell = '<div><span class="badge" style="background:' + b.bg + ';color:' + b.c + ';display:block;margin-bottom:4px">' + s + '</span>' +
+        '<div style="display:flex;gap:3px;flex-wrap:wrap">' + btnXong +
+        '<button class="btn-sm btn-blue" style="font-size:11px" onclick="openKQModal(' + t.row + ')">📝 KQ</button>' +
+        (IS_ADMIN ? '<button class="btn-sm" style="background:#c62828;color:#fff;border:none;padding:3px 7px;border-radius:4px;cursor:pointer;font-size:10.5px" onclick="deleteTask(' + t.row + ',\'' + (t.nhiemVu||"").replace(/'/g,"\\'").substring(0,30) + '\')">🗑</button>' : '') +
+        '</div></div>';
+    }
     return '<tr class="' + rowCls + '">' +
-      '<td style="color:var(--muted);font-size:11px">' + (t.tt||i+1) + '</td>' +
+      '<td style="color:var(--muted);font-size:11px;text-align:center">' + (t.tt||i+1) + '</td>' +
       '<td><div style="font-weight:600;font-size:12.5px;line-height:1.4">' + (t.nhiemVu||"—") + '</div>' +
-        (t.nguoiTH ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">👤 ' + t.nguoiTH + '</div>' : '') + '</td>' +
+        (t.nguoiTH ? '' : '') + '</td>' +
+      '<td style="font-size:11px;color:#555;line-height:1.4" title="' + (t.canCu||'') + '">' + (canCuShort||"—") + '</td>' +
       '<td style="font-size:12px">' + (t.donVi||"—") + '</td>' +
       '<td style="font-size:11.5px">' + (normLanhDao(t.lanhDao)||"—") + '</td>' +
+      '<td style="font-size:11px;color:#555">' + nguoiShort + '</td>' +
       '<td style="font-size:12px;font-weight:600;color:' + (s.includes("Trễ")?COLORS.tre:s.includes("Sắp")?COLORS.sap:"inherit") + '">' + fmtDate(t.thoiHan) + '</td>' +
-      '<td><span class="badge" style="background:' + b.bg + ';color:' + b.c + '">' + s + '</span></td>' +
-      '<td style="font-size:11px;color:var(--muted)">' + (gh||"—") + '</td>' +
-      '<td><div style="display:flex;gap:4px;flex-wrap:wrap">' +
-        (s.includes("Hoàn thành") ? '' : s.includes("Trễ") ? '<button class="btn-sm" style="background:#E8651A;color:#fff;border:none;padding:4px 8px;border-radius:5px;cursor:pointer;font-size:11.5px;font-weight:600" title="Nhiệm vụ trễ hạn – xác nhận hoàn thành?" onclick="markDone(' + t.row + ',\'' + (t.nhiemVu||"").replace(/'/g,"\\'").substring(0,30) + '\')">⚠ Xong muộn</button> ' : '<button class="btn-sm btn-green" onclick="markDone(' + t.row + ',\'' + (t.nhiemVu||"").replace(/'/g,"\\'").substring(0,30) + '\')">✓ Xong</button> ') +
-        '<button class="btn-sm btn-blue" onclick="openKQModal(' + t.row + ')">✏ KQ</button>' +
-      '</div></td>' +
+      '<td style="vertical-align:top">' + statusCell + '</td>' +
     '</tr>';
   }).join("");
   document.getElementById("table-count").textContent = rows.length + " / " + allTasks.length + " nhiệm vụ";
@@ -1788,6 +1829,210 @@ function renderBcChiTiet(completed) {
     });
   html += '</tbody></table></div>';
   document.getElementById('bc-content').innerHTML = html;
+}
+
+
+// ============================================================
+// XÓA NHIỆM VỤ (chỉ admin)
+// ============================================================
+async function deleteTask(row, name) {
+  if (!IS_ADMIN) { showToast("⛔ Chỉ admin mới có quyền xóa nhiệm vụ"); return; }
+  const ok = confirm("⚠ XÓA NHIỆM VỤ\n\n#" + row + " – " + name + "\n\nHành động này KHÔNG thể hoàn tác.\nBạn có chắc chắn muốn xóa?");
+  if (!ok) return;
+  const ok2 = confirm("Xác nhận lần 2: Xóa nhiệm vụ \"" + name + "\"?");
+  if (!ok2) return;
+  try {
+    showToast("⏳ Đang xóa...", 2000);
+    const res = await fetch(API, { method: "POST", body: JSON.stringify({ action: "deleteTask", row }) });
+    const d = await res.json();
+    if (d.ok) {
+      showToast("✅ Đã xóa nhiệm vụ #" + row);
+      localStorage.removeItem(CACHE_KEY);
+      await loadData(true);
+    } else { showToast("❌ Lỗi: " + (d.error || "Không xóa được")); }
+  } catch(e) { showToast("❌ Lỗi kết nối: " + e.message); }
+}
+
+// ============================================================
+// TOGGLE EXPORT MENU
+// ============================================================
+function toggleExportMenu() {
+  const m = document.getElementById('export-menu');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest || !e.target.closest('[onclick="toggleExportMenu()"]')) {
+    const m = document.getElementById('export-menu');
+    if (m) m.style.display = 'none';
+  }
+});
+
+// ============================================================
+// EXPORT EXCEL (SheetJS)
+// ============================================================
+function exportExcel(mode) {
+  document.getElementById('export-menu').style.display = 'none';
+  if (typeof XLSX === 'undefined') {
+    // Load SheetJS nếu chưa có
+    const s = document.createElement('script');
+    s.src = 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js';
+    s.onload = () => _doExportExcel(mode);
+    document.head.appendChild(s);
+  } else { _doExportExcel(mode); }
+}
+
+function _doExportExcel(mode) {
+  // Lấy danh sách nhiệm vụ theo filter hiện tại
+  const search = (document.getElementById("search-input")?.value||"").toLowerCase();
+  const fStatus = document.getElementById("filter-status")?.value||"";
+  const fUnit = document.getElementById("filter-unit")?.value||"";
+  const fLd = document.getElementById("filter-ld")?.value||"";
+
+  let tasks = allTasks.map(t => ({...t, _s: effectiveStatus(t)}));
+  if (search) tasks = tasks.filter(t => (t.nhiemVu||"").toLowerCase().includes(search)||(t.donVi||"").toLowerCase().includes(search)||(t.canCu||"").toLowerCase().includes(search));
+  if (fStatus) tasks = tasks.filter(t => t._s === fStatus);
+  if (fUnit) tasks = tasks.filter(t => t.donVi === fUnit);
+  if (fLd) tasks = tasks.filter(t => normLanhDao(t.lanhDao) === fLd);
+
+  // Nếu mode = 'ton': chỉ lấy chưa hoàn thành
+  if (mode === 'ton') tasks = tasks.filter(t => !t._s.includes("Hoàn thành"));
+
+  const today = new Date();
+  const thangLabel = (today.getMonth()+1) + '/' + today.getFullYear();
+
+  // Dòng tiêu đề
+  const title = "BẢNG " + (mode === 'ton' ? "NHIỆM VỤ TỒN/CHẬM/TRỄ" : "THEO DÕI NHIỆM VỤ") + " THÁNG " + thangLabel + " – CHI CỤC HẢI QUAN KHU VỰC VIII";
+  const headers = ["TT","Nhiệm vụ","Căn cứ","Đơn vị chủ trì","Lãnh đạo phụ trách","Thời hạn hoàn thành","Yêu cầu sản phẩm đầu ra","Tình trạng","Người thực hiện trực tiếp","Ghi chú","Sản phẩm cụ thể - số VB - ngày HT"];
+
+  const rows = tasks.map(t => [
+    t.tt || "",
+    t.nhiemVu || "",
+    t.canCu || "",
+    t.donVi || "",
+    t.lanhDao || "",
+    fmtDate(t.thoiHan),
+    t.sanPham || "",
+    t._s,
+    t.nguoiTH || "",
+    thangLabel,
+    t.ketQua || ""
+  ]);
+
+  const wsData = [
+    [title, "","","","","","","","","",""],
+    Array(11).fill(""),
+    headers,
+    ...rows
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  // Style: merge title row
+  ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:10} }];
+
+  // Column widths
+  ws['!cols'] = [
+    {wch:5},{wch:38},{wch:26},{wch:20},{wch:18},{wch:14},{wch:16},{wch:12},{wch:20},{wch:14},{wch:26}
+  ];
+
+  // Row heights
+  ws['!rows'] = [
+    {hpt:35},  // title
+    {hpt:8},   // blank
+    {hpt:40},  // header
+    ...rows.map(() => ({hpt:50}))
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, "NV");
+  const suffix = fUnit ? "_" + fUnit.substring(0,10) : (fLd ? "_" + fLd.substring(0,10) : "");
+  const fname = "HQKV8_NhiemVu" + (mode==='ton'?'_Ton':'') + suffix + "_T" + (today.getMonth()+1) + ".xlsx";
+  XLSX.writeFile(wb, fname);
+  showToast("✅ Đã xuất " + tasks.length + " nhiệm vụ → " + fname);
+}
+
+// ============================================================
+// EXPORT EXCEL THEO THÁNG
+// ============================================================
+function promptExportThang() {
+  document.getElementById('export-menu').style.display = 'none';
+  const thang = prompt("Nhập số tháng cần kết xuất kết quả (ví dụ: 6):", new Date().getMonth()+1);
+  if (!thang || isNaN(parseInt(thang))) return;
+  const thangNum = parseInt(thang);
+  if (thangNum < 1 || thangNum > 12) { alert("Tháng không hợp lệ (1-12)"); return; }
+  _exportThang(thangNum);
+}
+
+function _exportThang(thangNum) {
+  if (typeof XLSX === 'undefined') {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js';
+    s.onload = () => __doExportThang(thangNum);
+    document.head.appendChild(s);
+  } else { __doExportThang(thangNum); }
+}
+
+function __doExportThang(thangNum) {
+  const mm = String(thangNum).padStart(2,'0');
+  const today = new Date();
+  const thangLabel = thangNum + '/' + today.getFullYear();
+
+  // Lọc: NV có cột K (ketQua) chứa "Ngày: DD/MM/YYYY" hoặc tình trạng Hoàn thành trong tháng đó
+  const regex = new RegExp('Ngày:\s*\d{1,2}\/' + mm + '\/', 'i');
+  const regexAlt = new RegExp('\b' + mm + '\/' + today.getFullYear() + '\b');
+
+  const tasks = allTasks.filter(t => {
+    const kq = t.ketQua || '';
+    const gh = t.ghiChu || '';
+    // Ưu tiên: có kết quả ghi trong tháng
+    if (regex.test(kq)) return true;
+    // Fallback: tình trạng Hoàn thành và hạn trong tháng
+    if (effectiveStatus(t).includes("Hoàn thành")) {
+      const d = parseDate(t.thoiHan);
+      if (d && (d.getMonth()+1) === thangNum) return true;
+    }
+    return false;
+  });
+
+  if (!tasks.length) {
+    showToast("⚠ Không có nhiệm vụ hoàn thành trong tháng " + thangNum);
+    return;
+  }
+
+  const title = "BẢNG KẾT QUẢ NHIỆM VỤ THÁNG " + thangNum + "/" + today.getFullYear() + " – CHI CỤC HẢI QUAN KHU VỰC VIII";
+  const headers = ["TT","Nhiệm vụ","Căn cứ","Đơn vị chủ trì","Lãnh đạo phụ trách","Thời hạn hoàn thành","Yêu cầu sản phẩm đầu ra","Tình trạng","Người thực hiện trực tiếp","Ghi chú","Sản phẩm cụ thể - số VB - ngày HT"];
+
+  const rows = tasks.map(t => [
+    t.tt || "",
+    t.nhiemVu || "",
+    t.canCu || "",
+    t.donVi || "",
+    t.lanhDao || "",
+    fmtDate(t.thoiHan),
+    t.sanPham || "",
+    effectiveStatus(t),
+    t.nguoiTH || "",
+    "Tháng " + thangLabel,
+    t.ketQua || ""
+  ]);
+
+  const wsData = [
+    [title, "","","","","","","","","",""],
+    Array(11).fill(""),
+    headers,
+    ...rows
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:10} }];
+  ws['!cols'] = [{wch:5},{wch:38},{wch:26},{wch:20},{wch:18},{wch:14},{wch:16},{wch:12},{wch:20},{wch:14},{wch:26}];
+  ws['!rows'] = [{hpt:35},{hpt:8},{hpt:40},...rows.map(()=>({hpt:50}))];
+
+  XLSX.utils.book_append_sheet(wb, ws, "KQ_T" + thangNum);
+  const fname = "HQKV8_KetQua_T" + thangNum + "_" + today.getFullYear() + ".xlsx";
+  XLSX.writeFile(wb, fname);
+  showToast("✅ Xuất " + tasks.length + " NV hoàn thành T" + thangNum + " → " + fname);
 }
 
 // ============================================================
