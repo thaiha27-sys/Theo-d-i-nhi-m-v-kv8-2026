@@ -88,6 +88,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
 .btn-sm{padding:4px 9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
 .btn-green{background:#E3F5EA;color:var(--green)}.btn-green:hover{background:#c3e6cb}
 .btn-orange{background:#FEF3E2;color:#B7581A;border-color:#F6C343}.btn-orange:hover{background:#FDDBA0}
+.btn-gold-outline{background:#FFF8E7;color:#8a6d00;border-color:#C8960C}.btn-gold-outline:hover{background:#FCEFC7}
 .btn-blue{background:#EBF5FB;color:var(--navy)}.btn-blue:hover{background:#bee3f8}
 .btn-red{background:#FEEBEA;color:var(--red)}.btn-red:hover{background:#fcd0cc}
 /* ALERT */
@@ -177,8 +178,9 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
     <button class="btn btn-outline" onclick="loadData(true)">🔄 Làm mới</button>
     <button class="btn btn-outline" onclick="openAddModal()">➕ Thêm NV</button>
     <button class="btn btn-outline" onclick="document.getElementById('excel-input').click()">📥 Excel</button>
-    <button class="btn btn-outline" id="btn-dedup" onclick="raSoatTrung()" title="Rà soát và đánh dấu nhiệm vụ trùng nội dung + đơn vị">🔍 Rà soát trùng</button>
-    <button class="btn btn-outline btn-orange" id="btn-normalize" onclick="chuanHoaDonVi()" title="Chuẩn hóa tên đơn vị chủ trì theo danh sách 18 đơn vị KV8">⚙ Chuẩn hóa ĐV</button>
+    <button class="btn btn-outline admin-only-action" id="btn-dedup" onclick="raSoatTrung()" title="Rà soát và đánh dấu nhiệm vụ trùng nội dung + đơn vị" style="display:none">🔍 Rà soát trùng</button>
+    <button class="btn btn-outline btn-orange admin-only-action" id="btn-normalize" onclick="chuanHoaDonVi()" title="Chuẩn hóa tên đơn vị chủ trì theo danh sách 18 đơn vị KV8" style="display:none">⚙ Chuẩn hóa ĐV</button>
+    <button class="btn btn-outline" id="btn-admin-toggle" onclick="openAdminLogin()">🔒 Đăng nhập Admin</button>
     <span style="font-size:10.5px;opacity:.7">⏰ 8h → dangbohqqn@gmail.com</span>
   </div>
 </div>
@@ -190,6 +192,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
   <div class="tab" onclick="switchTab('table')">📋 Bảng theo dõi</div>
   <div class="tab" onclick="switchTab('phanich')">📈 Phân tích</div>
   <div class="tab" onclick="switchTab('nsnn')">💰 Chỉ tiêu & Thu NSNN</div>
+  <div class="tab" onclick="switchTab('duyet')">🗳 Duyệt <span id="tab-duyet-badge" style="display:none;background:#c62828;color:#fff;font-size:10px;font-weight:700;border-radius:9px;padding:1px 6px;margin-left:3px">0</span></div>
 </div>
 
 <div class="main">
@@ -336,6 +339,20 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
   <div id="nsnn-loading" class="loading"><div class="spinner"></div>Đang tải chỉ tiêu...</div>
 </div>
 
+<!-- ========= DUYỆT (ADMIN) ========= -->
+<div id="tab-duyet" class="tab-content">
+  <div class="section">
+    <div class="section-title">📝 Nhiệm vụ mới chờ duyệt</div>
+    <div id="duyet-nv-empty" style="display:none;color:var(--muted);font-size:13px;padding:10px 0">✅ Không có nhiệm vụ mới nào đang chờ duyệt.</div>
+    <div id="duyet-nv-list"></div>
+  </div>
+  <div class="section" style="margin-top:18px">
+    <div class="section-title">📋 Kết quả/báo cáo chờ duyệt</div>
+    <div id="duyet-kq-empty" style="display:none;color:var(--muted);font-size:13px;padding:10px 0">✅ Không có kết quả nào đang chờ duyệt.</div>
+    <div id="duyet-kq-list"></div>
+  </div>
+</div>
+
 <!-- ========= BÁO CÁO KẾT QUẢ ========= -->
 <div id="tab-baocao" class="tab-content">
   <div class="section">
@@ -399,6 +416,72 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
         <button class="btn" onclick="closeModal('modal-dedup',event)" style="background:#eee;color:#333">Đóng</button>
         <button class="btn btn-save" id="btn-dedup-confirm" onclick="confirmDedup()" style="display:none;background:var(--red)">🗑 Xóa dòng đã chọn</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========= MODAL ĐĂNG NHẬP ADMIN ========= -->
+<div class="modal-overlay" id="modal-admin-login" onclick="closeModal('modal-admin-login',event)">
+  <div class="modal" style="max-width:380px" onkeydown="if(event.key==='Enter'){event.preventDefault();submitAdminLogin();}">
+    <button class="modal-close" onclick="closeModal('modal-admin-login')">✕</button>
+    <div class="modal-title">🔒 Đăng nhập Admin</div>
+    <div class="form-group">
+      <label class="form-label">Mã PIN quản trị</label>
+      <input class="form-input" id="admin-pin-input" type="password" inputmode="numeric" placeholder="Nhập mã PIN" autocomplete="off">
+    </div>
+    <div id="admin-login-error" class="form-error" style="display:none"></div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeModal('modal-admin-login')">Hủy</button>
+      <button class="btn btn-save" onclick="submitAdminLogin()">🔓 Đăng nhập</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========= MODAL SỬA CHI TIẾT NHIỆM VỤ (ADMIN) ========= -->
+<div class="modal-overlay" id="modal-edit" onclick="closeModal('modal-edit',event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-edit')">✕</button>
+    <div class="modal-title">✎ Sửa chi tiết nhiệm vụ</div>
+    <input type="hidden" id="edit-row">
+    <div class="form-group">
+      <label class="form-label">Nhiệm vụ *</label>
+      <textarea class="form-textarea" id="edit-nhiemvu" placeholder="Nội dung nhiệm vụ..."></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Đơn vị chủ trì *</label>
+        <input class="form-input" id="edit-donvi" placeholder="Đơn vị chủ trì">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Người thực hiện</label>
+        <input class="form-input" id="edit-nguoith" placeholder="Tên người thực hiện">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Lãnh đạo</label>
+        <input class="form-input" id="edit-lanhdao" placeholder="Lãnh đạo phụ trách">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Thời hạn</label>
+        <input class="form-input" id="edit-thoihan" type="date">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Căn cứ / Nguồn chỉ đạo</label>
+      <input class="form-input" id="edit-cancu" placeholder="Căn cứ chỉ đạo">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Yêu cầu sản phẩm đầu ra</label>
+      <input class="form-input" id="edit-sanpham" placeholder="Văn bản, báo cáo, kế hoạch...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Ghi chú</label>
+      <textarea class="form-textarea" id="edit-ghichu" placeholder="Ghi chú..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeModal('modal-edit')">Hủy</button>
+      <button class="btn btn-save" onclick="submitEditTask()">💾 Lưu chỉnh sửa</button>
     </div>
   </div>
 </div>
@@ -513,7 +596,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
 // ============================================================
 // CẤU HÌNH
 // ============================================================
-const API = "https://script.google.com/macros/s/AKfycbz74Hvk1H2fQyyf4UmLpG_6nBT4c_iGCXp7Xck1SsuEyV85CfyaG30xF1UcPCJl5t_n/exec";
+const API = "https://script.google.com/macros/s/AKfycbwuM71a9VU_DId3tv5TqSjmlX_VzRDOyOzG-w9Npl604sgrura8kUEVi8f_4PaaPUEf/exec";
 const CACHE_KEY = "kv8_tasks_v2";
 const CACHE_TIME_KEY = "kv8_tasks_ts";
 const CACHE_TTL = 5 * 60 * 1000;
@@ -525,12 +608,81 @@ const LD_INI = {"Phạm Quốc Hưng":"PQH","Bùi Ngọc Lợi":"BNL","Ngô Tùn
 
 let allTasks = [], curKQRow = null, curKQDeadline = null, paLoaded = false, nsnnLoaded = false;
 
-// ADMIN: đặt email admin ở đây (hoặc để '*' cho phép tất cả xóa)
-const ADMIN_EMAILS = ['dangbohqqn@gmail.com', 'thaiha27@gmail.com'];
-// Lấy email hiện tại từ header nếu có (sẽ set sau khi loadData)
-let currentUserEmail = '';
-let IS_ADMIN = false;
+// ============================================================
+// ADMIN: xác thực bằng mã PIN (server-side, lưu ở Script Properties)
+// Phiên đăng nhập admin lưu trong sessionStorage, kèm PIN để gửi lại server
+// mỗi lần thực hiện hành động nhạy cảm (server luôn tự kiểm tra lại PIN).
+// ============================================================
+const ADMIN_PIN_SESSION_KEY = "kv8_admin_pin";
 let bcView = 'donvi', bcData = null, bcLoaded = false;
+let choDuyetNVCache = [], choDuyetKQCache = [];
+
+function isAdmin() { return !!sessionStorage.getItem(ADMIN_PIN_SESSION_KEY); }
+function getAdminPin() { return sessionStorage.getItem(ADMIN_PIN_SESSION_KEY) || ""; }
+
+function openAdminLogin() {
+  document.getElementById("admin-pin-input").value = "";
+  document.getElementById("admin-login-error").style.display = "none";
+  document.getElementById("modal-admin-login").classList.add("open");
+  setTimeout(() => document.getElementById("admin-pin-input").focus(), 50);
+}
+
+async function submitAdminLogin() {
+  const pin = document.getElementById("admin-pin-input").value.trim();
+  if (!pin) return;
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      body: JSON.stringify({ action: "dangNhapAdmin", pin: pin })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      sessionStorage.setItem(ADMIN_PIN_SESSION_KEY, pin);
+      closeModal("modal-admin-login");
+      updateAdminUI();
+      showToast("✅ Đã đăng nhập Admin");
+      renderTable();
+      loadChoDuyet();
+    } else {
+      document.getElementById("admin-login-error").textContent = "Sai mã PIN, vui lòng thử lại.";
+      document.getElementById("admin-login-error").style.display = "block";
+    }
+  } catch (e) {
+    document.getElementById("admin-login-error").textContent = "Lỗi kết nối: " + e.message;
+    document.getElementById("admin-login-error").style.display = "block";
+  }
+}
+
+function logoutAdmin() {
+  sessionStorage.removeItem(ADMIN_PIN_SESSION_KEY);
+  updateAdminUI();
+  showToast("🔒 Đã đăng xuất Admin");
+  renderTable();
+}
+
+function updateAdminUI() {
+  const btn = document.getElementById("btn-admin-toggle");
+  if (!btn) return;
+  if (isAdmin()) {
+    btn.textContent = "🔓 Admin: ON";
+    btn.onclick = logoutAdmin;
+    btn.classList.add("btn-gold-outline");
+  } else {
+    btn.textContent = "🔒 Đăng nhập Admin";
+    btn.onclick = openAdminLogin;
+    btn.classList.remove("btn-gold-outline");
+  }
+  document.getElementById("tab-duyet-badge").style.display = isAdmin() ? "inline-block" : "none";
+  document.querySelectorAll(".admin-only-action").forEach(el => el.style.display = isAdmin() ? "" : "none");
+}
+
+// Helper: gọi action cần PIN admin; nếu chưa đăng nhập thì mở modal login và dừng lại
+function requireAdminOrPrompt() {
+  if (isAdmin()) return true;
+  showToast("⛔ Cần đăng nhập Admin để thực hiện thao tác này");
+  openAdminLogin();
+  return false;
+}
 
 // ============================================================
 // TRẠNG THÁI NHIỆM VỤ – ĐỌC TỪ CỘT GHI CHÚ (J)
@@ -611,10 +763,14 @@ function switchTab(id) {
   document.querySelectorAll(".tab-content").forEach(e => e.classList.remove("active"));
   document.querySelectorAll(".tab").forEach(e => e.classList.remove("active"));
   document.getElementById("tab-" + id).classList.add("active");
-  const tabs = ["dashboard","table","phanich","nsnn","baocao"];
+  const tabs = ["dashboard","table","phanich","nsnn","duyet","baocao"];
   document.querySelectorAll(".tab")[tabs.indexOf(id)]?.classList.add("active");
   if (id === "phanich" && !paLoaded) renderPhanich();
   if (id === "nsnn" && !nsnnLoaded) loadNSNN();
+  if (id === "duyet") {
+    if (!requireAdminOrPrompt()) { switchTab("dashboard"); return; }
+    loadChoDuyet();
+  }
   if (id === "baocao") {
     // Điền đơn vị/lãnh đạo vào filter
     const dvSel = document.getElementById("bc-filter-donvi");
@@ -650,13 +806,11 @@ async function loadData(forceRefresh = false) {
     const data = await res.json();
     if (data.ok && data.rows) {
       allTasks = data.rows;
-      // Kiểm tra admin
-      if (data.email) { currentUserEmail = data.email; IS_ADMIN = ADMIN_EMAILS.includes(data.email); }
-      else { IS_ADMIN = true; } // local/dev mode: cho phép xóa
       localStorage.setItem(CACHE_KEY, JSON.stringify(allTasks));
       localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
       document.getElementById("sync-label").textContent = "✓ " + new Date().toLocaleTimeString("vi-VN") + " · " + allTasks.length + " NV";
       renderAll();
+      if (isAdmin()) loadChoDuyet();
     } else {
       showError("API lỗi: " + (data.error || "Không rõ"));
     }
@@ -828,7 +982,8 @@ function renderTable() {
       statusCell = '<div><span class="badge" style="background:' + b.bg + ';color:' + b.c + ';display:block;margin-bottom:3px">' + s + '</span>' +
         (hasKQ ? '<div style="font-size:10.5px;color:#2e7d32;line-height:1.4;margin-top:2px">' + kqShort + '</div>' : '') +
         '<div style="display:flex;gap:3px;margin-top:4px"><button class="btn-sm btn-blue" style="font-size:10.5px" onclick="openKQModal(' + t.row + ')">✏ Sửa KQ</button>' +
-        (IS_ADMIN ? '<button class="btn-sm" style="background:#c62828;color:#fff;border:none;padding:3px 7px;border-radius:4px;cursor:pointer;font-size:10.5px" onclick="deleteTask(' + t.row + ',\'' + (t.nhiemVu||"").replace(/'/g,"\\'").substring(0,30) + '\')">🗑</button>' : '') +
+        (isAdmin() ? '<button class="btn-sm" style="background:#1A3A6B;color:#fff;border:none;padding:3px 7px;border-radius:4px;cursor:pointer;font-size:10.5px" onclick="openEditModal(' + t.row + ')" title="Sửa chi tiết (Admin)">✎</button>' : '') +
+        (isAdmin() ? '<button class="btn-sm" style="background:#c62828;color:#fff;border:none;padding:3px 7px;border-radius:4px;cursor:pointer;font-size:10.5px" onclick="deleteTask(' + t.row + ',\'' + (t.nhiemVu||"").replace(/'/g,"\\'").substring(0,30) + '\')">🗑</button>' : '') +
         '</div></div>';
     } else {
       const btnXong = s.includes("Trễ")
@@ -837,7 +992,8 @@ function renderTable() {
       statusCell = '<div><span class="badge" style="background:' + b.bg + ';color:' + b.c + ';display:block;margin-bottom:4px">' + s + '</span>' +
         '<div style="display:flex;gap:3px;flex-wrap:wrap">' + btnXong +
         '<button class="btn-sm btn-blue" style="font-size:11px" onclick="openKQModal(' + t.row + ')">📝 KQ</button>' +
-        (IS_ADMIN ? '<button class="btn-sm" style="background:#c62828;color:#fff;border:none;padding:3px 7px;border-radius:4px;cursor:pointer;font-size:10.5px" onclick="deleteTask(' + t.row + ',\'' + (t.nhiemVu||"").replace(/'/g,"\\'").substring(0,30) + '\')">🗑</button>' : '') +
+        (isAdmin() ? '<button class="btn-sm" style="background:#1A3A6B;color:#fff;border:none;padding:3px 7px;border-radius:4px;cursor:pointer;font-size:10.5px" onclick="openEditModal(' + t.row + ')" title="Sửa chi tiết (Admin)">✎</button>' : '') +
+        (isAdmin() ? '<button class="btn-sm" style="background:#c62828;color:#fff;border:none;padding:3px 7px;border-radius:4px;cursor:pointer;font-size:10.5px" onclick="deleteTask(' + t.row + ',\'' + (t.nhiemVu||"").replace(/'/g,"\\'").substring(0,30) + '\')">🗑</button>' : '') +
         '</div></div>';
     }
     return '<tr class="' + rowCls + '">' +
@@ -1041,7 +1197,7 @@ async function submitAdd() {
     const j = await res.json();
     if (j.ok) {
       closeModal("modal-add");
-      showToast("✅ Đã thêm nhiệm vụ mới");
+      showToast("✅ Đã gửi đề xuất nhiệm vụ mới, chờ Admin duyệt");
       localStorage.removeItem(CACHE_KEY);
       await loadData(true);
     } else { errEl.textContent = "⚠ " + (j.error||"Lỗi không xác định"); errEl.style.display = "block"; }
@@ -1107,8 +1263,7 @@ async function submitKQ() {
     const d = await res.json();
     if (d.ok) {
       closeModal("modal-kq");
-      const muonMsg = d.isLate ? " ⚠ (ghi nhận HOÀN THÀNH MUỘN)" : "";
-      showToast((isDone ? "✅ Hoàn thành" : "✅ Đã lưu kết quả") + muonMsg);
+      showToast("✅ Đã gửi đề xuất kết quả, chờ Admin duyệt");
       bcLoaded = false;
       localStorage.removeItem(CACHE_KEY);
       await loadData(true);
@@ -1121,12 +1276,12 @@ async function submitKQ() {
 // MARK DONE (nhanh từ bảng)
 // ============================================================
 async function markDone(row, name) {
-  if (!confirm("Xác nhận hoàn thành:\n" + (name||"NV #"+row) + "?")) return;
+  if (!confirm("Xác nhận đề xuất hoàn thành:\n" + (name||"NV #"+row) + "?\n(Sẽ chờ Admin duyệt trước khi cập nhật chính thức)")) return;
   try {
     const res = await fetch(API, {method:"POST", body:JSON.stringify({action:"hoanThanh", row})});
     const d = await res.json();
     if (d.ok) {
-      showToast("✅ Đã đánh dấu hoàn thành");
+      showToast("✅ Đã gửi đề xuất hoàn thành, chờ Admin duyệt");
       localStorage.removeItem(CACHE_KEY);
       await loadData(true);
     } else showToast("⚠ Lỗi: " + d.error);
@@ -1142,7 +1297,7 @@ function closeModal(id, e) {
   if (id === "modal-kq") curKQRow = null;
 }
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape") { closeModal("modal-add"); closeModal("modal-kq"); }
+  if (e.key === "Escape") { closeModal("modal-add"); closeModal("modal-kq"); closeModal("modal-admin-login"); closeModal("modal-edit"); }
 });
 
 // ============================================================
@@ -1317,6 +1472,7 @@ function matchDonVi(raw) {
 let normPlan = []; // [{row, rowOld, dvMoi}]
 
 async function chuanHoaDonVi() {
+  if (!requireAdminOrPrompt()) return;
   document.getElementById("modal-norm").classList.add("open");
   document.getElementById("norm-loading").style.display  = "block";
   document.getElementById("norm-result").style.display   = "none";
@@ -1402,7 +1558,7 @@ async function confirmNorm() {
   try {
     const res = await fetch(API, {
       method: "POST",
-      body: JSON.stringify({ action: "chuanHoaDV", plan: normPlan })
+      body: JSON.stringify({ action: "chuanHoaDV", plan: normPlan, pin: getAdminPin() })
     });
     const d = await res.json();
     if (d.ok) {
@@ -1427,6 +1583,7 @@ async function confirmNorm() {
 let dedupGroups = []; // lưu kết quả để dùng lúc confirm xóa
 
 async function raSoatTrung() {
+  if (!requireAdminOrPrompt()) return;
   // Mở modal, reset trạng thái
   document.getElementById("modal-dedup").classList.add("open");
   document.getElementById("dedup-loading").style.display = "block";
@@ -1530,7 +1687,7 @@ async function confirmDedup() {
   try {
     const res = await fetch(API, {
       method: "POST",
-      body: JSON.stringify({ action: "xoaDongTrung", rows: rows })
+      body: JSON.stringify({ action: "xoaDongTrung", rows: rows, pin: getAdminPin() })
     });
     const d = await res.json();
     if (d.ok) {
@@ -1673,7 +1830,7 @@ async function handleExcel(e) {
       });
       const d = await res.json();
       if (d.ok) {
-        let toastMsg = "✅ Nhập thành công " + d.successCount + "/" + batch.length + " nhiệm vụ";
+        let toastMsg = "✅ Đã gửi " + d.successCount + "/" + batch.length + " nhiệm vụ vào hàng chờ duyệt";
         if (d.skipCount > 0) toastMsg += " · Bỏ qua " + d.skipCount + " trùng trên server";
         showToast(toastMsg, 5000);
         localStorage.removeItem(CACHE_KEY);
@@ -1836,14 +1993,14 @@ function renderBcChiTiet(completed) {
 // XÓA NHIỆM VỤ (chỉ admin)
 // ============================================================
 async function deleteTask(row, name) {
-  if (!IS_ADMIN) { showToast("⛔ Chỉ admin mới có quyền xóa nhiệm vụ"); return; }
+  if (!requireAdminOrPrompt()) return;
   const ok = confirm("⚠ XÓA NHIỆM VỤ\n\n#" + row + " – " + name + "\n\nHành động này KHÔNG thể hoàn tác.\nBạn có chắc chắn muốn xóa?");
   if (!ok) return;
   const ok2 = confirm("Xác nhận lần 2: Xóa nhiệm vụ \"" + name + "\"?");
   if (!ok2) return;
   try {
     showToast("⏳ Đang xóa...", 2000);
-    const res = await fetch(API, { method: "POST", body: JSON.stringify({ action: "deleteTask", row }) });
+    const res = await fetch(API, { method: "POST", body: JSON.stringify({ action: "deleteTask", row, pin: getAdminPin() }) });
     const d = await res.json();
     if (d.ok) {
       showToast("✅ Đã xóa nhiệm vụ #" + row);
@@ -1852,6 +2009,133 @@ async function deleteTask(row, name) {
     } else { showToast("❌ Lỗi: " + (d.error || "Không xóa được")); }
   } catch(e) { showToast("❌ Lỗi kết nối: " + e.message); }
 }
+
+// ============================================================
+// SỬA CHI TIẾT NHIỆM VỤ (ADMIN)
+// ============================================================
+function openEditModal(row) {
+  if (!requireAdminOrPrompt()) return;
+  const t = allTasks.find(x => x.row === row);
+  if (!t) { showToast("❌ Không tìm thấy nhiệm vụ #" + row); return; }
+  document.getElementById("edit-row").value = row;
+  document.getElementById("edit-nhiemvu").value = t.nhiemVu || "";
+  document.getElementById("edit-cancu").value = t.canCu || "";
+  document.getElementById("edit-donvi").value = t.donVi || "";
+  document.getElementById("edit-lanhdao").value = t.lanhDao || "";
+  document.getElementById("edit-thoihan").value = (parseDate(t.thoiHan) ? parseDate(t.thoiHan).toISOString().substring(0,10) : "");
+  document.getElementById("edit-sanpham").value = t.sanPham || "";
+  document.getElementById("edit-nguoith").value = t.nguoiTH || "";
+  document.getElementById("edit-ghichu").value = t.ghiChu || "";
+  document.getElementById("modal-edit").classList.add("open");
+}
+
+async function submitEditTask() {
+  const row = parseInt(document.getElementById("edit-row").value, 10);
+  const fields = {
+    nhiemVu: document.getElementById("edit-nhiemvu").value.trim(),
+    canCu: document.getElementById("edit-cancu").value.trim(),
+    donVi: document.getElementById("edit-donvi").value.trim(),
+    lanhDao: document.getElementById("edit-lanhdao").value.trim(),
+    thoiHan: document.getElementById("edit-thoihan").value.trim(),
+    sanPham: document.getElementById("edit-sanpham").value.trim(),
+    nguoiTH: document.getElementById("edit-nguoith").value.trim(),
+    ghiChu: document.getElementById("edit-ghichu").value.trim()
+  };
+  if (!fields.nhiemVu || !fields.donVi) { showToast("⚠ Tên nhiệm vụ và Đơn vị không được để trống"); return; }
+  try {
+    showToast("⏳ Đang lưu...", 2000);
+    const res = await fetch(API, { method: "POST", body: JSON.stringify({ action: "editTask", row, fields, pin: getAdminPin() }) });
+    const d = await res.json();
+    if (d.ok) {
+      showToast("✅ Đã lưu chỉnh sửa nhiệm vụ #" + row);
+      closeModal("modal-edit");
+      localStorage.removeItem(CACHE_KEY);
+      await loadData(true);
+    } else { showToast("❌ Lỗi: " + (d.error || "Không lưu được")); }
+  } catch(e) { showToast("❌ Lỗi kết nối: " + e.message); }
+}
+
+// ============================================================
+// TAB DUYỆT (ADMIN): nhiệm vụ mới & kết quả do người ngoài đề xuất
+// ============================================================
+async function loadChoDuyet() {
+  if (!isAdmin()) return;
+  try {
+    const [r1, r2] = await Promise.all([
+      fetch(API, { method: "POST", body: JSON.stringify({ action: "layChoDuyetNV", pin: getAdminPin() }) }).then(r => r.json()),
+      fetch(API, { method: "POST", body: JSON.stringify({ action: "layChoDuyetKQ", pin: getAdminPin() }) }).then(r => r.json())
+    ]);
+    choDuyetNVCache = (r1.ok && r1.rows) ? r1.rows : [];
+    choDuyetKQCache = (r2.ok && r2.rows) ? r2.rows : [];
+    const total = choDuyetNVCache.length + choDuyetKQCache.length;
+    const badge = document.getElementById("tab-duyet-badge");
+    badge.textContent = String(total);
+    badge.style.display = (isAdmin() && total > 0) ? "inline-block" : (isAdmin() ? "none" : "none");
+    if (isAdmin() && total > 0) badge.style.display = "inline-block";
+    renderChoDuyetNV();
+    renderChoDuyetKQ();
+  } catch(e) { showToast("❌ Lỗi tải danh sách chờ duyệt: " + e.message); }
+}
+
+function renderChoDuyetNV() {
+  const list = document.getElementById("duyet-nv-list");
+  const empty = document.getElementById("duyet-nv-empty");
+  if (!choDuyetNVCache.length) { list.innerHTML = ""; empty.style.display = "block"; return; }
+  empty.style.display = "none";
+  list.innerHTML = choDuyetNVCache.map(t => (
+    '<div style="border:1px solid #E5E7EB;border-radius:8px;padding:10px 14px;margin-bottom:8px;background:#F9FAFB">' +
+    '<div style="font-weight:600;font-size:13px;color:var(--navy)">' + (t.nhiemVu||"—") + '</div>' +
+    '<div style="font-size:11.5px;color:#555;margin-top:4px;line-height:1.5">' +
+      '<b>Đơn vị:</b> ' + (t.donVi||"—") + ' · <b>Lãnh đạo:</b> ' + (t.lanhDao||"—") + ' · <b>Hạn:</b> ' + fmtDate(t.thoiHan) + '<br>' +
+      '<b>Căn cứ:</b> ' + (t.canCu||"—") + (t.sanPham ? ' · <b>Sản phẩm:</b> ' + t.sanPham : '') + '<br>' +
+      '<b>Người đề xuất:</b> ' + (t.nguoiDeXuat||"—") + (t.thoiGianDeXuat ? ' · ' + t.thoiGianDeXuat : '') +
+    '</div>' +
+    '<div style="display:flex;gap:6px;margin-top:8px">' +
+      '<button class="btn-sm btn-green" onclick="approveNV(' + t.row + ')">✓ Duyệt</button>' +
+      '<button class="btn-sm" style="background:#c62828;color:#fff;border:none;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px" onclick="rejectNV(' + t.row + ')">✕ Từ chối</button>' +
+    '</div></div>'
+  )).join("");
+}
+
+function renderChoDuyetKQ() {
+  const list = document.getElementById("duyet-kq-list");
+  const empty = document.getElementById("duyet-kq-empty");
+  if (!choDuyetKQCache.length) { list.innerHTML = ""; empty.style.display = "block"; return; }
+  empty.style.display = "none";
+  list.innerHTML = choDuyetKQCache.map(t => (
+    '<div style="border:1px solid #E5E7EB;border-radius:8px;padding:10px 14px;margin-bottom:8px;background:#F9FAFB">' +
+    '<div style="font-weight:600;font-size:13px;color:var(--navy)">#' + t.rowGoc + ' · ' + (t.nhiemVu||"—") + '</div>' +
+    '<div style="font-size:11.5px;color:#555;margin-top:4px;line-height:1.5">' +
+      '<b>Đơn vị:</b> ' + (t.donVi||"—") + (t.danhDauHT ? ' · <span style="color:#2e7d32;font-weight:600">Đề xuất đánh dấu Hoàn thành</span>' : '') + '<br>' +
+      (t.soVanBan ? '<b>Số văn bản:</b> ' + t.soVanBan + ' · ' : '') + (t.ngayTH ? '<b>Ngày TH:</b> ' + fmtDate(t.ngayTH) : '') + '<br>' +
+      '<b>Mô tả/kết quả:</b> ' + (t.moTa||"—") + '<br>' +
+      '<b>Người đề xuất:</b> ' + (t.nguoiDeXuat||"—") + (t.thoiGianDeXuat ? ' · ' + t.thoiGianDeXuat : '') +
+    '</div>' +
+    '<div style="display:flex;gap:6px;margin-top:8px">' +
+      '<button class="btn-sm btn-green" onclick="approveKQ(' + t.row + ')">✓ Duyệt</button>' +
+      '<button class="btn-sm" style="background:#c62828;color:#fff;border:none;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px" onclick="rejectKQ(' + t.row + ')">✕ Từ chối</button>' +
+    '</div></div>'
+  )).join("");
+}
+
+async function _duyetAction(action, row, okMsg) {
+  if (!requireAdminOrPrompt()) return;
+  try {
+    showToast("⏳ Đang xử lý...", 1500);
+    const res = await fetch(API, { method: "POST", body: JSON.stringify({ action, row, pin: getAdminPin() }) });
+    const d = await res.json();
+    if (d.ok) {
+      showToast(okMsg);
+      localStorage.removeItem(CACHE_KEY);
+      await loadChoDuyet();
+      await loadData(true);
+    } else { showToast("❌ Lỗi: " + (d.error || "Không xử lý được")); }
+  } catch(e) { showToast("❌ Lỗi kết nối: " + e.message); }
+}
+function approveNV(row) { _duyetAction("duyetNV", row, "✅ Đã duyệt nhiệm vụ mới"); }
+function rejectNV(row)  { _duyetAction("tuChoiNV", row, "✅ Đã từ chối đề xuất"); }
+function approveKQ(row) { _duyetAction("duyetKQ", row, "✅ Đã duyệt kết quả"); }
+function rejectKQ(row)  { _duyetAction("tuChoiKQ", row, "✅ Đã từ chối kết quả"); }
 
 // ============================================================
 // TOGGLE EXPORT MENU
@@ -2038,6 +2322,7 @@ function __doExportThang(thangNum) {
 // ============================================================
 // INIT
 // ============================================================
+updateAdminUI();
 loadData();
 </script>
 </body>
