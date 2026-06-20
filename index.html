@@ -309,6 +309,8 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
   <div class="ct-subtabs">
     <div class="ct-subtab active" onclick="ctTab('nsnn-thu')">💰 Thu NSNN</div>
     <div class="ct-subtab" onclick="ctTab('nsnn-gsql')">📊 Chỉ tiêu GSQL</div>
+    <div class="ct-subtab" onclick="ctTab('nsnn-chicuc')">🎯 Tổng quan Chi cục</div>
+    <div class="ct-subtab" onclick="ctTab('nsnn-dondoc')">📌 Đôn đốc đơn vị</div>
   </div>
 
   <!-- THU NSNN -->
@@ -332,6 +334,39 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
       <div class="section-title">📊 Chỉ tiêu GSQL – Kết quả thực hiện tháng 5/2026</div>
       <div style="overflow-x:auto">
         <table class="ct-tbl"><thead id="gsql-thead"></thead><tbody id="gsql-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TỔNG QUAN CHỈ TIÊU CHI CỤC -->
+  <div id="nsnn-chicuc" style="display:none">
+    <div id="chicuc-content"></div>
+  </div>
+
+  <!-- ĐÔN ĐỐC ĐƠN VỊ -->
+  <div id="nsnn-dondoc" style="display:none">
+    <div class="section">
+      <div class="section-title">🚨 Đơn vị cần đôn đốc – chỉ tiêu thấp nhất</div>
+      <div id="dondoc-alert"></div>
+    </div>
+    <div class="section">
+      <div class="section-title">⛴ KTSTQ theo đơn vị</div>
+      <div id="ktstq-bars" class="nsnn-bar-wrap"></div>
+      <div style="overflow-x:auto;margin-top:12px">
+        <table class="ct-tbl"><thead id="ktstq-thead"></thead><tbody id="ktstq-tbody"></tbody></table>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">🛡 QLRR – Thu thập thông tin DN theo đơn vị</div>
+      <div id="qlrr-bars" class="nsnn-bar-wrap"></div>
+      <div style="overflow-x:auto;margin-top:12px">
+        <table class="ct-tbl"><thead id="qlrr-thead"></thead><tbody id="qlrr-tbody"></tbody></table>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">🚓 Kiểm soát chống buôn lậu theo đơn vị</div>
+      <div style="overflow-x:auto">
+        <table class="ct-tbl"><thead id="cbl-thead"></thead><tbody id="cbl-tbody"></tbody></table>
       </div>
     </div>
   </div>
@@ -596,7 +631,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
 // ============================================================
 // CẤU HÌNH
 // ============================================================
-const API = "https://script.google.com/macros/s/AKfycbwuM71a9VU_DId3tv5TqSjmlX_VzRDOyOzG-w9Npl604sgrura8kUEVi8f_4PaaPUEf/exec";
+const API = "https://script.google.com/macros/s/AKfycbwE236E0b4PO3GGYk8u47ZKy1n71X7_2BISsiWpr5xfKioRHL_-tMua5rj6ttmUDKLF/exec";
 const CACHE_KEY = "kv8_tasks_v2";
 const CACHE_TIME_KEY = "kv8_tasks_ts";
 const CACHE_TTL = 5 * 60 * 1000;
@@ -1068,6 +1103,8 @@ async function loadNSNN() {
     if (data.ok) {
       renderNSNN(data.nsnn || []);
       renderGSQL(data.gsql || []);
+      renderChiCuc(data.chiCuc || []);
+      renderDonDoc(data.ktstq || [], data.qlrr || [], data.cbl || [], data.nsnn || [], data.gsql || []);
       nsnnLoaded = true;
     }
   } catch(e) {
@@ -1135,10 +1172,98 @@ function renderGSQL(rows) {
   ).join("");
 }
 
+function renderChiCuc(rows) {
+  var el = document.getElementById("chicuc-content");
+  if (!rows.length) { el.innerHTML = '<div class="section" style="color:var(--muted);text-align:center">Chưa có dữ liệu chỉ tiêu Chi cục</div>'; return; }
+  var groups = {};
+  rows.forEach(function(r){ (groups[r.nhom] = groups[r.nhom] || []).push(r); });
+  var html = "";
+  Object.keys(groups).forEach(function(nhom) {
+    html += '<div class="section"><div class="section-title">🎯 ' + nhom + '</div>';
+    html += '<div class="ct-kpi">' + groups[nhom].map(function(r) {
+      var pct = r.pct6t != null ? r.pct6t : r.pctQ2;
+      var color = pct == null ? NAVY : (pct >= 95 ? COLORS.ht : pct >= 70 ? COLORS.sap : COLORS.tre);
+      var valStr = r.kq6t != null ? r.kq6t.toLocaleString("vi-VN") : (r.kqQ2 != null ? r.kqQ2.toLocaleString("vi-VN") : "—");
+      var subStr = (r.kh6t != null ? "KH 6T: " + r.kh6t.toLocaleString("vi-VN") + " " + r.dvt : "") +
+                   (pct != null ? " — " + pct + "%" : "") +
+                   (r.tdg6t ? " — " + r.tdg6t : (r.tdgQ2 ? " — " + r.tdgQ2 : ""));
+      return kpiBox(r.chiTieu, valStr + (r.dvt ? " " + r.dvt : ""), color, subStr);
+    }).join("") + '</div></div>';
+  });
+  el.innerHTML = html;
+}
+
+function renderDonDoc(ktstq, qlrr, cbl, nsnnRows, gsqlRows) {
+  // Cảnh báo tổng hợp: liệt kê đơn vị có % đạt thấp nhất trên các nhóm chỉ tiêu
+  var alerts = [];
+  (nsnnRows||[]).forEach(function(r){ if (r.donVi && r.donVi !== "Tổng" && (r.pctKH||0) < 35) alerts.push({nhom:"Thu NSNN", donVi:r.donVi, pct:r.pctKH, ghiChu:"Lũy kế "+(r.thLuyKe||0)+" tỷ / KH "+(r.khNam||0)+" tỷ"}); });
+  (ktstq||[]).forEach(function(r){ if (r.donVi && r.donVi.toLowerCase()!=="tổng" && r.soCuocDat != null && r.soCuocDat < 60) alerts.push({nhom:"KTSTQ – Số cuộc kiểm tra", donVi:r.donVi, pct:r.soCuocDat, ghiChu:"Lũy kế "+(r.soCuocLK||0)+"/"+(r.soCuocGiao||0)+" cuộc"}); });
+  (qlrr||[]).forEach(function(r){ if (r.donVi && r.donVi.toLowerCase().indexOf("tổng")<0 && r.pctDat != null && r.pctDat < 60) alerts.push({nhom:"QLRR – Thu thập thông tin DN", donVi:r.donVi, pct:r.pctDat, ghiChu:"Lũy kế "+(r.tongLK||0)+"/"+(r.tongGiao||0)+" DN"}); });
+  (cbl||[]).forEach(function(r){ if (r.donVi && !r.isGroup && r.datTong != null && r.datTong < 80) alerts.push({nhom:"Kiểm soát CBL – Tổng số vụ", donVi:r.donVi, pct:r.datTong, ghiChu:"Lũy kế "+(r.lkTong||0)+"/"+(r.giaoTong||0)+" vụ"}); });
+  alerts.sort(function(a,b){ return (a.pct||0)-(b.pct||0); });
+
+  var alertEl = document.getElementById("dondoc-alert");
+  if (!alerts.length) {
+    alertEl.innerHTML = '<div style="color:var(--muted)">Không có đơn vị nào dưới ngưỡng cảnh báo.</div>';
+  } else {
+    alertEl.innerHTML = alerts.slice(0,12).map(function(a) {
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;background:#FDEDEC;border-left:4px solid var(--red);margin-bottom:6px">' +
+        '<div><b>' + a.donVi + '</b> <span style="color:var(--muted);font-size:12px">— ' + a.nhom + '</span><div style="font-size:11.5px;color:var(--muted)">' + a.ghiChu + '</div></div>' +
+        '<div style="font-weight:700;color:var(--red);font-size:15px">' + a.pct + '%</div></div>';
+    }).join("");
+  }
+
+  // Bảng KTSTQ
+  var fmt2 = v => v != null ? Number(v).toLocaleString("vi-VN") : "—";
+  document.getElementById("ktstq-bars").innerHTML = (ktstq||[]).filter(function(r){return r.donVi.toLowerCase()!=="tổng";}).map(function(r) {
+    var pct = Math.min(r.soCuocDat||0, 120);
+    var cls = pct >= 100 ? "over" : pct < 60 ? "low" : "";
+    return '<div class="nsnn-bar-row"><div class="nsnn-bar-label">' + r.donVi + '</div>' +
+      '<div class="nsnn-bar-track"><div class="nsnn-bar-fill ' + cls + '" style="width:' + Math.min(pct,100) + '%"><span class="nsnn-bar-pct">' + (r.soCuocDat||0) + '%</span></div></div>' +
+      '<div class="nsnn-bar-val">LK: ' + fmt2(r.soCuocLK) + ' / Giao: ' + fmt2(r.soCuocGiao) + ' cuộc</div></div>';
+  }).join("");
+  document.getElementById("ktstq-thead").innerHTML = '<tr><th style="text-align:left">Đơn vị</th><th>Số cuộc giao</th><th>LK</th><th>% Đạt</th><th>Thu NSNN giao (tr.đ)</th><th>LK (tr.đ)</th><th>% Đạt</th></tr>';
+  document.getElementById("ktstq-tbody").innerHTML = (ktstq||[]).map(function(r) {
+    return '<tr><td style="text-align:left;font-weight:' + (r.donVi.toLowerCase()==="tổng"?700:500) + '">' + r.donVi + '</td>' +
+      '<td>' + fmt2(r.soCuocGiao) + '</td><td>' + fmt2(r.soCuocLK) + '</td>' +
+      '<td style="font-weight:600;color:' + ((r.soCuocDat||0)>=70?COLORS.ht:COLORS.tre) + '">' + (r.soCuocDat??'—') + '%</td>' +
+      '<td>' + fmt2(r.thuNSNNGiao) + '</td><td>' + fmt2(r.thuNSNNLK) + '</td>' +
+      '<td style="font-weight:600;color:' + ((r.thuNSNNDat||0)>=50?COLORS.ht:COLORS.tre) + '">' + (r.thuNSNNDat??'—') + '%</td></tr>';
+  }).join("");
+
+  // Bảng QLRR
+  document.getElementById("qlrr-bars").innerHTML = (qlrr||[]).filter(function(r){return r.donVi.toLowerCase().indexOf("tổng")<0 && r.tongGiao>0;}).map(function(r) {
+    var pct = Math.min(r.pctDat||0, 120);
+    var cls = pct >= 100 ? "over" : pct < 60 ? "low" : "";
+    return '<div class="nsnn-bar-row"><div class="nsnn-bar-label">' + r.donVi + '</div>' +
+      '<div class="nsnn-bar-track"><div class="nsnn-bar-fill ' + cls + '" style="width:' + Math.min(pct,100) + '%"><span class="nsnn-bar-pct">' + (r.pctDat||0) + '%</span></div></div>' +
+      '<div class="nsnn-bar-val">LK: ' + fmt2(r.tongLK) + ' / Giao: ' + fmt2(r.tongGiao) + ' DN</div></div>';
+  }).join("");
+  document.getElementById("qlrr-thead").innerHTML = '<tr><th style="text-align:left">Đơn vị</th><th>Hồ sơ trọng điểm (TH/Giao)</th><th>%</th><th>DN giao (Cục)</th><th>LK</th><th>DN giao (Chi cục bổ sung)</th><th>LK</th><th>Tổng % Đạt</th></tr>';
+  document.getElementById("qlrr-tbody").innerHTML = (qlrr||[]).map(function(r) {
+    var isTong = r.donVi.toLowerCase().indexOf("tổng")>=0;
+    return '<tr><td style="text-align:left;font-weight:' + (isTong?700:500) + '">' + r.donVi + '</td>' +
+      '<td>' + (r.hoSoTH!=null ? r.hoSoTH+'/'+r.hoSoGiao : '—') + '</td>' +
+      '<td style="font-weight:600;color:' + ((r.hoSoPct||0)>=80?COLORS.ht:COLORS.tre) + '">' + (r.hoSoPct??'—') + (r.hoSoPct!=null?'%':'') + '</td>' +
+      '<td>' + fmt2(r.cucGiao) + '</td><td>' + fmt2(r.cucLK) + '</td>' +
+      '<td>' + fmt2(r.ccGiao) + '</td><td>' + fmt2(r.ccLK) + '</td>' +
+      '<td style="font-weight:600;color:' + ((r.pctDat||0)>=70?COLORS.ht:COLORS.tre) + '">' + (r.pctDat??'—') + (r.pctDat!=null?'%':'') + '</td></tr>';
+  }).join("");
+
+  // Bảng kiểm soát CBL
+  document.getElementById("cbl-thead").innerHTML = '<tr><th style="text-align:left">Đơn vị</th><th>Giao chủ trì</th><th>LK</th><th>%Đạt</th><th>Giao phối hợp</th><th>LK</th><th>%Đạt</th><th>Giao tổng</th><th>LK</th><th>%Đạt</th></tr>';
+  document.getElementById("cbl-tbody").innerHTML = (cbl||[]).map(function(r) {
+    return '<tr><td style="text-align:left;font-weight:' + (r.isGroup?700:500) + '">' + r.donVi + '</td>' +
+      '<td>' + fmt2(r.giaoChuTri) + '</td><td>' + fmt2(r.lkChuTri) + '</td><td style="color:' + ((r.datChuTri||0)>=90?COLORS.ht:COLORS.tre) + ';font-weight:600">' + (r.datChuTri??'—') + '%</td>' +
+      '<td>' + fmt2(r.giaoPH) + '</td><td>' + fmt2(r.lkPH) + '</td><td style="color:' + ((r.datPH||0)>=90?COLORS.ht:COLORS.tre) + ';font-weight:600">' + (r.datPH??'—') + '%</td>' +
+      '<td>' + fmt2(r.giaoTong) + '</td><td>' + fmt2(r.lkTong) + '</td><td style="color:' + ((r.datTong||0)>=90?COLORS.ht:COLORS.tre) + ';font-weight:600">' + (r.datTong??'—') + '%</td></tr>';
+  }).join("");
+}
+
 function ctTab(which) {
-  document.getElementById("nsnn-thu").style.display = which === "nsnn-thu" ? "block" : "none";
-  document.getElementById("nsnn-gsql").style.display = which === "nsnn-gsql" ? "block" : "none";
-  document.querySelectorAll(".ct-subtab").forEach((el,i) => el.classList.toggle("active", i === (which === "nsnn-thu" ? 0 : 1)));
+  var ids = ["nsnn-thu","nsnn-gsql","nsnn-chicuc","nsnn-dondoc"];
+  ids.forEach(function(id) { document.getElementById(id).style.display = (id === which ? "block" : "none"); });
+  document.querySelectorAll(".ct-subtab").forEach((el,i) => el.classList.toggle("active", i === ids.indexOf(which)));
 }
 
 // ============================================================
