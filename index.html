@@ -1328,14 +1328,25 @@ function renderPhanGiao(phanGiao) {
 // ===== XẾP LOẠI ĐƠN VỊ =====
 function renderXepLoai(rows) {
   if (!rows.length) { document.getElementById("xeploai-tbody").innerHTML = '<tr><td>Chưa có dữ liệu</td></tr>'; return; }
-  document.getElementById("xeploai-thead").innerHTML = '<tr><th style="text-align:left">Đơn vị</th><th>II.1 GSQL</th><th>II.2 Thuế XNK</th><th>II.3 KTSTQ</th><th>II.4 QLRR</th><th>II.5 KSHQ/CBL</th><th>Điểm % HT BQ</th><th>Xếp loại</th></tr>';
+  document.getElementById("xeploai-thead").innerHTML =
+    '<tr><th style="text-align:left">Đơn vị</th>' +
+    '<th>II.1 GSQL</th><th>II.2 Thuế XNK</th><th>II.3 KTSTQ</th><th>II.4 QLRR</th>' +
+    '<th>II.5 KSHQ/CBL</th><th>II.6 Đào tạo</th><th>II.7 Tuyên truyền</th>' +
+    '<th>Điểm trọng số</th><th>Xếp loại</th><th>Hạng</th></tr>';
   document.getElementById("xeploai-tbody").innerHTML = rows.map(function(r) {
-    var color = (r.diemBinhQuan||0) >= 100 ? COLORS.ht : (r.diemBinhQuan||0) >= 50 ? COLORS.sap : COLORS.tre;
+    var d = (r.diemBinhQuan||0);
+    var color = d >= 100 ? COLORS.ht : d >= 70 ? COLORS.sap : COLORS.tre;
+    function cell(v){
+      var n = Number(v);
+      var red = (!isNaN(n) && v!=null && v!=="" && n < 70) ? ' style="color:#C0392B;font-weight:700"' : '';
+      return '<td'+red+'>' + (v??'—') + '</td>';
+    }
     return '<tr><td style="text-align:left;font-weight:600">' + r.donVi + '</td>' +
-      '<td>' + (r.gsql??'—') + '</td><td>' + (r.thueXNK??'—') + '</td><td>' + (r.ktstq??'—') + '</td>' +
-      '<td>' + (r.qlrr??'—') + '</td><td>' + (r.cbl??'—') + '</td>' +
-      '<td style="font-weight:700;color:' + color + '">' + (r.diemBinhQuan??'—') + '%</td>' +
-      '<td style="font-size:11.5px">' + (r.xepLoai||"") + '</td></tr>';
+      cell(r.gsql) + cell(r.thueXNK) + cell(r.ktstq) + cell(r.qlrr) + cell(r.cbl) +
+      cell(r.daoTao) + cell(r.tuyenTruyen) +
+      '<td style="font-weight:700;color:' + color + '">' + (r.diemBinhQuan??'—') + '</td>' +
+      '<td style="font-size:11.5px">' + (r.xepLoai||"") + '</td>' +
+      '<td>' + (r.xepHang??'—') + '</td></tr>';
   }).join("");
 }
 
