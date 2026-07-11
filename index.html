@@ -1251,13 +1251,15 @@ function renderPhanich() {
 // Màu theo quy ước 3 mức: 🟩 ≥ tiến độ kỳ vọng | 🟨 70-99% tiến độ kỳ vọng | 🟥 <70%
 function pctColor(pct, kyVong) {
   if (pct == null) return NAVY;
-  var kv = kyVong != null ? kyVong : 50;
-  var ratio = kv > 0 ? (pct / kv * 100) : pct;
+  var kv = kyVong != null ? kyVong : 0.5;
+  var ratio = kv > 0 ? (pct / kv * 100) : pct*100;
   if (ratio >= 100) return COLORS.ht;
   if (ratio >= 70) return COLORS.sap;
   return COLORS.tre;
 }
 var fmtN = v => (v != null && v !== "") ? Number(v).toLocaleString("vi-VN") : "—";
+// v18-fix: pct trong dữ liệu là số thập phân (0.5466) -> hiển thị 54,7%
+var fmtPct = v => (v != null && v !== "" && !isNaN(v)) ? (Number(v)*100).toFixed(1).replace(".",",")+"%" : "—";
 
 async function loadNSNN() {
   document.getElementById("nsnn-loading").style.display = "flex";
@@ -1287,14 +1289,14 @@ async function loadNSNN() {
 function renderTongQuan(rows) {
   if (!rows.length) { document.getElementById("nsnn-kpi").innerHTML = '<div style="color:var(--muted)">Chưa có dữ liệu</div>'; return; }
   document.getElementById("nsnn-kpi").innerHTML = rows.slice(0,4).map(r =>
-    kpiBox(r.chiTieu, fmtN(r.luyKe) + (r.dvt?" "+r.dvt:""), pctColor(r.pct, r.tienDoKyVong), (r.pct!=null?r.pct+"% KH năm — ":"") + (r.danhGia||""))
+    kpiBox(r.chiTieu, fmtN(r.luyKe) + (r.dvt?" "+r.dvt:""), pctColor(r.pct, r.tienDoKyVong), (r.pct!=null?fmtPct(r.pct)+" KH năm — ":"") + (r.danhGia||""))
   ).join("");
 
   document.getElementById("nsnn-bars").innerHTML = rows.map(function(r) {
-    var pct = Math.min(r.pct||0, 130);
+    var pct = Math.min((r.pct!=null?r.pct*100:0), 130);
     var color = pctColor(r.pct, r.tienDoKyVong);
     return '<div class="nsnn-bar-row"><div class="nsnn-bar-label">' + r.chiTieu + '</div>' +
-      '<div class="nsnn-bar-track"><div class="nsnn-bar-fill" style="width:' + Math.min(pct,100) + '%;background:' + color + '"><span class="nsnn-bar-pct">' + (r.pct??'—') + '%</span></div></div>' +
+      '<div class="nsnn-bar-track"><div class="nsnn-bar-fill" style="width:' + Math.min(pct,100) + '%;background:' + color + '"><span class="nsnn-bar-pct">' + fmtPct(r.pct) + '</span></div></div>' +
       '<div class="nsnn-bar-val">LK: ' + fmtN(r.luyKe) + ' / KH: ' + fmtN(r.khNam) + ' ' + (r.dvt||'') + '</div></div>';
   }).join("");
 
@@ -1303,7 +1305,7 @@ function renderTongQuan(rows) {
     var color = pctColor(r.pct, r.tienDoKyVong);
     return '<tr><td style="text-align:left">' + (r.chiTieu||"") + '</td><td>' + (r.dvt||"") + '</td>' +
       '<td>' + fmtN(r.khNam) + '</td><td><b>' + fmtN(r.luyKe) + '</b></td><td style="font-size:11.5px">' + (r.ngay||"") + '</td>' +
-      '<td style="font-weight:700;color:' + color + '">' + (r.pct??'—') + '%</td><td>' + (r.tienDoKyVong??'—') + '%</td>' +
+      '<td style="font-weight:700;color:' + color + '">' + fmtPct(r.pct) + '</td><td>' + fmtPct(r.tienDoKyVong) + '</td>' +
       '<td style="font-size:11.5px;color:' + color + '">' + (r.danhGia||"") + '</td></tr>';
   }).join("");
 }
@@ -1324,8 +1326,8 @@ function renderChiTieuChiCuc(rows) {
       '<td>' + (r.dvt||"") + '</td><td style="font-size:11.5px">' + (r.capGiao||"") + '</td>' +
       '<td>' + fmtN(r.khNam) + '</td><td>' + fmtN(r.lkQ1) + '</td><td>' + fmtN(r.lk6t) + '</td>' +
       '<td><b>' + (r.capNhatMoiNhat!=null && r.capNhatMoiNhat!==""? fmtN(r.capNhatMoiNhat) : "—") + '</b></td>' +
-      '<td style="font-weight:700;color:' + color + '">' + (r.pct??'—') + (r.pct!=null?'%':'') + '</td>' +
-      '<td>' + (r.tienDoKyVong??'—') + (r.tienDoKyVong!=null?'%':'') + '</td>' +
+      '<td style="font-weight:700;color:' + color + '">' + fmtPct(r.pct) + '</td>' +
+      '<td>' + fmtPct(r.tienDoKyVong) + '</td>' +
       '<td style="font-size:11.5px;color:' + color + '">' + (r.danhGia||"") + '</td></tr>';
   });
   document.getElementById("gsql-tbody").innerHTML = html;
