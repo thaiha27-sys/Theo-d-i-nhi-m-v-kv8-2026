@@ -191,6 +191,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
   <div class="tab" onclick="switchTab('table')">📋 Bảng theo dõi</div>
   <div class="tab" onclick="switchTab('phanich')">📈 Phân tích</div>
   <div class="tab" onclick="switchTab('nsnn')">💰 Chỉ tiêu & Thu NSNN</div>
+  <div class="tab" onclick="switchTab('bcngay')">📊 Báo cáo ngày</div>
   <div class="tab" onclick="switchTab('luutru')">🗂 Lưu trữ</div>
   <div class="tab" onclick="switchTab('duyet')">🗳 Duyệt <span id="tab-duyet-badge" style="display:none;background:#c62828;color:#fff;font-size:10px;font-weight:700;border-radius:9px;padding:1px 6px;margin-left:3px">0</span></div>
 </div>
@@ -426,6 +427,38 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
   </div>
 
   <div id="nsnn-loading" class="loading"><div class="spinner"></div>Đang tải chỉ tiêu...</div>
+</div>
+
+<!-- ========= BÁO CÁO NGÀY (v18) ========= -->
+<div id="tab-bcngay" class="tab-content">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+    <div>
+      <div style="font-size:15px;font-weight:700;color:var(--navy)">📊 Báo cáo tờ khai ngày</div>
+      <div id="bcngay-sub" style="font-size:12px;color:var(--muted);margin-top:2px">Đang tải...</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <select id="bcngay-select" onchange="loadBCNgay(this.value)" style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12.5px"></select>
+      <button class="btn" style="background:var(--navy);color:#fff;font-size:12.5px;padding:7px 14px;border:none;border-radius:6px;cursor:pointer" onclick="loadBCNgay('', true)">🔄 Tải lại</button>
+      <button class="btn" style="background:var(--gold);color:#000;font-size:12.5px;padding:7px 14px;border:none;border-radius:6px;cursor:pointer;font-weight:600" onclick="moModalNhapBCNgay()">➕ Nhập báo cáo ngày</button>
+    </div>
+  </div>
+  <div id="bcngay-body"></div>
+  <div id="bcngay-loading" class="loading"><div class="spinner"></div>Đang tải báo cáo ngày...</div>
+</div>
+
+<!-- ========= MODAL NHẬP BÁO CÁO NGÀY (v18) ========= -->
+<div id="modal-bcngay" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:640px">
+    <button class="modal-close" onclick="dongModalNhapBCNgay()">✕</button>
+    <div class="modal-title">➕ Nhập báo cáo tờ khai ngày</div>
+    <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Dán nguyên văn nội dung báo cáo ngày (copy từ Zalo). Hệ thống tự bóc tách và hiển thị.</div>
+    <textarea id="bcngay-raw" style="width:100%;min-height:180px;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:12px;resize:vertical" placeholder="📊 BÁO CÁO TỜ KHAI NGÀY 08/07/2026..."></textarea>
+    <div id="bcngay-preview" style="margin-top:10px;font-size:12px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+      <button class="btn" style="background:#EBF0F7;color:var(--navy);padding:8px 16px;border:none;border-radius:6px;cursor:pointer" onclick="xemTruocBCNgay()">👁 Xem trước</button>
+      <button class="btn btn-save" style="padding:8px 16px;border:none;border-radius:6px;cursor:pointer" onclick="luuBCNgay()">💾 Lưu &amp; hiển thị</button>
+    </div>
+  </div>
 </div>
 
 <!-- ========= DUYỆT (ADMIN) ========= -->
@@ -741,7 +774,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
 // ============================================================
 // CẤU HÌNH
 // ============================================================
-const API = "https://script.google.com/macros/s/AKfycbxn8VcWoAjpygClxRwNwxPR8EWSv-mFv3t1mRJX8zvRTEoXXsj75Fto-cfX18MskLN4/exec";
+const API = "https://script.google.com/macros/s/AKfycbzRm_qI0sNQH7dSbM6UmAPS5ey-pMsGKiPLjXp_PEoDCPaMv6fzD1l2frG_6eK6uJvb/exec";
 const CACHE_KEY = "kv8_tasks_v2";
 const CACHE_TIME_KEY = "kv8_tasks_ts";
 const CACHE_TTL = 5 * 60 * 1000;
@@ -760,6 +793,8 @@ let allTasks = [], curKQRow = null, curKQDeadline = null, paLoaded = false, nsnn
 // ============================================================
 const ADMIN_PIN_SESSION_KEY = "kv8_admin_pin";
 let bcView = 'donvi', bcData = null, bcLoaded = false;
+let bcngayLoaded = false, bcngayData = null;
+const KH_NSNN_BCNGAY = {phaplenh:17500, cuc:18300, ubnd:25000};
 let choDuyetNVCache = [], choDuyetKQCache = [];
 
 function isAdmin() { return !!sessionStorage.getItem(ADMIN_PIN_SESSION_KEY); }
@@ -912,10 +947,11 @@ function switchTab(id) {
   document.querySelectorAll(".tab-content").forEach(e => e.classList.remove("active"));
   document.querySelectorAll(".tab").forEach(e => e.classList.remove("active"));
   document.getElementById("tab-" + id).classList.add("active");
-  const tabs = ["dashboard","table","phanich","nsnn","luutru","duyet","baocao"];
+  const tabs = ["dashboard","table","phanich","nsnn","bcngay","luutru","duyet","baocao"];
   document.querySelectorAll(".tab")[tabs.indexOf(id)]?.classList.add("active");
   if (id === "phanich" && !paLoaded) renderPhanich();
   if (id === "nsnn" && !nsnnLoaded) loadNSNN();
+  if (id === "bcngay" && !bcngayLoaded) loadBCNgay();
   if (id === "luutru") loadLuuTru();
   if (id === "duyet") {
     if (!requireAdminOrPrompt()) { switchTab("dashboard"); return; }
@@ -2970,6 +3006,168 @@ async function runLuuTruThang() {
 
 
 loadData();
+
+
+/* ================= MODULE BÁO CÁO NGÀY (v18) ================= */
+/* ---- Parser (đồng bộ với Apps Script, đã kiểm thử) ---- */
+function _bcnInt(s){return parseInt(String(s).replace(/\./g,'').replace(/,/g,''),10);}
+function _bcnFloat(s){return parseFloat(s);}
+function _bcnPct(s){return parseFloat(String(s).replace(',','.'))/100.0;}
+function _bcnSigned(dir,pct){if(pct===undefined||pct===null||pct==='')return(dir?0.0:null);var v=_bcnPct(pct);if(dir==='giảm')return -v;if(dir==='không đổi')return 0.0;return v;}
+var BCN_PERIOD_RE=new RegExp("(?<label>Trong ngày|Trong tháng|Luỹ kế năm)\\s*\\[(?<d1>[\\d/]+)\\]→\\[(?<d2>[\\d/]+)\\]:\\s*Có\\s+(?<tk>[\\d.]+)\\s*TK\\s*\\(📥\\s*(?<nk>[\\d.]+)\\s*-\\s*📤\\s*(?<xk>[\\d.]+)\\)\\.\\s*Luồng:\\s*Xanh\\s*\\((?<xanh>[\\d.]+)\\s*tờ\\s*(?<xanhp>[\\d,]+)%\\),\\s*Vàng\\s*\\((?<vang>[\\d.]+)\\s*tờ\\s*(?<vangp>[\\d,]+)%\\),\\s*Đỏ\\s*\\((?<do>[\\d.]+)\\s*tờ\\s*(?<dop>[\\d,]+)%\\)\\.\\s*💰\\s*Kim ngạch:\\s*(?<kn>[\\d.]+)\\s*TrUSD\\s*\\(📥\\s*(?<knnk>[\\d.]+)\\s*-\\s*📤\\s*(?<knxk>[\\d.]+)\\)\\.\\s*💸\\s*Thuế:\\s*(?<thue>[\\d.]+)\\s*tỷ đồng\\s*\\((?<thuedetail>[^)]*)\\)\\.\\s*🏢\\s*DN:\\s*(?<dn>[\\d.]+)\\s*DN\\s*\\(🏠\\s*Trong tỉnh:\\s*(?<dntrong>[\\d.]+),\\s*🚚\\s*Ngoài tỉnh:\\s*(?<dnngoai>[\\d.]+)\\)\\.\\s*📥\\s*Chỉ Nhập:\\s*(?<chinhap>[\\d.]+),\\s*📤\\s*Chỉ Xuất:\\s*(?<chixuat>[\\d.]+),\\s*🔄\\s*Cả hai:\\s*(?<cahai>[\\d.]+)\\.(?:\\s*✨\\s*Doanh nghiệp mới\\s*\\([^)]*\\):\\s*(?<dnmoi>[\\d.]+)\\s*DN mở\\s*(?<dnmoitk>[\\d.]+)\\s*TK,\\s*KN\\s*(?<dnmoikn>[\\d.]+)\\s*TrUSD,\\s*Thuế\\s*(?<dnmoithue>[\\d.]+)\\s*tỷ\\.)?","gu");
+var BCN_TAX_RE=/([A-Za-zÀ-ỹ]+):\s*([\d.]+)/gu;
+var BCN_CMP_RE=new RegExp("\\+\\s*So sánh với\\s*(?<label>[^:]+):\\s*-\\s*Tổng số tờ khai\\s*(?<tkd>tăng|giảm)\\s*(?<tkp>[\\d,]+)%(?:\\s*\\(Nhập\\s*(?<nkd>tăng|giảm|không đổi)\\s*(?<nkp>[\\d,]+)?%?,\\s*Xuất\\s*(?<xkd>tăng|giảm|không đổi)\\s*(?<xkp>[\\d,]+)?%?\\))?\\.\\s*-\\s*Tổng kim ngạch\\s*(?<knd>tăng|giảm)\\s*(?<knp>[\\d,]+)%(?:\\s*\\(Nhập\\s*(?<knnkd>tăng|giảm|không đổi)\\s*(?<knnkp>[\\d,]+)?%?,\\s*Xuất\\s*(?<knxkd>tăng|giảm|không đổi)\\s*(?<knxkp>[\\d,]+)?%?\\))?\\.\\s*-\\s*Tổng số thuế\\s*(?<thued>tăng|giảm|không đổi)\\s*(?<thuep>[\\d,]+)?%?\\.(?:\\s*-\\s*Số lượng doanh nghiệp hoạt động\\s*(?<dnd>tăng|giảm|không đổi)\\s*(?<dnp>[\\d,]+)?%?\\.)?","gu");
+var BCN_LABEL={"Trong ngày":"ngay","Trong tháng":"thang","Luỹ kế năm":"nam"};
+function _bcnPeriod(m){var g=m.groups,td={},tm;BCN_TAX_RE.lastIndex=0;while((tm=BCN_TAX_RE.exec(g.thuedetail||""))!==null){td[tm[1]]=_bcnFloat(tm[2]);}var dm=null;if(g.dnmoi!==undefined){dm={so_dn:_bcnInt(g.dnmoi),so_tk:_bcnInt(g.dnmoitk),kim_ngach:_bcnFloat(g.dnmoikn),thue:_bcnFloat(g.dnmoithue)};}return{tu_ngay:g.d1,den_ngay:g.d2,tong_tk:_bcnInt(g.tk),nk:_bcnInt(g.nk),xk:_bcnInt(g.xk),xanh:_bcnInt(g.xanh),xanh_pct:_bcnPct(g.xanhp),vang:_bcnInt(g.vang),vang_pct:_bcnPct(g.vangp),do:_bcnInt(g.do),do_pct:_bcnPct(g.dop),kim_ngach:_bcnFloat(g.kn),kim_ngach_nk:_bcnFloat(g.knnk),kim_ngach_xk:_bcnFloat(g.knxk),thue:_bcnFloat(g.thue),thue_chi_tiet:td,dn:_bcnInt(g.dn),dn_trong_tinh:_bcnInt(g.dntrong),dn_ngoai_tinh:_bcnInt(g.dnngoai),dn_chi_nhap:_bcnInt(g.chinhap),dn_chi_xuat:_bcnInt(g.chixuat),dn_ca_hai:_bcnInt(g.cahai),dn_moi:dm};}
+function _bcnCompare(block){var out=[],m;BCN_CMP_RE.lastIndex=0;while((m=BCN_CMP_RE.exec(block))!==null){var g=m.groups;out.push({label:(g.label||"").trim(),tk:_bcnSigned(g.tkd,g.tkp),tk_nk:g.nkd?_bcnSigned(g.nkd,g.nkp):null,tk_xk:g.xkd?_bcnSigned(g.xkd,g.xkp):null,kn:_bcnSigned(g.knd,g.knp),kn_nk:g.knnkd?_bcnSigned(g.knnkd,g.knnkp):null,kn_xk:g.knxkd?_bcnSigned(g.knxkd,g.knxkp):null,thue:_bcnSigned(g.thued,g.thuep),dn:g.dnd?_bcnSigned(g.dnd,g.dnp):null});}return out;}
+function bcnParse(text){var warnings=[],result={units:{},toan_chi_cuc:null,hoan_thue:null,warnings:warnings};var ti=text.search(/🌎\s*TỔNG HỢP TOÀN CHI CỤC/u);if(ti<0)ti=text.search(/TỔNG HỢP TOÀN CHI CỤC/u);var us=ti>=0?text.slice(0,ti):text;var ts="";if(ti>=0){var h=text.indexOf("BÁO CÁO HOÀN THUẾ",ti);ts=text.slice(ti,h!==-1?h:text.length);}else warnings.push("Không tìm thấy khối 'TỔNG HỢP TOÀN CHI CỤC'.");var UR=/📍\s*Đơn vị:\s*(.+?)\s*$/gmu,heads=[],hm;while((hm=UR.exec(us))!==null){heads.push({name:hm[1].trim(),pos:hm.index});}for(var i=0;i<heads.length;i++){var name=heads[i].name,bs=heads[i].pos,be=(i+1<heads.length)?heads[i+1].pos:us.length,block=us.slice(bs,be),periods={},m;BCN_PERIOD_RE.lastIndex=0;while((m=BCN_PERIOD_RE.exec(block))!==null){periods[BCN_LABEL[m.groups.label]]=_bcnPeriod(m);}["ngay","thang","nam"].forEach(function(k){if(!(k in periods))warnings.push("Đơn vị '"+name+"': thiếu kỳ '"+k+"'.");});var cmp=block.match(/ĐÁNH GIÁ TĂNG\/GIẢM:([\s\S]*)/u),ss=cmp?_bcnCompare(cmp[1]):[];if(ss.length<3)warnings.push("Đơn vị '"+name+"': chỉ "+ss.length+"/3 kỳ so sánh.");periods.sosanh=ss;result.units[name]=periods;}if(ts){var periods={},m;BCN_PERIOD_RE.lastIndex=0;while((m=BCN_PERIOD_RE.exec(ts))!==null){periods[BCN_LABEL[m.groups.label]]=_bcnPeriod(m);}["ngay","thang","nam"].forEach(function(k){if(!(k in periods))warnings.push("TOÀN CHI CỤC: thiếu kỳ '"+k+"'.");});var cmp=ts.match(/ĐÁNH GIÁ TĂNG\/GIẢM:([\s\S]*)/u),ss=cmp?_bcnCompare(cmp[1]):[];if(ss.length<3)warnings.push("TOÀN CHI CỤC: chỉ "+ss.length+"/3 kỳ so sánh — kiểm tra lại nguồn.");periods.sosanh=ss;result.toan_chi_cuc=periods;}var ht=text.match(/Số thuế hoàn trong tuần:\s*([\d.]+)\s*tỷ đồng[\s\S]*?Số thuế hoàn trong tháng:\s*([\d.]+)\s*tỷ đồng[\s\S]*?Số thuế hoàn luỹ kế từ đầu năm:\s*([\d.]+)\s*tỷ đồng/u);if(ht)result.hoan_thue={tuan:_bcnFloat(ht[1]),thang:_bcnFloat(ht[2]),luy_ke:_bcnFloat(ht[3])};return result;}
+
+/* ---- Định dạng số ---- */
+var BCN_SHORT={"Hải quan CK Quốc tế Móng Cái (20BB)":"Móng Cái (20BB)","Hải quan CK Hoành Mô (20BC)":"Hoành Mô (20BC)","Hải quan Bắc Phong Sinh (20BD)":"Bắc Phong Sinh (20BD)","Hải quan CK cảng Vạn Gia (20CE)":"Vạn Gia (20CE)","Hải quan CK cảng Hòn Gai (20CF)":"Hòn Gai (20CF)","Hải quan CK cảng Cẩm Phả (20CG)":"Cẩm Phả (20CG)"};
+function _bcnNf(x,d){if(x===null||x===undefined||isNaN(x))return "—";return Number(x).toLocaleString('vi-VN',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});}
+function _bcnP1(x){if(x===null||x===undefined||isNaN(x))return "—";return (x*100).toFixed(1).replace('.',',')+"%";}
+function _bcnDlt(x){if(x===null||x===undefined||isNaN(x))return{t:"—",c:""};return{t:(x>=0?"+":"−")+Math.abs(x*100).toFixed(1).replace('.',',')+"%",c:x>=0?"bcn-up":"bcn-down"};}
+function _bcnShort(n){return BCN_SHORT[n]||n;}
+
+/* ---- Vẽ dashboard 3 lớp ---- */
+function bcnRender(data, ngayBC, nguoiNhap, ngayNhap){
+  var tcc=data.toan_chi_cuc, d=tcc?tcc.ngay:null;
+  var body=document.getElementById('bcngay-body');
+  if(!d){body.innerHTML='<div class="card" style="color:var(--red);padding:20px">Không đọc được khối TỔNG HỢP TOÀN CHI CỤC trong dữ liệu.</div>';return;}
+  document.getElementById('bcngay-sub').textContent="Ngày báo cáo "+(ngayBC||d.den_ngay)+" · Lũy kế năm đến "+(tcc.nam?tcc.nam.den_ngay:"")+" · "+Object.keys(data.units).length+" đơn vị"+(nguoiNhap?" · Nhập: "+nguoiNhap+(ngayNhap?" ("+ngayNhap+")":""):"");
+  var h="";
+  var C={navy:"#1A3A6B",gold:"#C8960C",lb:"#E8EEF7"};
+  /* LỚP 1 */
+  h+='<div class="card" style="padding:16px;margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px;letter-spacing:.3px">LỚP 1 · TOÀN CẢNH CHI CỤC (TRONG NGÀY)</div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px">';
+  h+=_bcnKpi("Tổng tờ khai",_bcnNf(d.tong_tk),"NK "+_bcnNf(d.nk)+" · XK "+_bcnNf(d.xk),false);
+  h+=_bcnKpi("Kim ngạch (tr.USD)",_bcnNf(d.kim_ngach,1),"NK "+_bcnNf(d.kim_ngach_nk,1)+" · XK "+_bcnNf(d.kim_ngach_xk,1),false);
+  h+=_bcnKpi("Số thuế (tỷ đồng)",_bcnNf(d.thue,1),"Tháng "+(tcc.thang?_bcnNf(tcc.thang.thue,0):"—")+" · Năm "+(tcc.nam?_bcnNf(tcc.nam.thue,0):"—"),true);
+  h+=_bcnKpi("DN hoạt động",_bcnNf(d.dn),"Mới mở TK: "+(d.dn_moi?_bcnNf(d.dn_moi.so_dn):"0")+" DN",false);
+  h+='</div>';
+  /* DN theo địa bàn */
+  var tn=tcc.ngay,tt=tcc.thang,tnam=tcc.nam;
+  function TT(x){return x?x.dn_trong_tinh:null;}function NT(x){return x?x.dn_ngoai_tinh:null;}function TO(x){return x?x.dn:null;}function RT(x){return(x&&x.dn)?x.dn_trong_tinh/x.dn:null;}
+  h+='<div style="background:#F1EFE8;border-radius:10px;padding:11px 14px;margin-bottom:10px"><div style="font-size:11px;font-weight:600;color:#444;margin-bottom:8px">🏢 DOANH NGHIỆP THEO ĐỊA BÀN <span style="font-weight:400;color:#6b6b6b">(phục vụ báo cáo họp tỉnh)</span></div>';
+  h+='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="color:#5F5E5A;font-size:11px"><th style="text-align:left;padding:2px 4px;font-weight:400"></th><th style="text-align:right;padding:2px 8px;font-weight:400">Trong ngày</th><th style="text-align:right;padding:2px 8px;font-weight:400">Trong tháng</th><th style="text-align:right;padding:2px 8px;font-weight:400">Lũy kế năm</th></tr></thead><tbody>';
+  h+='<tr><td style="padding:5px 4px;color:#185FA5;font-weight:600;border-top:1px solid #D3D1C7">🏠 DN trong tỉnh</td><td style="padding:5px 8px;text-align:right;color:#185FA5;font-weight:600;border-top:1px solid #D3D1C7">'+_bcnNf(TT(tn))+'</td><td style="padding:5px 8px;text-align:right;color:#185FA5;font-weight:600;border-top:1px solid #D3D1C7">'+_bcnNf(TT(tt))+'</td><td style="padding:5px 8px;text-align:right;color:#185FA5;font-weight:600;border-top:1px solid #D3D1C7">'+_bcnNf(TT(tnam))+'</td></tr>';
+  h+='<tr><td style="padding:5px 4px;color:#633806;border-top:1px solid #D3D1C7">🚚 DN ngoài tỉnh</td><td style="padding:5px 8px;text-align:right;border-top:1px solid #D3D1C7">'+_bcnNf(NT(tn))+'</td><td style="padding:5px 8px;text-align:right;border-top:1px solid #D3D1C7">'+_bcnNf(NT(tt))+'</td><td style="padding:5px 8px;text-align:right;border-top:1px solid #D3D1C7">'+_bcnNf(NT(tnam))+'</td></tr>';
+  h+='<tr style="font-weight:700"><td style="padding:5px 4px;border-top:1px solid #B4B2A9">Tổng cộng</td><td style="padding:5px 8px;text-align:right;border-top:1px solid #B4B2A9">'+_bcnNf(TO(tn))+'</td><td style="padding:5px 8px;text-align:right;border-top:1px solid #B4B2A9">'+_bcnNf(TO(tt))+'</td><td style="padding:5px 8px;text-align:right;border-top:1px solid #B4B2A9">'+_bcnNf(TO(tnam))+'</td></tr>';
+  h+='<tr><td style="padding:3px 4px;font-size:10.5px;color:#888">Tỷ trọng DN trong tỉnh</td><td style="padding:3px 8px;text-align:right;font-size:10.5px;color:#185FA5">'+_bcnP1(RT(tn))+'</td><td style="padding:3px 8px;text-align:right;font-size:10.5px;color:#185FA5">'+_bcnP1(RT(tt))+'</td><td style="padding:3px 8px;text-align:right;font-size:10.5px;color:#185FA5">'+_bcnP1(RT(tnam))+'</td></tr>';
+  h+='</tbody></table></div>';
+  /* Phân luồng */
+  h+='<div style="display:flex;gap:6px;font-size:11px"><div style="flex:1;background:#EAF3DE;color:#27500A;padding:6px 10px;border-radius:6px">🟢 Xanh '+_bcnNf(d.xanh)+' tờ · '+_bcnP1(d.xanh_pct)+'</div><div style="flex:1;background:#FAEEDA;color:#633806;padding:6px 10px;border-radius:6px">🟡 Vàng '+_bcnNf(d.vang)+' tờ · '+_bcnP1(d.vang_pct)+'</div><div style="flex:1;background:#FCEBEB;color:#791F1F;padding:6px 10px;border-radius:6px">🔴 Đỏ '+_bcnNf(d.do)+' tờ · '+_bcnP1(d.do_pct)+'</div></div>';
+  h+='</div>';
+  /* LỚP 2 */
+  h+='<div class="card" style="padding:16px;margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px;letter-spacing:.3px">LỚP 2 · SO SÁNH ĐƠN VỊ (TK NGÀY + BIẾN ĐỘNG vs THÁNG TRƯỚC)</div>';
+  h+='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--navy);color:#fff"><th style="padding:7px 8px;text-align:left;font-weight:600">Đơn vị</th><th style="padding:7px 8px;text-align:right;font-weight:600">TK ngày</th><th style="padding:7px 8px;text-align:right;font-weight:600">Thuế (tỷ)</th><th style="padding:7px 8px;text-align:right;font-weight:600">Δ TK</th><th style="padding:7px 8px;text-align:right;font-weight:600">Δ Thuế</th><th style="padding:7px 8px;text-align:center;font-weight:600">Đỏ</th></tr></thead><tbody>';
+  var warnU=[];
+  Object.keys(data.units).forEach(function(name){
+    var u=data.units[name],un=u.ngay;
+    var cmp=(u.sosanh||[]).find(function(s){return s.label.indexOf("Tháng trước")>=0;});
+    var dtk=cmp?_bcnDlt(cmp.tk):{t:"—",c:""},dth=cmp?_bcnDlt(cmp.thue):{t:"—",c:""};
+    var noData=!un||un.tong_tk===0;
+    var hotTk=(cmp&&cmp.tk!==null&&cmp.tk<=-0.30),hotTh=(cmp&&cmp.thue!==null&&cmp.thue<=-0.30);
+    if(hotTk||hotTh)warnU.push(_bcnShort(name));
+    var stTk=hotTk?'background:#FCEBEB;color:#A32D2D;font-weight:700':(dtk.c==='bcn-up'?'color:#27500A':(dtk.c==='bcn-down'?'color:#A32D2D':''));
+    var stTh=hotTh?'background:#FCEBEB;color:#A32D2D;font-weight:700':(dth.c==='bcn-up'?'color:#27500A':(dth.c==='bcn-down'?'color:#A32D2D':''));
+    h+='<tr style="border-bottom:1px solid var(--border)'+(noData?';color:#999':'')+'"><td style="padding:7px 8px">'+_bcnShort(name)+'</td><td style="padding:7px 8px;text-align:right;font-variant-numeric:tabular-nums">'+(un?_bcnNf(un.tong_tk):"—")+'</td><td style="padding:7px 8px;text-align:right;font-variant-numeric:tabular-nums">'+(un?_bcnNf(un.thue,1):"—")+'</td><td style="padding:7px 8px;text-align:right;'+stTk+'">'+dtk.t+'</td><td style="padding:7px 8px;text-align:right;'+stTh+'">'+dth.t+'</td><td style="padding:7px 8px;text-align:center;font-variant-numeric:tabular-nums">'+(un?_bcnNf(un.do):"—")+'</td></tr>';
+  });
+  h+='<tr style="background:#EBF0F7;font-weight:700"><td style="padding:7px 8px;color:var(--navy)">TOÀN CHI CỤC</td><td style="padding:7px 8px;text-align:right;color:var(--navy);font-variant-numeric:tabular-nums">'+_bcnNf(d.tong_tk)+'</td><td style="padding:7px 8px;text-align:right;color:var(--navy);font-variant-numeric:tabular-nums">'+_bcnNf(d.thue,1)+'</td><td style="padding:7px 8px;text-align:right;color:#5F5E5A">—</td><td style="padding:7px 8px;text-align:right;color:#5F5E5A">—</td><td style="padding:7px 8px;text-align:center;color:var(--navy);font-variant-numeric:tabular-nums">'+_bcnNf(d.do)+'</td></tr>';
+  h+='</tbody></table>';
+  if(warnU.length)h+='<div style="font-size:11.5px;color:#791F1F;background:#FCEBEB;padding:7px 12px;border-radius:6px;margin-top:8px">⚠ Cần lưu ý: biến động giảm mạnh (≥30%) tại: '+warnU.join(", ")+'. Đề nghị làm rõ nguyên nhân.</div>';
+  if(data.warnings&&data.warnings.length)h+='<div style="font-size:11.5px;color:#633806;background:#FAEEDA;padding:7px 12px;border-radius:6px;margin-top:8px">⚠ Cảnh báo dữ liệu: '+data.warnings.join(" · ")+'</div>';
+  h+='</div>';
+  /* LỚP 3 */
+  var thueNam=tcc.nam?tcc.nam.thue:null;
+  h+='<div class="card" style="padding:16px"><div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px;letter-spacing:.3px">LỚP 3 · ĐIỀU HÀNH THU NSNN (LŨY KẾ NĂM vs KẾ HOẠCH)</div>';
+  h+=_bcnBar("Thu NSNN (Pháp lệnh CP giao)",thueNam,KH_NSNN_BCNGAY.phaplenh,"#1F9D55");
+  h+=_bcnBar("Thu NSNN (Chỉ thị Cục giao)",thueNam,KH_NSNN_BCNGAY.cuc,"#1F9D55");
+  h+=_bcnBar("Thu NSNN (KH phấn đấu UBND tỉnh)",thueNam,KH_NSNN_BCNGAY.ubnd,"#C8960C");
+  h+='</div>';
+  body.innerHTML=h;
+}
+function _bcnKpi(l,v,s,gold){var bg=gold?"#FBF3DF":"#E8EEF7",cl=gold?"#633806":"#15305A",cv=gold?"#C8960C":"#1A3A6B",cs=gold?"#854F0B":"#5F5E5A";return '<div style="background:'+bg+';border-radius:10px;padding:12px 14px"><div style="font-size:11px;color:'+cl+'">'+l+'</div><div style="font-size:26px;font-weight:700;color:'+cv+';font-variant-numeric:tabular-nums;line-height:1.15">'+v+'</div><div style="font-size:11px;color:'+cs+'">'+s+'</div></div>';}
+function _bcnBar(label,val,kh,color){var p=val?val/kh:0,pc=Math.min(p*100,100);return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px"><span>'+label+'</span><span style="color:#5F5E5A">'+_bcnNf(val,0)+' / '+_bcnNf(kh,0)+' tỷ · '+(p*100).toFixed(1).replace('.',',')+'%</span></div><div style="height:9px;background:#E8EEF7;border-radius:5px;overflow:hidden"><div style="height:100%;border-radius:5px;width:'+pc+'%;background:'+color+'"></div></div></div>';}
+
+/* ---- Tải dữ liệu từ server ---- */
+async function loadBCNgay(ngay, force){
+  var loading=document.getElementById('bcngay-loading'),body=document.getElementById('bcngay-body');
+  if(bcngayLoaded && !force && !ngay && bcngayData){ return; }
+  loading.style.display='flex'; body.innerHTML='';
+  try{
+    // tải danh sách ngày (cho dropdown)
+    var resList=await fetch(API+"?bcngay=list&t="+Date.now());
+    var dList=await resList.json();
+    if(dList.ok && dList.ngayList){
+      var sel=document.getElementById('bcngay-select');
+      sel.innerHTML=dList.ngayList.map(function(x){return '<option value="'+x.ngayBC+'">'+x.ngayBC+'</option>';}).join('');
+      if(ngay) sel.value=ngay;
+    }
+    var url=API+"?bcngay=get&t="+Date.now()+(ngay?("&ngay="+encodeURIComponent(ngay)):"");
+    var res=await fetch(url);
+    var d=await res.json();
+    loading.style.display='none';
+    if(d.ok && d.data){
+      bcngayData=d.data; bcngayLoaded=true;
+      bcnRender(d.data, d.ngayBC, d.nguoiNhap, d.ngayNhap);
+    } else {
+      body.innerHTML='<div class="card" style="padding:24px;text-align:center;color:var(--muted)">Chưa có báo cáo ngày nào. Bấm <b>➕ Nhập báo cáo ngày</b> để thêm.</div>';
+      bcngayLoaded=true;
+    }
+  }catch(e){
+    loading.style.display='none';
+    body.innerHTML='<div class="card" style="padding:20px;color:var(--red)">Lỗi kết nối: '+e.message+'</div>';
+  }
+}
+
+/* ---- Nhập báo cáo ngày (admin) ---- */
+function moModalNhapBCNgay(){
+  if(typeof requireAdminOrPrompt==="function" && !requireAdminOrPrompt())return;
+  document.getElementById('bcngay-raw').value='';
+  document.getElementById('bcngay-preview').innerHTML='';
+  document.getElementById('modal-bcngay').style.display='flex';
+}
+function dongModalNhapBCNgay(){document.getElementById('modal-bcngay').style.display='none';}
+function xemTruocBCNgay(){
+  var raw=document.getElementById('bcngay-raw').value.trim();
+  var pv=document.getElementById('bcngay-preview');
+  if(!raw){pv.innerHTML='<span style="color:var(--red)">Chưa có nội dung.</span>';return;}
+  try{
+    var data=bcnParse(raw);
+    var tcc=data.toan_chi_cuc,d=tcc?tcc.ngay:null;
+    var nDV=Object.keys(data.units).length;
+    var msg='<div style="background:#EAF3DE;color:#27500A;padding:8px 12px;border-radius:6px">✓ Đọc được: '+nDV+' đơn vị';
+    if(d)msg+=' · Toàn CC ngày '+(d.den_ngay||'')+': TK '+_bcnNf(d.tong_tk)+', Thuế '+_bcnNf(d.thue,1)+' tỷ';
+    msg+='</div>';
+    if(data.warnings&&data.warnings.length)msg+='<div style="background:#FAEEDA;color:#633806;padding:8px 12px;border-radius:6px;margin-top:6px">⚠ '+data.warnings.join(' · ')+'</div>';
+    pv.innerHTML=msg;
+  }catch(e){pv.innerHTML='<span style="color:var(--red)">Lỗi đọc dữ liệu: '+e.message+'</span>';}
+}
+async function luuBCNgay(){
+  var raw=document.getElementById('bcngay-raw').value.trim();
+  if(!raw){showToast('⚠ Chưa có nội dung để lưu');return;}
+  var data;
+  try{ data=bcnParse(raw); }catch(e){ showToast('⚠ Lỗi đọc dữ liệu: '+e.message); return; }
+  var tcc=data.toan_chi_cuc, d=tcc?tcc.ngay:null;
+  if(!d||!d.den_ngay){ showToast('⚠ Không xác định được ngày báo cáo. Kiểm tra khối TỔNG HỢP TOÀN CHI CỤC.'); return; }
+  var ngayBC=d.den_ngay;
+  showToast('⏳ Đang lưu báo cáo ngày '+ngayBC+'...');
+  try{
+    var res=await fetch(API,{method:"POST",body:JSON.stringify({action:"importBaoCaoNgay",pin:getAdminPin(),ngayBC:ngayBC,data:data,nguoiNhap:"Admin"})});
+    var r=await res.json();
+    if(r.ok){
+      showToast('✓ Đã lưu báo cáo ngày '+ngayBC+(r.ghiDe?' (ghi đè)':''));
+      dongModalNhapBCNgay();
+      bcngayLoaded=false;
+      loadBCNgay(ngayBC, true);
+    } else {
+      showToast('⚠ '+(r.error||'Lưu thất bại'));
+    }
+  }catch(e){ showToast('⚠ Lỗi kết nối: '+e.message); }
+}
+/* =============== HẾT MODULE BÁO CÁO NGÀY =============== */
+
 </script>
 </body>
 </html>
