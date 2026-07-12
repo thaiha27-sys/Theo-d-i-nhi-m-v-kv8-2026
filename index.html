@@ -3830,6 +3830,12 @@ function bcnRender(data, ngayBC, nguoiNhap, ngayNhap){
 function _bcnKpi(l,v,s,gold){var bg=gold?"#FBF3DF":"#E8EEF7",cl=gold?"#633806":"#15305A",cv=gold?"#C8960C":"#1A3A6B",cs=gold?"#854F0B":"#5F5E5A";return '<div style="background:'+bg+';border-radius:10px;padding:12px 14px"><div style="font-size:11px;color:'+cl+'">'+l+'</div><div style="font-size:26px;font-weight:700;color:'+cv+';font-variant-numeric:tabular-nums;line-height:1.15">'+v+'</div><div style="font-size:11px;color:'+cs+'">'+s+'</div></div>';}
 function _bcnBar(label,val,kh,color){var p=val?val/kh:0,pc=Math.min(p*100,100);return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px"><span>'+label+'</span><span style="color:#5F5E5A">'+_bcnNf(val,0)+' / '+_bcnNf(kh,0)+' tỷ · '+(p*100).toFixed(1).replace('.',',')+'%</span></div><div style="height:9px;background:#E8EEF7;border-radius:5px;overflow:hidden"><div style="height:100%;border-radius:5px;width:'+pc+'%;background:'+color+'"></div></div></div>';}
 
+/* ---- v21: dd/MM/yyyy -> số nguyên yyyymmdd để so sánh ---- */
+function _bcnKey(s){
+  var m=String(s||"").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  return m ? ((+m[3])*10000 + (+m[2])*100 + (+m[1])) : 0;
+}
+
 /* ---- Tải dữ liệu từ server ---- */
 async function loadBCNgay(ngay, force){
   var loading=document.getElementById('bcngay-loading'),body=document.getElementById('bcngay-body');
@@ -3837,14 +3843,19 @@ async function loadBCNgay(ngay, force){
   loading.style.display='flex'; body.innerHTML='';
   try{
     // tải danh sách ngày (cho dropdown)
-    var resList=await fetch(API+"?bcngay=list&t="+Date.now());
+    var _nc = force ? ("&nocache=" + Date.now()) : "";   // v21: chỉ phá cache khi BẤM "Tải lại"
+    var resList=await fetch(API+"?bcngay=list"+_nc);
     var dList=await resList.json();
-    if(dList.ok && dList.ngayList){
+    if(dList.ok && dList.ngayList && dList.ngayList.length){
+      // v21: LUÔN sắp xếp MỚI → CŨ ở phía client (không tin thứ tự server trả về)
+      var ds=dList.ngayList.slice().sort(function(a,b){ return _bcnKey(b.ngayBC)-_bcnKey(a.ngayBC); });
       var sel=document.getElementById('bcngay-select');
-      sel.innerHTML=dList.ngayList.map(function(x){return '<option value="'+x.ngayBC+'">'+_bcnNgay(x.ngayBC)+'</option>';}).join('');
-      if(ngay) sel.value=ngay;
+      sel.innerHTML=ds.map(function(x){return '<option value="'+x.ngayBC+'">'+_bcnNgay(x.ngayBC)+'</option>';}).join('');
+      // Không chỉ định ngày -> mặc định lấy NGÀY MỚI NHẤT (phần tử đầu sau khi sắp)
+      if(!ngay) ngay = ds[0].ngayBC;
+      sel.value = ngay;
     }
-    var url=API+"?bcngay=get&t="+Date.now()+(ngay?("&ngay="+encodeURIComponent(ngay)):"");
+    var url=API+"?bcngay=get"+(ngay?("&ngay="+encodeURIComponent(ngay)):"")+_nc;
     var res=await fetch(url);
     var d=await res.json();
     loading.style.display='none';
@@ -3991,7 +4002,7 @@ function kpiClass(xl){
 async function loadKPI(ky, force){
   if(kpiLoaded && !force) return;
   try{
-    var rl = await (await fetch(API+"?kpi=list&t="+Date.now())).json();
+    var rl = await (await fetch(API+"?kpi=list")).json();
     var ds = (rl && rl.danhSach) || [];
     var sel = document.getElementById("kpi-ky");
     sel.innerHTML = ds.map(function(k){ return '<option value="'+_esc(k.ky)+'">Kỳ '+_esc(k.ky)+' · tháng '+k.thang+'</option>'; }).join("");
@@ -4001,7 +4012,7 @@ async function loadKPI(ky, force){
       kpiLoaded=true; return;
     }
     if(ky) sel.value=ky;
-    var r = await (await fetch(API+"?kpi=get&ky="+encodeURIComponent(sel.value||"")+"&t="+Date.now())).json();
+    var r = await (await fetch(API+"?kpi=get&ky="+encodeURIComponent(sel.value||""))).json();
     if(!r.ok||r.trong){
       document.getElementById("kpi-empty").style.display="block";
       document.getElementById("kpi-body").style.display="none"; kpiLoaded=true; return;
@@ -4282,7 +4293,7 @@ function kpiXuatExcel(){
 async function loadISO(force){
   if(isoLoaded && !force) return;
   try{
-    var r = await (await fetch(API+"?iso=all&t="+Date.now())).json();
+    var r = await (await fetch(API+"?iso=all")).json();
     if(!r.ok){ showToast("⚠ "+(r.error||"Lỗi tải ISO")); return; }
     ISO.quyTrinh=r.quyTrinh||[]; ISO.taiLieu=r.taiLieu||[]; ISO.theoDoi=r.theoDoi||[];
     isoRender(); isoLoaded=true;
@@ -4784,7 +4795,7 @@ function v20SyncBadge(){
 
 document.addEventListener("DOMContentLoaded", function(){
   v20DiChuyenDOM();
-  setInterval(v20SyncBadge, 1500);
+  setInterval(v20SyncBadge, 15000);   // v21: 1,5s -> 15s (giảm tải nền)
 });
 
 </script>
