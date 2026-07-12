@@ -3194,6 +3194,16 @@ function exportBaoCaoChuan(mode) {
 .v20-divider:before,.v20-divider:after{content:"";flex:1;height:2px;background:linear-gradient(90deg,transparent,#cbd5e1,transparent)}
 .v20-divider span{white-space:nowrap;padding:4px 14px;background:var(--navy);color:#fff;border-radius:14px;font-size:12px}
 
+
+/* v20 — Sơ đồ ISO đầy đủ */
+.v19-step-nd{font-size:12.5px;color:#475569;line-height:1.5;margin:5px 0 7px}
+.v19-step-sp{font-size:12px;color:#065F46;background:#ECFDF5;border-left:3px solid #10B981;padding:5px 9px;border-radius:0 5px 5px 0;margin-top:7px}
+.v19-chip{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:11px;margin:2px 5px 2px 0;white-space:nowrap}
+.v19-chip.ct{background:#EFF6FF;color:#1E40AF}
+.v19-chip.th{background:#FEF3C7;color:#92400E;font-weight:600}
+.v19-chip.ph{background:#F1F5F9;color:#475569}
+.v19-chip.pd{background:#F5F3FF;color:#5B21B6}
+.v19-chip.bm{background:#FFFBEB;color:#92400E}
   </style></head>
   <body onload="window.print()">
     <div class="letterhead">
@@ -4217,16 +4227,22 @@ function isoChon(ma){
   if(x.soDo && x.soDo.length){
     h += '<div class="v19-flow">' + x.soDo.map(function(s,i){
       var meta = [];
-      if(s.trachNhiem) meta.push("👤 "+_esc(s.trachNhiem));
-      if(s.thoiHan)    meta.push("⏱ "+_esc(s.thoiHan));
+      if(s.trachNhiem) meta.push('<span class="v19-chip ct">👤 '+_esc(s.trachNhiem)+'</span>');
+      if(s.thoiHan)    meta.push('<span class="v19-chip th">⏱ '+_esc(s.thoiHan)+'</span>');
+      if(s.phoiHop && s.phoiHop!=="—") meta.push('<span class="v19-chip ph">🤝 '+_esc(s.phoiHop)+'</span>');
+      if(s.pheDuyet && s.pheDuyet!=="—") meta.push('<span class="v19-chip pd">✔ '+_esc(s.pheDuyet)+'</span>');
       if(s.bieuMau){
         var f = tl.filter(function(t){return t.maBieu && t.maBieu.toLowerCase()===String(s.bieuMau).toLowerCase();})[0];
-        meta.push(f ? '📋 <a href="'+_esc(f.fileUrl)+'" target="_blank" style="color:var(--gold);font-weight:700">'+_esc(s.bieuMau)+'</a>'
-                    : '📋 <span style="color:var(--red)" title="Chưa đính kèm file mẫu biểu này">'+_esc(s.bieuMau)+' ⚠</span>');
+        meta.push(f ? '<span class="v19-chip bm">📋 <a href="'+_esc(f.fileUrl)+'" target="_blank" style="color:var(--gold);font-weight:700">'+_esc(s.bieuMau)+'</a></span>'
+                    : '<span class="v19-chip bm" style="color:var(--red)" title="Chưa đính kèm file mẫu biểu này">📋 '+_esc(s.bieuMau)+' ⚠</span>');
       }
+      // Nội dung thực hiện — công chức cần đọc để biết LÀM GÌ
+      var nd = s.noiDung ? '<div class="v19-step-nd">'+_esc(String(s.noiDung).slice(0,300))+'</div>' : '';
+      // Sản phẩm đầu ra — căn cứ để lãnh đạo kiểm soát
+      var sp = s.sanPham ? '<div class="v19-step-sp">📦 <b>Sản phẩm:</b> '+_esc(s.sanPham)+'</div>' : '';
       return '<div class="v19-step"><div class="v19-step-n"><div class="v19-step-c">'+(i+1)+'</div><div class="v19-step-l"></div></div>'+
-        '<div class="v19-step-b"><div class="v19-step-t">'+_esc(s.buoc)+'</div>'+
-        (meta.length?'<div class="v19-step-m">'+meta.join("")+'</div>':'')+'</div></div>';
+        '<div class="v19-step-b"><div class="v19-step-t">'+_esc(s.buoc)+'</div>'+ nd +
+        (meta.length?'<div class="v19-step-m">'+meta.join("")+'</div>':'') + sp + '</div></div>';
     }).join("") + '</div>';
   } else h += '<div class="v19-empty-sub">Chưa khai báo sơ đồ. Sửa quy trình để thêm các bước.</div>';
 
