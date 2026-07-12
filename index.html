@@ -156,6 +156,121 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
 /* ERROR */
 .form-error{color:var(--red);font-size:12px;margin-top:5px;display:none}
 @media(max-width:700px){.pa-grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.ld-grid{grid-template-columns:1fr}.header-right .btn-outline:not(:first-child):not(:nth-child(2)):not(:nth-child(3)){display:none}}
+
+/* ================= v19: CHỈ TIÊU TRỌNG SỐ + SMART ISO ================= */
+.v19-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.v19-bar-left,.v19-bar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.v19-sel,.v19-inp{padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;color:var(--text);background:#fff;outline:none}
+.v19-inp:focus,.v19-sel:focus{border-color:var(--navy)}
+.v19-inp{width:100%}
+.v19-meta{font-size:12px;color:var(--muted)}
+.v19-note{font-size:11.5px;color:var(--muted);font-weight:400}
+.v19-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.v19-card-head h3{margin:0;font-size:15px;color:var(--navy)}
+.v19-empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.v19-empty-ico{font-size:44px;margin-bottom:10px}
+.v19-empty-sub{font-size:13px;margin-top:6px;line-height:1.6}
+
+/* KPI cards */
+.v19-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.v19-kpi{background:#fff;border:1px solid var(--border);border-left:4px solid var(--navy);border-radius:10px;padding:12px 14px;box-shadow:var(--shadow)}
+.v19-kpi-l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;font-weight:600}
+.v19-kpi-v{font-size:26px;font-weight:800;color:var(--navy);line-height:1.25;margin-top:2px}
+.v19-kpi-s{font-size:11.5px;color:var(--muted)}
+.v19-kpi.gold{border-left-color:var(--gold)}.v19-kpi.gold .v19-kpi-v{color:var(--gold)}
+.v19-kpi.red{border-left-color:var(--red)}.v19-kpi.red .v19-kpi-v{color:var(--red)}
+.v19-kpi.green{border-left-color:var(--green)}.v19-kpi.green .v19-kpi-v{color:var(--green)}
+
+/* Bảng */
+.v19-table{width:100%;border-collapse:collapse;font-size:12.8px}
+.v19-table th{background:var(--navy);color:#fff;padding:9px 8px;text-align:center;font-weight:600;font-size:11.5px;position:sticky;top:0;z-index:2}
+.v19-table td{padding:8px;border-bottom:1px solid var(--border);text-align:center}
+.v19-table td.l{text-align:left}
+.v19-table tbody tr:hover{background:var(--light)}
+.v19-dv{font-weight:600;color:var(--navy);cursor:pointer}
+.v19-dv:hover{text-decoration:underline}
+.v19-d{display:inline-block;min-width:46px;padding:3px 7px;border-radius:6px;font-weight:700;font-size:12px}
+.v19-d.xs{background:#E3F5EA;color:#146c39}
+.v19-d.tot{background:#E8F0FB;color:#1A3A6B}
+.v19-d.ht{background:#FDF3DC;color:#8a6508}
+.v19-d.chua{background:#FBE6E4;color:#a02f22}
+.v19-d.na{background:#F1F3F6;color:#9aa3ad;font-weight:500}
+.v19-rank{font-weight:800;color:var(--gold)}
+.v19-bar-in{height:6px;background:#EDF1F6;border-radius:4px;overflow:hidden;margin-top:3px}
+.v19-bar-in i{display:block;height:100%;background:var(--navy)}
+
+.v19-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.v19-alert{display:flex;gap:9px;padding:9px 11px;border-radius:8px;margin-bottom:8px;font-size:12.8px;line-height:1.5}
+.v19-alert.hi{background:#FBE9E7;border-left:3px solid var(--red)}
+.v19-alert.mid{background:#FFF6E0;border-left:3px solid var(--gold)}
+.v19-alert.ok{background:#E8F6EE;border-left:3px solid var(--green)}
+.v19-lvrow{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:12.8px}
+.v19-lvname{flex:0 0 168px;color:var(--text)}
+.v19-lvbar{flex:1;height:16px;background:#EDF1F6;border-radius:5px;overflow:hidden}
+.v19-lvbar i{display:block;height:100%;background:linear-gradient(90deg,var(--navy),#3d6bb3)}
+.v19-lvval{flex:0 0 52px;text-align:right;font-weight:700;color:var(--navy)}
+
+/* Smart ISO */
+.v19-iso-grid{display:grid;grid-template-columns:380px 1fr;gap:14px;align-items:start}
+.v19-iso-list{max-height:620px;overflow-y:auto}
+.v19-qt{border:1px solid var(--border);border-left:3px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:.15s}
+.v19-qt:hover{border-color:var(--navy);background:var(--light)}
+.v19-qt.on{border-left-color:var(--navy);background:#EEF3FB}
+.v19-qt.w-hi{border-left-color:var(--red)}
+.v19-qt.w-mid{border-left-color:var(--gold)}
+.v19-qt-ma{font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.4px}
+.v19-qt-ten{font-size:13.2px;font-weight:600;color:var(--navy);margin:2px 0 4px;line-height:1.4}
+.v19-qt-sub{font-size:11.2px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap}
+.v19-tag{display:inline-block;padding:1px 7px;border-radius:20px;font-size:10.5px;font-weight:600}
+.v19-tag.ok{background:#E3F5EA;color:#146c39}
+.v19-tag.hi{background:#FBE6E4;color:#a02f22}
+.v19-tag.mid{background:#FDF3DC;color:#8a6508}
+.v19-tag.n{background:#EEF1F5;color:#5d6b7a}
+.v19-iso-detail{min-height:200px}
+.v19-sec{font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;margin:16px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+
+/* Sơ đồ quy trình */
+.v19-flow{display:flex;flex-direction:column;gap:0;padding:4px 0}
+.v19-step{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:stretch}
+.v19-step-n{display:flex;flex-direction:column;align-items:center}
+.v19-step-c{width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:0 0 26px}
+.v19-step-l{flex:1;width:2px;background:var(--border);min-height:12px}
+.v19-step:last-child .v19-step-l{display:none}
+.v19-step-b{background:var(--light);border:1px solid var(--border);border-radius:8px;padding:8px 11px;margin-bottom:10px}
+.v19-step-t{font-size:13px;font-weight:600;color:var(--navy)}
+.v19-step-m{font-size:11.3px;color:var(--muted);margin-top:3px;display:flex;gap:12px;flex-wrap:wrap}
+
+.v19-files{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.v19-file{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12.3px;background:#fff}
+.v19-file a{color:var(--navy);font-weight:600;text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v19-file a:hover{text-decoration:underline}
+.v19-file .x{color:var(--red);cursor:pointer;font-weight:700}
+
+/* Modal */
+.v19-modal{position:fixed;inset:0;background:rgba(20,32,52,.55);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px}
+.v19-modal-box{background:#fff;border-radius:12px;width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 18px 50px rgba(0,0,0,.28)}
+.v19-modal-lg{max-width:880px}
+.v19-modal-head{background:var(--navy);color:#fff;padding:12px 16px;border-radius:12px 12px 0 0;font-weight:600;font-size:14.5px;display:flex;justify-content:space-between;align-items:center}
+.v19-x{cursor:pointer;font-size:17px;opacity:.85}
+.v19-x:hover{opacity:1}
+.v19-modal-body{padding:16px;overflow-y:auto;flex:1}
+.v19-modal-body label{display:block;font-size:11.8px;font-weight:600;color:var(--muted);margin:9px 0 3px}
+.v19-modal-foot{padding:11px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+.v19-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.v19-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.v19-row label{margin:0 0 3px}
+.v19-hint{font-size:11.8px;color:var(--muted);background:var(--light);border-left:3px solid var(--gold);padding:8px 10px;border-radius:0 6px 6px 0;margin:10px 0;line-height:1.55}
+.v19-log{font-size:12px;font-family:ui-monospace,monospace;background:#F7F9FC;border:1px solid var(--border);border-radius:6px;padding:9px;margin-top:10px;max-height:190px;overflow-y:auto;white-space:pre-wrap;line-height:1.5}
+.v19-ts-lv{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.v19-ts-lv span{flex:1;font-size:12.8px}
+.v19-ts-lv input{width:74px;text-align:center}
+.v19-ts-tong{font-weight:700;font-size:13px;padding:8px 0;border-top:1px solid var(--border);margin-top:6px}
+
+@media(max-width:980px){
+  .v19-2col,.v19-iso-grid,.v19-grid2{grid-template-columns:1fr}
+  .v19-lvname{flex:0 0 120px}
+}
+
 </style>
 </head>
 <body>
@@ -193,6 +308,8 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
   <div class="tab" onclick="switchTab('nsnn')">💰 Chỉ tiêu & Thu NSNN</div>
   <div class="tab" onclick="switchTab('bcngay')">📊 Báo cáo ngày</div>
   <div class="tab" onclick="switchTab('luutru')">🗂 Lưu trữ</div>
+  <div class="tab" onclick="switchTab('kpi')">🏆 Xếp loại đơn vị</div>
+  <div class="tab" onclick="switchTab('iso')">📐 Smart ISO</div>
   <div class="tab" onclick="switchTab('duyet')">🗳 Duyệt <span id="tab-duyet-badge" style="display:none;background:#c62828;color:#fff;font-size:10px;font-weight:700;border-radius:9px;padding:1px 6px;margin-left:3px">0</span></div>
 </div>
 
@@ -462,6 +579,237 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
 </div>
 
 <!-- ========= DUYỆT (ADMIN) ========= -->
+<!-- ========= v19: TAB XẾP LOẠI ĐƠN VỊ (CHỈ TIÊU TRỌNG SỐ) ========= -->
+<div id="tab-kpi" class="tab-content">
+  <div class="v19-bar">
+    <div class="v19-bar-left">
+      <select id="kpi-ky" class="v19-sel" onchange="loadKPI(this.value, true)"></select>
+      <span id="kpi-meta" class="v19-meta"></span>
+    </div>
+    <div class="v19-bar-right">
+      <button id="btn-3nhanh" class="btn btn-outline btn-navy" onclick="v19bToggle()">🎯 Chế độ 3 nhánh</button>
+      <button class="btn btn-outline" onclick="kpiXuatExcel()">⬇ Xuất Excel</button>
+      <button class="btn btn-outline btn-orange admin-only-action" style="display:none" onclick="kpiMoTrongSo()">⚖ Trọng số</button>
+      <button class="btn btn-primary admin-only-action" style="display:none" onclick="kpiMoNapExcel()">📥 Nạp file khung</button>
+    </div>
+  </div>
+
+  <div id="v19b-wrap" style="display:none"></div>
+
+  <div id="kpi-empty" class="v19-empty" style="display:none">
+    <div class="v19-empty-ico">🏆</div>
+    <div><b>Chưa có kỳ chấm điểm nào.</b></div>
+    <div class="v19-empty-sub">Đăng nhập Admin → <b>Nạp file khung</b> (KHUNG_NHAP_CHI_TIEU_TRONGSO.xlsx) để hệ thống tự tính điểm và xếp loại.</div>
+  </div>
+
+  <div id="kpi-body" style="display:none">
+    <!-- KPI tổng quan -->
+    <div class="v19-kpis" id="kpi-tongquan"></div>
+
+    <!-- Bảng xếp hạng -->
+    <div class="card">
+      <div class="v19-card-head">
+        <h3>🏆 Bảng xếp loại đơn vị — điểm bình quân gia quyền 7 lĩnh vực</h3>
+        <span class="v19-note">Điểm CT con = MIN(%HT ÷ tiến độ kỳ vọng; trần) × 100 · Nhấn tên đơn vị để xem chi tiết</span>
+      </div>
+      <div class="table-wrap">
+        <table class="v19-table" id="kpi-table">
+          <thead><tr id="kpi-thead"></tr></thead>
+          <tbody id="kpi-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Phân tích điều hành -->
+    <div class="v19-2col">
+      <div class="card">
+        <div class="v19-card-head"><h3>⚠ Điểm cần lưu ý điều hành</h3></div>
+        <div id="kpi-canhbao"></div>
+      </div>
+      <div class="card">
+        <div class="v19-card-head"><h3>📊 Điểm bình quân theo lĩnh vực</h3></div>
+        <div id="kpi-linhvuc"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========= v19: TAB SMART ISO ========= -->
+<div id="tab-iso" class="tab-content">
+  <div class="v19-bar">
+    <div class="v19-bar-left">
+      <input id="iso-search" class="v19-inp" placeholder="🔍 Tìm quy trình, mã QT, lĩnh vực..." oninput="isoRender()">
+      <select id="iso-filter" class="v19-sel" onchange="isoRender()">
+        <option value="">Tất cả trạng thái</option>
+        <option value="QUA_HAN">⛔ Quá hạn rà soát</option>
+        <option value="SAP_DEN_HAN">⏰ Sắp đến hạn rà soát</option>
+        <option value="THIEU_MAU_BIEU">📎 Thiếu mẫu biểu</option>
+      </select>
+    </div>
+    <div class="v19-bar-right">
+      <button class="btn btn-outline" onclick="isoXuatDanhMuc()">⬇ Xuất danh mục</button>
+      <button class="btn btn-primary admin-only-action" style="display:none" onclick="isoMoQuyTrinh()">➕ Thêm quy trình</button>
+    </div>
+  </div>
+
+  <div class="v19-kpis" id="iso-tongquan"></div>
+
+  <div class="v19-iso-grid">
+    <!-- Danh mục quy trình -->
+    <div class="card">
+      <div class="v19-card-head"><h3>📋 Danh mục quy trình ISO 9001:2015</h3></div>
+      <div id="iso-list" class="v19-iso-list"></div>
+    </div>
+
+    <!-- Chi tiết quy trình -->
+    <div class="card">
+      <div class="v19-card-head"><h3 id="iso-detail-title">📐 Chi tiết quy trình</h3></div>
+      <div id="iso-detail" class="v19-iso-detail">
+        <div class="v19-empty-sub" style="padding:24px;text-align:center">Chọn một quy trình bên trái để xem sơ đồ, mẫu biểu và tình hình triển khai.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: NẠP FILE KHUNG CHỈ TIÊU ===== -->
+<div id="kpi-modal-nap" class="v19-modal" style="display:none">
+  <div class="v19-modal-box">
+    <div class="v19-modal-head">📥 Nạp file khung chỉ tiêu (Excel) <span class="v19-x" onclick="kpiDongModal('kpi-modal-nap')">✕</span></div>
+    <div class="v19-modal-body">
+      <div class="v19-row">
+        <label>Kỳ báo cáo</label>
+        <input id="kpi-nap-ky" class="v19-inp" placeholder="VD: 2026-06">
+        <label>Tháng lũy kế (1–12)</label>
+        <input id="kpi-nap-thang" class="v19-inp" type="number" min="1" max="12" value="6" style="max-width:90px">
+      </div>
+      <div class="v19-hint">
+        Chọn file <b>KHUNG_NHAP_CHI_TIEU_TRONGSO.xlsx</b> đã nhập cột vàng "Lũy kế". Hệ thống chỉ đọc <b>số gốc</b> (Giao 2026 / Lũy kế) từ các sheet II.1–II.7, tự tính %HT, điểm, xếp loại — không phụ thuộc công thức trong file.
+      </div>
+      <input type="file" id="kpi-file" accept=".xlsx,.xls" class="v19-inp">
+      <div id="kpi-nap-log" class="v19-log"></div>
+    </div>
+    <div class="v19-modal-foot">
+      <button class="btn btn-outline" onclick="kpiDongModal('kpi-modal-nap')">Hủy</button>
+      <button class="btn btn-primary" onclick="kpiDocFile()">Đọc & xem trước</button>
+      <button class="btn btn-primary" id="kpi-btn-luu" style="display:none" onclick="kpiLuuKy()">💾 Lưu lên hệ thống</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: TRỌNG SỐ ===== -->
+<div id="kpi-modal-ts" class="v19-modal" style="display:none">
+  <div class="v19-modal-box">
+    <div class="v19-modal-head">⚖ Cấu hình trọng số & tham số chấm điểm <span class="v19-x" onclick="kpiDongModal('kpi-modal-ts')">✕</span></div>
+    <div class="v19-modal-body" id="kpi-ts-body"></div>
+    <div class="v19-modal-foot">
+      <button class="btn btn-outline" onclick="kpiDongModal('kpi-modal-ts')">Hủy</button>
+      <button class="btn btn-primary" onclick="kpiLuuTrongSo()">💾 Lưu cấu hình</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: CHI TIẾT ĐƠN VỊ ===== -->
+<div id="kpi-modal-dv" class="v19-modal" style="display:none">
+  <div class="v19-modal-box v19-modal-lg">
+    <div class="v19-modal-head" id="kpi-dv-title">Chi tiết <span class="v19-x" onclick="kpiDongModal('kpi-modal-dv')">✕</span></div>
+    <div class="v19-modal-body" id="kpi-dv-body"></div>
+  </div>
+</div>
+
+<!-- ===== MODAL: QUY TRÌNH ISO ===== -->
+<div id="iso-modal-qt" class="v19-modal" style="display:none">
+  <div class="v19-modal-box v19-modal-lg">
+    <div class="v19-modal-head" id="iso-qt-title">➕ Quy trình ISO <span class="v19-x" onclick="kpiDongModal('iso-modal-qt')">✕</span></div>
+    <div class="v19-modal-body">
+      <div class="v19-grid2">
+        <div><label>Mã quy trình *</label><input id="iso-f-ma" class="v19-inp" placeholder="VD: QT-VP-01"></div>
+        <div><label>Tên quy trình *</label><input id="iso-f-ten" class="v19-inp" placeholder="Quy trình tiếp nhận và xử lý văn bản đến"></div>
+        <div><label>Lĩnh vực</label><input id="iso-f-lv" class="v19-inp" placeholder="Văn phòng / Nghiệp vụ / TCCB..."></div>
+        <div><label>Đơn vị chủ trì</label><input id="iso-f-dv" class="v19-inp" placeholder="Văn phòng"></div>
+        <div><label>Phiên bản</label><input id="iso-f-pb" class="v19-inp" value="1.0"></div>
+        <div><label>Trạng thái</label>
+          <select id="iso-f-tt" class="v19-inp">
+            <option>Hiệu lực</option><option>Đang sửa đổi</option><option>Hết hiệu lực</option><option>Dự thảo</option>
+          </select></div>
+        <div><label>Ngày ban hành</label><input id="iso-f-nbh" class="v19-inp" placeholder="dd/mm/yyyy"></div>
+        <div><label>Ngày rà soát gần nhất</label><input id="iso-f-nrs" class="v19-inp" placeholder="dd/mm/yyyy"></div>
+        <div><label>Chu kỳ rà soát (tháng)</label><input id="iso-f-ck" class="v19-inp" type="number" value="12"></div>
+      </div>
+      <label>Mô tả / phạm vi áp dụng</label>
+      <textarea id="iso-f-mota" class="v19-inp" rows="2"></textarea>
+
+      <div class="v19-sec">🔀 Sơ đồ quy trình (mỗi dòng 1 bước, dạng: <code>Bước | Trách nhiệm | Thời hạn | Biểu mẫu</code>)</div>
+      <textarea id="iso-f-sodo" class="v19-inp" rows="6" placeholder="Tiếp nhận văn bản | Văn thư | Trong ngày | BM-01
+Phân loại, trình lãnh đạo | Chánh Văn phòng | 0,5 ngày | BM-02
+Chỉ đạo xử lý | Lãnh đạo Chi cục | 1 ngày |
+Chuyển đơn vị thực hiện | Văn thư | Trong ngày | BM-03
+Theo dõi, đôn đốc | Văn phòng | Theo hạn |
+Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
+      <div class="v19-hint">Hệ thống sẽ tự vẽ sơ đồ khối (flowchart) từ các dòng trên.</div>
+    </div>
+    <div class="v19-modal-foot">
+      <button class="btn btn-outline" onclick="kpiDongModal('iso-modal-qt')">Hủy</button>
+      <button class="btn btn-primary" onclick="isoLuuQuyTrinh()">💾 Lưu quy trình</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: THEO DÕI TRIỂN KHAI ISO ===== -->
+<div id="iso-modal-td" class="v19-modal" style="display:none">
+  <div class="v19-modal-box">
+    <div class="v19-modal-head">📊 Ghi nhận triển khai quy trình <span class="v19-x" onclick="kpiDongModal('iso-modal-td')">✕</span></div>
+    <div class="v19-modal-body">
+      <input type="hidden" id="iso-td-ma">
+      <div class="v19-grid2">
+        <div><label>Đơn vị *</label><select id="iso-td-dv" class="v19-inp"></select></div>
+        <div><label>Kỳ *</label><input id="iso-td-ky" class="v19-inp" placeholder="2026-07"></div>
+        <div><label>Số hồ sơ áp dụng</label><input id="iso-td-hs" class="v19-inp" type="number" value="0"></div>
+        <div><label>Số hồ sơ đúng hạn</label><input id="iso-td-dh" class="v19-inp" type="number" value="0"></div>
+        <div><label>Số hồ sơ trễ hạn</label><input id="iso-td-th" class="v19-inp" type="number" value="0"></div>
+        <div><label>Số điểm không phù hợp (NC)</label><input id="iso-td-nc" class="v19-inp" type="number" value="0"></div>
+      </div>
+      <label>Hành động khắc phục</label>
+      <textarea id="iso-td-hd" class="v19-inp" rows="2"></textarea>
+      <label>Trạng thái</label>
+      <select id="iso-td-tt" class="v19-inp">
+        <option>Đang thực hiện</option><option>Đã khắc phục</option><option>Cần hỗ trợ</option>
+      </select>
+    </div>
+    <div class="v19-modal-foot">
+      <button class="btn btn-outline" onclick="kpiDongModal('iso-modal-td')">Hủy</button>
+      <button class="btn btn-primary" onclick="isoLuuTheoDoi()">💾 Ghi nhận</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: UPLOAD TÀI LIỆU ISO ===== -->
+<div id="iso-modal-up" class="v19-modal" style="display:none">
+  <div class="v19-modal-box">
+    <div class="v19-modal-head">📎 Đính kèm tài liệu <span class="v19-x" onclick="kpiDongModal('iso-modal-up')">✕</span></div>
+    <div class="v19-modal-body">
+      <input type="hidden" id="iso-up-ma">
+      <label>Loại tài liệu</label>
+      <select id="iso-up-loai" class="v19-inp">
+        <option value="quy_trinh">📄 Văn bản quy trình</option>
+        <option value="mau_bieu">📋 Mẫu biểu (BM)</option>
+        <option value="so_do">🔀 Sơ đồ quy trình (ảnh/PDF)</option>
+        <option value="huong_dan">📖 Hướng dẫn công việc</option>
+      </select>
+      <div class="v19-grid2">
+        <div><label>Tên tài liệu</label><input id="iso-up-ten" class="v19-inp"></div>
+        <div><label>Mã biểu (nếu có)</label><input id="iso-up-mabieu" class="v19-inp" placeholder="BM-01"></div>
+      </div>
+      <label>Chọn file (≤ 5MB)</label>
+      <input type="file" id="iso-up-file" class="v19-inp">
+      <div class="v19-hint">File lưu trên Google Drive của cơ quan, web chỉ giữ liên kết. Hỗ trợ: DOCX, XLSX, PDF, PNG, JPG.</div>
+    </div>
+    <div class="v19-modal-foot">
+      <button class="btn btn-outline" onclick="kpiDongModal('iso-modal-up')">Hủy</button>
+      <button class="btn btn-primary" onclick="isoUpload()">⬆ Tải lên</button>
+    </div>
+  </div>
+</div>
+
 <div id="tab-duyet" class="tab-content">
   <div class="section">
     <div class="section-title">📝 Nhiệm vụ mới chờ duyệt</div>
@@ -947,7 +1295,9 @@ function switchTab(id) {
   document.querySelectorAll(".tab-content").forEach(e => e.classList.remove("active"));
   document.querySelectorAll(".tab").forEach(e => e.classList.remove("active"));
   document.getElementById("tab-" + id).classList.add("active");
-  const tabs = ["dashboard","table","phanich","nsnn","bcngay","luutru","duyet","baocao"];
+  const tabs = ["dashboard","table","phanich","nsnn","bcngay","kpi","iso","luutru","duyet","baocao"];
+  if (id === "kpi" && !kpiLoaded) loadKPI();
+  if (id === "iso" && !isoLoaded) loadISO();
   document.querySelectorAll(".tab")[tabs.indexOf(id)]?.classList.add("active");
   if (id === "phanich" && !paLoaded) renderPhanich();
   if (id === "nsnn" && !nsnnLoaded) loadNSNN();
@@ -2619,6 +2969,41 @@ function exportBaoCaoChuan(mode) {
     .sign-block .space { height:70px; }
     .meta { font-size:11px; color:#555; margin-top:4px; }
     @media print { .no-print { display:none; } }
+/* ═══════════ v19B — XẾP LOẠI 3 NHÁNH ═══════════ */
+.v19b-block{margin:18px 0;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff}
+.v19b-head{padding:10px 14px;background:var(--navy);color:#fff;font-weight:600;font-size:14px}
+.v19b-head .v19b-sub{opacity:.75;font-weight:400;font-size:12px}
+.v19b-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;margin-right:8px}
+.v19b-badge.n1{background:var(--gold);color:#3b2a00}
+.v19b-badge.n2{background:#2E86C1;color:#fff}
+.v19b-badge.n3{background:#1F9D55;color:#fff}
+.v19b-ts{padding:6px 14px;background:#f1f5f9;font-size:11px;color:#475569;border-bottom:1px solid #e2e8f0}
+.v19b-ts span{display:inline-block;margin-right:10px;padding:1px 6px;background:#fff;border:1px solid #cbd5e1;border-radius:3px}
+.v19b-tblwrap{overflow-x:auto}
+.v19b-tbl{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap}
+.v19b-tbl th{background:#f8fafc;padding:8px 6px;text-align:center;font-weight:600;color:#334155;border-bottom:2px solid #e2e8f0;font-size:11px}
+.v19b-tbl td{padding:7px 6px;text-align:center;border-bottom:1px solid #f1f5f9}
+.v19b-tbl th.l,.v19b-tbl td.l{text-align:left}
+.v19b-tbl tr:hover td{background:#f8fafc}
+.v19b-tbl .rk{font-weight:700;color:var(--navy)}
+.v19b-diem{font-weight:700;font-size:15px;color:var(--navy)}
+.v19b-na{color:#cbd5e1}
+.v19b-lowcov{color:#C0392B;font-weight:600}
+.v19b-warn{background:#FEF3C7;color:#92400E;padding:1px 5px;border-radius:3px;font-size:11px;font-weight:600}
+.v19b-xl{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.v19b-xl.xs{background:#DCFCE7;color:#166534}
+.v19b-xl.t{background:#DBEAFE;color:#1E40AF}
+.v19b-xl.ht{background:#FEF3C7;color:#92400E}
+.v19b-xl.ch{background:#FEE2E2;color:#991B1B}
+.v19b-alert{background:#FFFBEB;border:1px solid #FCD34D;border-left:4px solid #F59E0B;border-radius:8px;padding:12px 16px;margin:14px 0}
+.v19b-alert-t{font-weight:700;color:#92400E;margin-bottom:6px;font-size:13px}
+.v19b-alert ul{margin:0;padding-left:18px}
+.v19b-alert li{font-size:12.5px;color:#78350F;margin:3px 0}
+.v19b-note{background:#F0F9FF;border:1px solid #BAE6FD;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#075985;margin:12px 0}
+.v19b-bar{text-align:right;margin:10px 0}
+.v19-loading{padding:30px;text-align:center;color:#64748b}
+.btn-navy{border-color:var(--navy);color:var(--navy)}
+
   </style></head>
   <body onload="window.print()">
     <div class="letterhead">
@@ -3031,12 +3416,28 @@ function _bcnP1(x){if(x===null||x===undefined||isNaN(x))return "—";return (x*1
 function _bcnDlt(x){if(x===null||x===undefined||isNaN(x))return{t:"—",c:""};return{t:(x>=0?"+":"−")+Math.abs(x*100).toFixed(1).replace('.',',')+"%",c:x>=0?"bcn-up":"bcn-down"};}
 function _bcnShort(n){return BCN_SHORT[n]||n;}
 
+/* ---- Định dạng ngày gọn: dd/MM/yyyy (v19B) ---- */
+function _bcnNgay(v){
+  if(v===null||v===undefined||v==="") return "";
+  var s=String(v).trim();
+  // Đã đúng dd/MM/yyyy -> giữ nguyên
+  var m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m) return ("0"+m[1]).slice(-2)+"/"+("0"+m[2]).slice(-2)+"/"+m[3];
+  // yyyy-MM-dd
+  var m2=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m2) return m2[3]+"/"+m2[2]+"/"+m2[1];
+  // Chuỗi Date dài kiểu "Sat Jul 11 2026 07:00:00 GMT+0700 (...)"
+  var d=new Date(s);
+  if(!isNaN(d)) return ("0"+d.getDate()).slice(-2)+"/"+("0"+(d.getMonth()+1)).slice(-2)+"/"+d.getFullYear();
+  return s;
+}
+
 /* ---- Vẽ dashboard 3 lớp ---- */
 function bcnRender(data, ngayBC, nguoiNhap, ngayNhap){
   var tcc=data.toan_chi_cuc, d=tcc?tcc.ngay:null;
   var body=document.getElementById('bcngay-body');
   if(!d){body.innerHTML='<div class="card" style="color:var(--red);padding:20px">Không đọc được khối TỔNG HỢP TOÀN CHI CỤC trong dữ liệu.</div>';return;}
-  document.getElementById('bcngay-sub').textContent="Ngày báo cáo "+(ngayBC||d.den_ngay)+" · Lũy kế năm đến "+(tcc.nam?tcc.nam.den_ngay:"")+" · "+Object.keys(data.units).length+" đơn vị"+(nguoiNhap?" · Nhập: "+nguoiNhap+(ngayNhap?" ("+ngayNhap+")":""):"");
+  document.getElementById('bcngay-sub').textContent="BÁO CÁO NGÀY "+_bcnNgay(ngayBC||d.den_ngay);
   var h="";
   var C={navy:"#1A3A6B",gold:"#C8960C",lb:"#E8EEF7"};
   /* LỚP 1 */
@@ -3103,7 +3504,7 @@ async function loadBCNgay(ngay, force){
     var dList=await resList.json();
     if(dList.ok && dList.ngayList){
       var sel=document.getElementById('bcngay-select');
-      sel.innerHTML=dList.ngayList.map(function(x){return '<option value="'+x.ngayBC+'">'+x.ngayBC+'</option>';}).join('');
+      sel.innerHTML=dList.ngayList.map(function(x){return '<option value="'+x.ngayBC+'">'+_bcnNgay(x.ngayBC)+'</option>';}).join('');
       if(ngay) sel.value=ngay;
     }
     var url=API+"?bcngay=get&t="+Date.now()+(ngay?("&ngay="+encodeURIComponent(ngay)):"");
@@ -3169,6 +3570,795 @@ async function luuBCNgay(){
   }catch(e){ showToast('⚠ Lỗi kết nối: '+e.message); }
 }
 /* =============== HẾT MODULE BÁO CÁO NGÀY =============== */
+
+
+/* ================================================================
+   MODULE v19 — CHỈ TIÊU TRỌNG SỐ + SMART ISO
+   Append-only: không sửa bất kỳ hàm nào của v17/v18.
+   ================================================================ */
+var kpiLoaded = false, isoLoaded = false;
+var KPI = { ky:null, thang:6, config:null, duLieu:null, ketQua:[] };
+var ISO = { quyTrinh:[], taiLieu:[], theoDoi:[], chon:null };
+var KPI_NAP = null; // dữ liệu tạm sau khi đọc Excel
+
+var DV_18 = ["Văn phòng","Phòng TCCB","Phòng CNTT","Phòng QLRR","Phòng NV",
+  "Đội KSHQ","Đội PT&KTSTQ","HQCK QT Móng Cái","HQCK Hoành Mô","HQCK Bắc Phong Sinh",
+  "HQCK cảng Hòn Gai","HQCK cảng Cẩm Phả","HQCK cảng Vạn Gia"];
+
+function kpiDongModal(id){ var e=document.getElementById(id); if(e) e.style.display="none"; }
+function _n(v){ var x=Number(v); return isNaN(x)?null:x; }
+function _esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+
+/* ============ ENGINE CHẤM ĐIỂM (đồng nhất với server) ============ */
+function kpiChamDiem(data, cfg, thang){
+  var ts = cfg.thamSo||{}, tienDo=(Number(thang)||12)/12, cap=Number(ts.capVuotMuc)||1.2;
+  var dvs={};
+  (cfg.linhVuc||[]).forEach(function(lv){ Object.keys(data[lv.ma]||{}).forEach(function(d){ dvs[d]=1; }); });
+
+  var out=[];
+  Object.keys(dvs).forEach(function(dv){
+    var dong={donVi:dv, linhVuc:{}, chiTiet:{}}, tuT=0, mauT=0;
+    (cfg.linhVuc||[]).forEach(function(lv){
+      var dsCT=(cfg.chiTieu||{})[lv.ma]||[], rec=(data[lv.ma]||{})[dv];
+      if(!rec){ dong.linhVuc[lv.ma]=null; return; }
+      var tu=0,mau=0,ct=[];
+      dsCT.forEach(function(c){
+        var o=rec[c.ma]; if(!o) return;
+        var giao=_n(o.giao), luyKe=_n(o.luyKe);
+        if(luyKe===null) return;
+        var pct;
+        if(c.loai==="tyle"){ pct = (giao&&giao!==0) ? luyKe/giao : luyKe; }
+        else { if(!giao||giao===0) return; pct = luyKe/giao; }
+        if(c.chieu==="giam"&&pct>0) pct=1/pct;
+        var d=Math.min(pct/tienDo,cap)*100; if(d<0)d=0; d=Math.round(d*10)/10;
+        var w=Number(c.trongSo)||0; tu+=d*w; mau+=w;
+        ct.push({ma:c.ma,ten:c.ten,trongSo:w,giao:giao,luyKe:luyKe,pctHT:Math.round(pct*1000)/10,diem:d});
+      });
+      if(mau===0){ dong.linhVuc[lv.ma]=null; return; }
+      var dLV=Math.round((tu/mau)*10)/10;
+      dong.linhVuc[lv.ma]=dLV; dong.chiTiet[lv.ma]=ct;
+      var w=Number(lv.trongSo)||0; tuT+=dLV*w; mauT+=w;
+    });
+    dong.diemTong = mauT ? Math.round((tuT/mauT)*10)/10 : null;
+    dong.doPhuLinhVuc = mauT;
+    dong.xepLoai = kpiXepLoai(dong.diemTong, ts);
+    out.push(dong);
+  });
+  // Phân nhóm so sánh theo độ phủ trọng số — KHÔNG xếp chung đơn vị đủ 7 lĩnh vực
+  // với đơn vị chỉ có 1 lĩnh vực (mẫu số khác nhau -> so sánh khập khiễng).
+  out.forEach(function(r){ r.nhom = r.doPhuLinhVuc >= 60 ? "A" : (r.doPhuLinhVuc >= 25 ? "B" : "C"); });
+  out.sort(function(a,b){
+    if(a.nhom !== b.nhom) return a.nhom < b.nhom ? -1 : 1;
+    return (b.diemTong===null?-1:b.diemTong)-(a.diemTong===null?-1:a.diemTong);
+  });
+  var dem={};
+  out.forEach(function(r){ dem[r.nhom]=(dem[r.nhom]||0)+1; r.hang=dem[r.nhom]; });
+  return out;
+}
+function kpiXepLoai(d, ts){
+  if(d===null||d===undefined||isNaN(d)) return "";
+  if(d>=(Number(ts.nguongXuatSac)||100)) return "Hoàn thành xuất sắc";
+  if(d>=(Number(ts.nguongTot)||85)) return "Hoàn thành tốt";
+  if(d>=(Number(ts.nguongHoanThanh)||70)) return "Hoàn thành";
+  return "Chưa hoàn thành";
+}
+function kpiClass(xl){
+  if(xl==="Hoàn thành xuất sắc") return "xs";
+  if(xl==="Hoàn thành tốt") return "tot";
+  if(xl==="Hoàn thành") return "ht";
+  if(xl==="Chưa hoàn thành") return "chua";
+  return "na";
+}
+
+/* ============ TẢI & HIỂN THỊ ============ */
+async function loadKPI(ky, force){
+  if(kpiLoaded && !force) return;
+  try{
+    var rl = await (await fetch(API+"?kpi=list&t="+Date.now())).json();
+    var ds = (rl && rl.danhSach) || [];
+    var sel = document.getElementById("kpi-ky");
+    sel.innerHTML = ds.map(function(k){ return '<option value="'+_esc(k.ky)+'">Kỳ '+_esc(k.ky)+' · tháng '+k.thang+'</option>'; }).join("");
+    if(!ds.length){
+      document.getElementById("kpi-empty").style.display="block";
+      document.getElementById("kpi-body").style.display="none";
+      kpiLoaded=true; return;
+    }
+    if(ky) sel.value=ky;
+    var r = await (await fetch(API+"?kpi=get&ky="+encodeURIComponent(sel.value||"")+"&t="+Date.now())).json();
+    if(!r.ok||r.trong){
+      document.getElementById("kpi-empty").style.display="block";
+      document.getElementById("kpi-body").style.display="none"; kpiLoaded=true; return;
+    }
+    KPI = { ky:r.ky, thang:r.thang, config:r.config, duLieu:r.duLieu, ketQua:r.ketQua };
+    document.getElementById("kpi-empty").style.display="none";
+    document.getElementById("kpi-body").style.display="block";
+    document.getElementById("kpi-meta").textContent = "Cập nhật: "+r.capNhat+" · Tiến độ kỳ vọng: "+Math.round(r.thang/12*100)+"%";
+    kpiRender();
+    kpiLoaded=true;
+  }catch(e){ showToast("⚠ Lỗi tải chỉ tiêu: "+e.message); }
+}
+
+function kpiRender(){
+  var cfg=KPI.config, kq=KPI.ketQua, ts=cfg.thamSo||{};
+  var co = kq.filter(function(r){ return r.diemTong!==null; });
+
+  // KPI tổng quan
+  var bq = co.length ? Math.round(co.reduce(function(s,r){return s+r.diemTong;},0)/co.length*10)/10 : 0;
+  var xs = co.filter(function(r){return r.xepLoai==="Hoàn thành xuất sắc";}).length;
+  var chua = co.filter(function(r){return r.xepLoai==="Chưa hoàn thành";}).length;
+  var top = co[0];
+  document.getElementById("kpi-tongquan").innerHTML = [
+    kpiCard("Điểm bình quân toàn Chi cục", bq, kpiXepLoai(bq,ts), bq>=100?"green":(bq>=85?"":(bq>=70?"gold":"red"))),
+    kpiCard("Đơn vị được chấm điểm", co.length, "trên tổng "+kq.length+" đơn vị có số liệu", ""),
+    kpiCard("Hoàn thành xuất sắc", xs, "≥ "+(ts.nguongXuatSac||100)+" điểm", "green"),
+    kpiCard("Chưa hoàn thành", chua, "< "+(ts.nguongHoanThanh||70)+" điểm", chua>0?"red":"green"),
+    kpiCard("Dẫn đầu", top?top.diemTong:"—", top?top.donVi:"", "gold")
+  ].join("");
+
+  // Bảng
+  var th = '<th style="width:42px">Hạng</th><th style="width:52px" title="Nhóm so sánh theo độ phủ chỉ tiêu — chỉ so sánh trong cùng nhóm">Nhóm</th><th style="text-align:left;min-width:150px">Đơn vị</th>';
+  (cfg.linhVuc||[]).forEach(function(lv){ th += '<th title="'+_esc(lv.ten)+'">'+_esc(lv.ma)+'<br><span style="font-weight:400;opacity:.75">TS'+lv.trongSo+'</span></th>'; });
+  th += '<th style="width:78px">ĐIỂM<br>TỔNG HỢP</th><th style="min-width:130px">XẾP LOẠI</th>';
+  document.getElementById("kpi-thead").innerHTML = th;
+
+  document.getElementById("kpi-tbody").innerHTML = kq.map(function(r){
+    var tds = (cfg.linhVuc||[]).map(function(lv){
+      var d=r.linhVuc[lv.ma];
+      if(d===null||d===undefined) return '<td><span class="v19-d na">—</span></td>';
+      return '<td><span class="v19-d '+kpiClass(kpiXepLoai(d,ts))+'">'+d.toFixed(1)+'</span></td>';
+    }).join("");
+    var dt = r.diemTong;
+    var canhBaoPhu = r.doPhuLinhVuc<50 ? ' <span title="Chỉ có số liệu ở các lĩnh vực chiếm '+r.doPhuLinhVuc+'/100 trọng số — điểm chỉ mang tính tham chiếu" style="color:var(--gold);cursor:help">⚠</span>' : '';
+    var NH = {A:['ok','A'],B:['mid','B'],C:['hi','C']}[r.nhom]||['n','—'];
+    return '<tr>'+
+      '<td class="v19-rank">'+(dt===null?'—':r.hang)+'</td>'+
+      '<td><span class="v19-tag '+NH[0]+'" title="Độ phủ '+r.doPhuLinhVuc+'/100 trọng số">'+NH[1]+'</span></td>'+
+      '<td class="l"><span class="v19-dv" onclick="kpiChiTiet(\''+_esc(r.donVi).replace(/'/g,"\\'")+'\')">'+_esc(r.donVi)+'</span>'+canhBaoPhu+'</td>'+
+      tds+
+      '<td><b style="font-size:14px;color:var(--navy)">'+(dt===null?'—':dt.toFixed(1))+'</b>'+
+        (dt===null?'':'<div class="v19-bar-in"><i style="width:'+Math.min(dt,120)/1.2+'%"></i></div>')+'</td>'+
+      '<td><span class="v19-d '+kpiClass(r.xepLoai)+'">'+_esc(r.xepLoai||"—")+'</span></td>'+
+    '</tr>';
+  }).join("");
+
+  // Cảnh báo điều hành
+  var alerts=[];
+  co.filter(function(r){return r.xepLoai==="Chưa hoàn thành";}).forEach(function(r){
+    var yeu = (cfg.linhVuc||[]).filter(function(lv){ var d=r.linhVuc[lv.ma]; return d!==null&&d!==undefined&&d<70; })
+      .map(function(lv){ return lv.ten+" ("+r.linhVuc[lv.ma].toFixed(0)+")"; });
+    alerts.push('<div class="v19-alert hi">⛔ <div><b>'+_esc(r.donVi)+'</b> — '+r.diemTong.toFixed(1)+' điểm, chưa hoàn thành.'+
+      (yeu.length?'<br>Lĩnh vực yếu: '+_esc(yeu.join(" · ")):'')+'</div></div>');
+  });
+  (cfg.linhVuc||[]).forEach(function(lv){
+    var ds = kq.filter(function(r){ var d=r.linhVuc[lv.ma]; return d!==null&&d!==undefined; });
+    if(!ds.length) return;
+    var bqLV = ds.reduce(function(s,r){return s+r.linhVuc[lv.ma];},0)/ds.length;
+    if(bqLV < 70) alerts.push('<div class="v19-alert mid">⚠ <div>Lĩnh vực <b>'+_esc(lv.ten)+'</b> (trọng số '+lv.trongSo+') bình quân toàn Chi cục chỉ đạt <b>'+bqLV.toFixed(1)+'</b> điểm — cần chỉ đạo tập trung.</div></div>');
+  });
+  var nhomC = kq.filter(function(r){ return r.nhom==="C" && r.diemTong!==null; });
+  if(nhomC.length) alerts.push('<div class="v19-alert mid">📋 <div><b>Nhóm C — '+nhomC.length+' đơn vị</b> ('+_esc(nhomC.map(function(r){return r.donVi;}).join(", "))+') chỉ có số liệu ở &lt;25/100 trọng số (chủ yếu Tuyên truyền). '+
+    'Điểm cao của các đơn vị này <b>không đồng nghĩa hoàn thành tốt hơn</b> khối cửa khẩu — mẫu số khác nhau. '+
+    '<br><b>Kiến nghị:</b> giao bổ sung chỉ tiêu định lượng cho khối Phòng/Văn phòng (VD: tiến độ tham mưu văn bản, tỷ lệ hồ sơ đúng hạn ISO, tỷ lệ nhiệm vụ hoàn thành đúng hạn) để đưa về nhóm A/B, hoặc xây dựng bảng trọng số riêng cho khối tham mưu.</div></div>');
+  if(!alerts.length) alerts.push('<div class="v19-alert ok">✓ <div>Không có đơn vị/lĩnh vực nào dưới ngưỡng cảnh báo trong kỳ này.</div></div>');
+  document.getElementById("kpi-canhbao").innerHTML = alerts.join("");
+
+  // Điểm bình quân theo lĩnh vực
+  document.getElementById("kpi-linhvuc").innerHTML = (cfg.linhVuc||[]).map(function(lv){
+    var ds = kq.filter(function(r){ var d=r.linhVuc[lv.ma]; return d!==null&&d!==undefined; });
+    var bqLV = ds.length ? ds.reduce(function(s,r){return s+r.linhVuc[lv.ma];},0)/ds.length : 0;
+    return '<div class="v19-lvrow"><div class="v19-lvname">'+_esc(lv.ma)+'. '+_esc(lv.ten)+' <span style="color:var(--gold);font-weight:700">·'+lv.trongSo+'</span></div>'+
+      '<div class="v19-lvbar"><i style="width:'+Math.min(bqLV,120)/1.2+'%"></i></div>'+
+      '<div class="v19-lvval">'+(ds.length?bqLV.toFixed(1):"—")+'</div></div>';
+  }).join("");
+}
+function kpiCard(l,v,s,c){
+  return '<div class="v19-kpi '+(c||"")+'"><div class="v19-kpi-l">'+_esc(l)+'</div><div class="v19-kpi-v">'+_esc(v)+'</div><div class="v19-kpi-s">'+_esc(s)+'</div></div>';
+}
+
+/* ============ CHI TIẾT ĐƠN VỊ ============ */
+function kpiChiTiet(dv){
+  var r = KPI.ketQua.filter(function(x){return x.donVi===dv;})[0];
+  if(!r) return;
+  var cfg=KPI.config, ts=cfg.thamSo||{};
+  document.getElementById("kpi-dv-title").innerHTML = '📊 '+_esc(dv)+' — '+(r.diemTong===null?'chưa chấm':r.diemTong.toFixed(1)+' điểm · '+_esc(r.xepLoai))+' <span class="v19-x" onclick="kpiDongModal(\'kpi-modal-dv\')">✕</span>';
+  var h = '';
+  (cfg.linhVuc||[]).forEach(function(lv){
+    var ct = r.chiTiet[lv.ma];
+    if(!ct||!ct.length) return;
+    h += '<div class="v19-sec">'+_esc(lv.ma)+'. '+_esc(lv.ten)+' — trọng số '+lv.trongSo+' · điểm lĩnh vực <b style="color:var(--navy)">'+r.linhVuc[lv.ma].toFixed(1)+'</b></div>';
+    h += '<table class="v19-table"><thead><tr><th style="text-align:left">Chỉ tiêu</th><th>TS</th><th>Giao 2026</th><th>Lũy kế</th><th>% HT</th><th>Điểm</th></tr></thead><tbody>';
+    ct.forEach(function(c){
+      h += '<tr><td class="l">'+_esc(c.ten)+'</td><td>'+c.trongSo+'</td><td>'+(c.giao===null?"—":c.giao.toLocaleString("vi-VN"))+'</td>'+
+        '<td>'+c.luyKe.toLocaleString("vi-VN")+'</td><td>'+c.pctHT.toFixed(1)+'%</td>'+
+        '<td><span class="v19-d '+kpiClass(kpiXepLoai(c.diem,ts))+'">'+c.diem.toFixed(1)+'</span></td></tr>';
+    });
+    h += '</tbody></table>';
+  });
+  if(!h) h = '<div class="v19-empty-sub" style="padding:20px">Đơn vị chưa có số liệu chỉ tiêu nào trong kỳ này.</div>';
+  else h = '<div class="v19-hint">Điểm chỉ tiêu con = MIN(%HT ÷ tiến độ kỳ vọng '+Math.round(KPI.thang/12*100)+'% ; trần '+((ts.capVuotMuc||1.2)*100)+'%) × 100. Điểm lĩnh vực = bình quân gia quyền các chỉ tiêu <b>có số liệu</b>.</div>' + h;
+  document.getElementById("kpi-dv-body").innerHTML = h;
+  document.getElementById("kpi-modal-dv").style.display="flex";
+}
+
+/* ============ TRỌNG SỐ ============ */
+function kpiMoTrongSo(){
+  if(!requireAdminOrPrompt()) return;
+  if(!KPI.config){ showToast("⚠ Chưa tải được cấu hình"); return; }
+  var cfg=JSON.parse(JSON.stringify(KPI.config)), ts=cfg.thamSo||{};
+  var h = '<div class="v19-sec">Tham số chấm điểm</div><div class="v19-grid2">'+
+    '<div><label>Tháng lũy kế mặc định</label><input id="ts-thang" class="v19-inp" type="number" value="'+(ts.thangHienTai||6)+'"></div>'+
+    '<div><label>Trần điểm vượt mức (VD 1.2 = 120%)</label><input id="ts-cap" class="v19-inp" type="number" step="0.1" value="'+(ts.capVuotMuc||1.2)+'"></div>'+
+    '<div><label>Ngưỡng Xuất sắc (≥)</label><input id="ts-xs" class="v19-inp" type="number" value="'+(ts.nguongXuatSac||100)+'"></div>'+
+    '<div><label>Ngưỡng Tốt (≥)</label><input id="ts-tot" class="v19-inp" type="number" value="'+(ts.nguongTot||85)+'"></div>'+
+    '<div><label>Ngưỡng Hoàn thành (≥)</label><input id="ts-ht" class="v19-inp" type="number" value="'+(ts.nguongHoanThanh||70)+'"></div>'+
+    '</div><div class="v19-sec">Bảng A — trọng số 7 lĩnh vực (tổng phải = 100)</div>';
+  (cfg.linhVuc||[]).forEach(function(lv,i){
+    h += '<div class="v19-ts-lv"><span><b>'+_esc(lv.ma)+'</b> · '+_esc(lv.ten)+'</span>'+
+      '<input class="v19-inp ts-a" data-i="'+i+'" type="number" value="'+lv.trongSo+'" oninput="kpiTinhTongTS()"></div>';
+  });
+  h += '<div class="v19-ts-tong">Tổng: <span id="ts-tong">100</span> / 100</div>';
+  h += '<div class="v19-hint">Bảng B (trọng số chỉ tiêu con trong từng lĩnh vực) giữ theo cấu hình hiện hành. Thay đổi trọng số sẽ <b>tính lại toàn bộ các kỳ</b> khi tải lại — số gốc không đổi.</div>';
+  document.getElementById("kpi-ts-body").innerHTML=h;
+  document.getElementById("kpi-modal-ts").style.display="flex";
+  kpiTinhTongTS();
+}
+function kpiTinhTongTS(){
+  var t=0; document.querySelectorAll(".ts-a").forEach(function(e){ t+=Number(e.value)||0; });
+  var el=document.getElementById("ts-tong");
+  el.textContent=t; el.style.color = (Math.abs(t-100)<0.01) ? "var(--green)" : "var(--red)";
+}
+async function kpiLuuTrongSo(){
+  var cfg=JSON.parse(JSON.stringify(KPI.config));
+  cfg.thamSo = {
+    thangHienTai:Number(document.getElementById("ts-thang").value)||6,
+    capVuotMuc:Number(document.getElementById("ts-cap").value)||1.2,
+    nguongXuatSac:Number(document.getElementById("ts-xs").value)||100,
+    nguongTot:Number(document.getElementById("ts-tot").value)||85,
+    nguongHoanThanh:Number(document.getElementById("ts-ht").value)||70
+  };
+  document.querySelectorAll(".ts-a").forEach(function(e){ cfg.linhVuc[Number(e.dataset.i)].trongSo=Number(e.value)||0; });
+  var t=cfg.linhVuc.reduce(function(s,l){return s+l.trongSo;},0);
+  if(Math.abs(t-100)>0.01){ showToast("⚠ Tổng trọng số = "+t+", phải bằng 100"); return; }
+  try{
+    var r = await (await fetch(API,{method:"POST",body:JSON.stringify({action:"kpiLuuTrongSo",pin:getAdminPin(),config:cfg,nguoiSua:"Admin"})})).json();
+    if(r.ok){ showToast("✓ Đã lưu cấu hình trọng số"); kpiDongModal("kpi-modal-ts"); kpiLoaded=false; loadKPI(KPI.ky,true); }
+    else showToast("⚠ "+(r.error||"Lưu thất bại"));
+  }catch(e){ showToast("⚠ Lỗi: "+e.message); }
+}
+
+/* ============ NẠP FILE KHUNG EXCEL ============ */
+function kpiMoNapExcel(){
+  if(!requireAdminOrPrompt()) return;
+  var d=new Date();
+  document.getElementById("kpi-nap-ky").value = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+  document.getElementById("kpi-nap-thang").value = d.getMonth()+1;
+  document.getElementById("kpi-nap-log").innerHTML="";
+  document.getElementById("kpi-btn-luu").style.display="none";
+  KPI_NAP=null;
+  document.getElementById("kpi-modal-nap").style.display="flex";
+}
+function kpiLog(s){ var e=document.getElementById("kpi-nap-log"); e.innerHTML += s+"\n"; e.scrollTop=e.scrollHeight; }
+
+function kpiDocFile(){
+  var f = document.getElementById("kpi-file").files[0];
+  if(!f){ showToast("⚠ Chưa chọn file"); return; }
+  if(!KPI.config){ showToast("⚠ Chưa tải cấu hình trọng số"); return; }
+  document.getElementById("kpi-nap-log").innerHTML="";
+  var rd=new FileReader();
+  rd.onload=function(ev){
+    try{
+      var wb = XLSX.read(new Uint8Array(ev.target.result), {type:"array"});
+      var cfg = KPI.config, data = {}, tongO = 0, canhBao = [];
+
+      (cfg.linhVuc||[]).forEach(function(lv){
+        var sh = wb.Sheets[lv.ma];
+        if(!sh){ canhBao.push("Không tìm thấy sheet "+lv.ma); return; }
+        // Đọc thô theo lưới; dòng 3 (index 2) = header cột, dữ liệu từ dòng 4 (index 3)
+        var A = XLSX.utils.sheet_to_json(sh, {header:1, raw:true, defval:null});
+        var dsCT = (cfg.chiTieu||{})[lv.ma]||[];
+        data[lv.ma] = {};
+        var soO = 0;
+        for(var r=3; r<A.length; r++){
+          var row = A[r] || [];
+          var dv = String(row[1]==null?"":row[1]).trim();
+          if(!dv) continue;
+          var rec = {};
+          dsCT.forEach(function(c, i){
+            // Bố cục file khung: mỗi chỉ tiêu chiếm 3 cột (Giao | Lũy kế | %HT), bắt đầu từ cột C (index 2)
+            var cGiao = 2 + i*3, cLuy = 3 + i*3;
+            var g = row[cGiao], l = row[cLuy];
+            if((g===null||g===""||g===undefined) && (l===null||l===""||l===undefined)) return;
+            rec[c.ma] = { giao:(g===null||g===""?null:Number(g)), luyKe:(l===null||l===""?null:Number(l)) };
+            if(l!==null&&l!=="") soO++;
+          });
+          if(Object.keys(rec).length){
+            // Đơn vị trùng dòng (VD II.5 có Đội KSHQ 2 lần) -> gộp, ưu tiên dòng có nhiều số liệu hơn
+            if(data[lv.ma][dv]){
+              var cu = Object.keys(data[lv.ma][dv]).length;
+              if(Object.keys(rec).length > cu) data[lv.ma][dv] = rec;
+              canhBao.push(lv.ma+": đơn vị \""+dv+"\" xuất hiện nhiều dòng — đã lấy dòng đầy đủ số liệu nhất");
+            } else data[lv.ma][dv] = rec;
+          }
+        }
+        tongO += soO;
+        kpiLog("✓ "+lv.ma+" — "+Object.keys(data[lv.ma]).length+" đơn vị, "+soO+" ô lũy kế");
+      });
+
+      var thang = Number(document.getElementById("kpi-nap-thang").value)||6;
+      var kq = kpiChamDiem(data, cfg, thang);
+      var co = kq.filter(function(r){return r.diemTong!==null;});
+      kpiLog("\n── KẾT QUẢ THỬ TÍNH (tháng "+thang+") ──");
+      co.forEach(function(r){ kpiLog("  "+String(r.hang).padStart(2)+". "+r.donVi.padEnd(22)+" "+r.diemTong.toFixed(1).padStart(6)+"  "+r.xepLoai); });
+      kq.filter(function(r){return r.diemTong===null;}).forEach(function(r){ kpiLog("   —. "+r.donVi+"  (không đủ số liệu để chấm)"); });
+      kpiLog("\nTổng: "+tongO+" ô lũy kế · "+co.length+"/"+kq.length+" đơn vị chấm được điểm");
+      if(canhBao.length){ kpiLog("\n⚠ LƯU Ý:"); canhBao.forEach(function(c){ kpiLog("  · "+c); }); }
+      if(!co.length){ showToast("⚠ Không chấm được đơn vị nào — kiểm tra bố cục file"); return; }
+
+      KPI_NAP = { data:data, thang:thang };
+      document.getElementById("kpi-btn-luu").style.display="inline-block";
+      showToast("✓ Đọc file thành công — kiểm tra kết quả rồi bấm Lưu");
+    }catch(e){ kpiLog("⛔ Lỗi đọc file: "+e.message); showToast("⚠ Lỗi đọc file: "+e.message); }
+  };
+  rd.readAsArrayBuffer(f);
+}
+
+async function kpiLuuKy(){
+  if(!KPI_NAP){ showToast("⚠ Chưa đọc file"); return; }
+  var ky = document.getElementById("kpi-nap-ky").value.trim();
+  if(!ky){ showToast("⚠ Chưa nhập mã kỳ"); return; }
+  showToast("⏳ Đang lưu kỳ "+ky+"...");
+  try{
+    var r = await (await fetch(API,{method:"POST",body:JSON.stringify({
+      action:"kpiLuuKy", pin:getAdminPin(), ky:ky, thang:KPI_NAP.thang, data:KPI_NAP.data, nguoiNhap:"Admin"
+    })})).json();
+    if(r.ok){
+      showToast("✓ Đã lưu kỳ "+ky+(r.ghiDe?" (ghi đè)":""));
+      kpiDongModal("kpi-modal-nap"); kpiLoaded=false; loadKPI(ky, true);
+    } else showToast("⚠ "+(r.error||"Lưu thất bại"));
+  }catch(e){ showToast("⚠ Lỗi: "+e.message); }
+}
+
+/* ============ XUẤT EXCEL XẾP LOẠI ============ */
+function kpiXuatExcel(){
+  if(!KPI.ketQua||!KPI.ketQua.length){ showToast("⚠ Chưa có dữ liệu"); return; }
+  var cfg=KPI.config;
+  var head = ["Hạng","Nhóm","Đơn vị"].concat((cfg.linhVuc||[]).map(function(l){return l.ma+" (TS"+l.trongSo+")";})).concat(["ĐIỂM TỔNG HỢP","XẾP LOẠI","Độ phủ trọng số"]);
+  var rows = [head];
+  KPI.ketQua.forEach(function(r){
+    rows.push([r.diemTong===null?"":r.hang, r.nhom, r.donVi]
+      .concat((cfg.linhVuc||[]).map(function(l){ var d=r.linhVuc[l.ma]; return (d===null||d===undefined)?"":d; }))
+      .concat([r.diemTong===null?"":r.diemTong, r.xepLoai, r.doPhuLinhVuc+"/100"]));
+  });
+  rows.push([]);
+  rows.push(["Ghi chú:","Nhóm A = có số liệu ≥60/100 trọng số · Nhóm B = 25–59 · Nhóm C = <25. Chỉ so sánh xếp hạng TRONG CÙNG NHÓM."]);
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws["!cols"] = [{wch:6},{wch:7},{wch:24}].concat((cfg.linhVuc||[]).map(function(){return {wch:11};})).concat([{wch:15},{wch:20},{wch:15}]);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "XEP LOAI");
+  XLSX.writeFile(wb, "XepLoaiDonVi_"+(KPI.ky||"KV8")+".xlsx");
+  showToast("✓ Đã xuất file");
+}
+
+/* ================================================================
+   SMART ISO
+   ================================================================ */
+async function loadISO(force){
+  if(isoLoaded && !force) return;
+  try{
+    var r = await (await fetch(API+"?iso=all&t="+Date.now())).json();
+    if(!r.ok){ showToast("⚠ "+(r.error||"Lỗi tải ISO")); return; }
+    ISO.quyTrinh=r.quyTrinh||[]; ISO.taiLieu=r.taiLieu||[]; ISO.theoDoi=r.theoDoi||[];
+    isoRender(); isoLoaded=true;
+  }catch(e){ showToast("⚠ Lỗi tải ISO: "+e.message); }
+}
+
+function isoRender(){
+  var q = String(document.getElementById("iso-search").value||"").toLowerCase().trim();
+  var f = document.getElementById("iso-filter").value;
+  var ds = ISO.quyTrinh.filter(function(x){
+    if(f && x.canhBao !== f) return false;
+    if(!q) return true;
+    return (x.maQT+" "+x.tenQT+" "+x.linhVuc+" "+x.donViChuTri).toLowerCase().indexOf(q)>=0;
+  });
+
+  // Tổng quan
+  var all=ISO.quyTrinh;
+  var quaHan = all.filter(function(x){return x.canhBao==="QUA_HAN";}).length;
+  var sapHan = all.filter(function(x){return x.canhBao==="SAP_DEN_HAN";}).length;
+  var thieuBM= all.filter(function(x){return x.canhBao==="THIEU_MAU_BIEU";}).length;
+  var soBM = ISO.taiLieu.filter(function(t){return t.loai==="mau_bieu";}).length;
+  var td = ISO.theoDoi;
+  var tongHS = td.reduce(function(s,t){return s+t.soHoSo;},0);
+  var tongDH = td.reduce(function(s,t){return s+t.soDungHan;},0);
+  var tyLe = tongHS ? Math.round(tongDH/tongHS*1000)/10 : null;
+  var tongNC = td.reduce(function(s,t){return s+t.soKhongPhuHop;},0);
+
+  document.getElementById("iso-tongquan").innerHTML = [
+    kpiCard("Quy trình đang quản lý", all.length, all.filter(function(x){return x.trangThai==="Hiệu lực";}).length+" đang hiệu lực",""),
+    kpiCard("Mẫu biểu đính kèm", soBM, thieuBM+" quy trình chưa có mẫu biểu", thieuBM>0?"gold":"green"),
+    kpiCard("Quá hạn rà soát", quaHan, sapHan+" quy trình sắp đến hạn", quaHan>0?"red":"green"),
+    kpiCard("Tỷ lệ hồ sơ đúng hạn", tyLe===null?"—":tyLe+"%", tongHS?(tongDH+"/"+tongHS+" hồ sơ"):"chưa có số liệu", tyLe===null?"":(tyLe>=95?"green":(tyLe>=85?"gold":"red"))),
+    kpiCard("Điểm không phù hợp (NC)", tongNC, "cần hành động khắc phục", tongNC>0?"red":"green")
+  ].join("");
+
+  // Danh mục
+  var W = {QUA_HAN:["hi","⛔ Quá hạn rà soát"], SAP_DEN_HAN:["mid","⏰ Sắp đến hạn"], THIEU_MAU_BIEU:["mid","📎 Thiếu mẫu biểu"]};
+  document.getElementById("iso-list").innerHTML = ds.length ? ds.map(function(x){
+    var w = W[x.canhBao];
+    var nBM = ISO.taiLieu.filter(function(t){return t.maQT===x.maQT;}).length;
+    return '<div class="v19-qt '+(ISO.chon===x.maQT?"on":"")+' '+(w?"w-"+w[0]:"")+'" onclick="isoChon(\''+_esc(x.maQT).replace(/'/g,"\\'")+'\')">'+
+      '<div class="v19-qt-ma">'+_esc(x.maQT)+'</div>'+
+      '<div class="v19-qt-ten">'+_esc(x.tenQT)+'</div>'+
+      '<div class="v19-qt-sub">'+
+        '<span class="v19-tag n">'+_esc(x.donViChuTri||"—")+'</span>'+
+        '<span class="v19-tag '+(x.trangThai==="Hiệu lực"?"ok":"n")+'">v'+_esc(x.phienBan)+' · '+_esc(x.trangThai)+'</span>'+
+        '<span class="v19-tag n">📎 '+nBM+'</span>'+
+        (w?'<span class="v19-tag '+w[0]+'">'+w[1]+'</span>':'')+
+      '</div></div>';
+  }).join("") : '<div class="v19-empty-sub" style="padding:24px;text-align:center">Chưa có quy trình nào. Đăng nhập Admin → <b>Thêm quy trình</b>.</div>';
+}
+
+function isoChon(ma){
+  ISO.chon = ma;
+  isoRender();
+  var x = ISO.quyTrinh.filter(function(q){return q.maQT===ma;})[0];
+  if(!x) return;
+  var tl = ISO.taiLieu.filter(function(t){return t.maQT===ma;});
+  var td = ISO.theoDoi.filter(function(t){return t.maQT===ma;});
+  var quyenAdmin = (typeof isAdmin==="function") ? isAdmin() : !!getAdminPin();
+
+  document.getElementById("iso-detail-title").innerHTML = '📐 '+_esc(x.maQT)+' — '+_esc(x.tenQT);
+
+  var h = '';
+  // Thông tin
+  var cbTxt = {QUA_HAN:'<span class="v19-tag hi">⛔ Quá hạn rà soát '+Math.abs(x.soNgayConLai||0)+' ngày</span>',
+               SAP_DEN_HAN:'<span class="v19-tag mid">⏰ Còn '+(x.soNgayConLai||0)+' ngày đến hạn rà soát</span>',
+               THIEU_MAU_BIEU:'<span class="v19-tag mid">📎 Chưa đính kèm mẫu biểu</span>'}[x.canhBao]||'<span class="v19-tag ok">✓ Trong hạn</span>';
+  h += '<div class="v19-qt-sub" style="margin-bottom:10px">'+
+    '<span class="v19-tag n">Lĩnh vực: '+_esc(x.linhVuc||"—")+'</span>'+
+    '<span class="v19-tag n">Chủ trì: '+_esc(x.donViChuTri||"—")+'</span>'+
+    '<span class="v19-tag n">Ban hành: '+_esc(x.ngayBanHanh||"—")+'</span>'+
+    '<span class="v19-tag n">Rà soát: '+_esc(x.ngayRaSoat||"—")+' (chu kỳ '+x.chuKyRaSoat+' tháng)</span>'+
+    cbTxt+'</div>';
+  if(x.moTa) h += '<div class="v19-hint">'+_esc(x.moTa)+'</div>';
+
+  // Sơ đồ
+  h += '<div class="v19-sec">🔀 Sơ đồ quy trình</div>';
+  if(x.soDo && x.soDo.length){
+    h += '<div class="v19-flow">' + x.soDo.map(function(s,i){
+      var meta = [];
+      if(s.trachNhiem) meta.push("👤 "+_esc(s.trachNhiem));
+      if(s.thoiHan)    meta.push("⏱ "+_esc(s.thoiHan));
+      if(s.bieuMau){
+        var f = tl.filter(function(t){return t.maBieu && t.maBieu.toLowerCase()===String(s.bieuMau).toLowerCase();})[0];
+        meta.push(f ? '📋 <a href="'+_esc(f.fileUrl)+'" target="_blank" style="color:var(--gold);font-weight:700">'+_esc(s.bieuMau)+'</a>'
+                    : '📋 <span style="color:var(--red)" title="Chưa đính kèm file mẫu biểu này">'+_esc(s.bieuMau)+' ⚠</span>');
+      }
+      return '<div class="v19-step"><div class="v19-step-n"><div class="v19-step-c">'+(i+1)+'</div><div class="v19-step-l"></div></div>'+
+        '<div class="v19-step-b"><div class="v19-step-t">'+_esc(s.buoc)+'</div>'+
+        (meta.length?'<div class="v19-step-m">'+meta.join("")+'</div>':'')+'</div></div>';
+    }).join("") + '</div>';
+  } else h += '<div class="v19-empty-sub">Chưa khai báo sơ đồ. Sửa quy trình để thêm các bước.</div>';
+
+  // Tài liệu
+  var LOAI = {quy_trinh:"📄 Văn bản quy trình", mau_bieu:"📋 Mẫu biểu", so_do:"🔀 Sơ đồ", huong_dan:"📖 Hướng dẫn"};
+  h += '<div class="v19-sec">📎 Tài liệu, mẫu biểu đính kèm ('+tl.length+')</div>';
+  if(tl.length){
+    h += '<div class="v19-files">' + tl.map(function(t){
+      return '<div class="v19-file"><span>'+(LOAI[t.loai]||"📎").split(" ")[0]+'</span>'+
+        '<a href="'+_esc(t.fileUrl)+'" target="_blank" title="'+_esc(t.tenTaiLieu)+'">'+(t.maBieu?_esc(t.maBieu)+" · ":"")+_esc(t.tenTaiLieu)+'</a>'+
+        (quyenAdmin?'<span class="x" onclick="isoXoaTaiLieu(\''+_esc(t.id)+'\')" title="Xóa">✕</span>':'')+'</div>';
+    }).join("") + '</div>';
+  } else h += '<div class="v19-empty-sub">Chưa có tài liệu.</div>';
+
+  // Theo dõi triển khai
+  h += '<div class="v19-sec">📊 Tình hình triển khai theo đơn vị</div>';
+  if(td.length){
+    h += '<table class="v19-table"><thead><tr><th style="text-align:left">Đơn vị</th><th>Kỳ</th><th>Hồ sơ</th><th>Đúng hạn</th><th>Trễ hạn</th><th>% đúng hạn</th><th>NC</th><th>Trạng thái</th></tr></thead><tbody>';
+    td.sort(function(a,b){return a.ky<b.ky?1:-1;}).forEach(function(t){
+      var p = t.soHoSo ? Math.round(t.soDungHan/t.soHoSo*1000)/10 : null;
+      var cls = p===null?"na":(p>=95?"xs":(p>=85?"ht":"chua"));
+      h += '<tr><td class="l">'+_esc(t.donVi)+'</td><td>'+_esc(t.ky)+'</td><td>'+t.soHoSo+'</td><td>'+t.soDungHan+'</td>'+
+        '<td'+(t.soTreHan>0?' style="color:var(--red);font-weight:700"':'')+'>'+t.soTreHan+'</td>'+
+        '<td><span class="v19-d '+cls+'">'+(p===null?"—":p+"%")+'</span></td>'+
+        '<td'+(t.soKhongPhuHop>0?' style="color:var(--red);font-weight:700"':'')+'>'+t.soKhongPhuHop+'</td>'+
+        '<td>'+_esc(t.trangThai)+'</td></tr>';
+    });
+    h += '</tbody></table>';
+    var nc = td.filter(function(t){return t.soKhongPhuHop>0 && t.trangThai!=="Đã khắc phục";});
+    if(nc.length) h += '<div class="v19-alert hi" style="margin-top:10px">⛔ <div><b>'+nc.length+' đơn vị</b> còn điểm không phù hợp chưa khắc phục xong: '+_esc(nc.map(function(t){return t.donVi;}).join(", "))+'. Đề nghị đưa vào nội dung giao ban tháng.</div></div>';
+  } else h += '<div class="v19-empty-sub">Chưa có đơn vị nào ghi nhận triển khai.</div>';
+
+  // Nút thao tác
+  h += '<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">'+
+    '<button class="btn btn-primary" onclick="isoMoTheoDoi(\''+_esc(x.maQT)+'\')">📊 Ghi nhận triển khai</button>'+
+    (quyenAdmin?'<button class="btn btn-outline" onclick="isoMoUpload(\''+_esc(x.maQT)+'\')">📎 Đính kèm tài liệu</button>'+
+             '<button class="btn btn-outline btn-orange" onclick="isoMoQuyTrinh(\''+_esc(x.maQT)+'\')">✎ Sửa quy trình</button>'+
+             '<button class="btn btn-outline" style="color:var(--red)" onclick="isoXoaQuyTrinh(\''+_esc(x.maQT)+'\')">🗑 Xóa</button>':'')+
+    '</div>';
+
+  document.getElementById("iso-detail").innerHTML = h;
+}
+
+/* --- Quy trình --- */
+function isoMoQuyTrinh(ma){
+  if(!requireAdminOrPrompt()) return;
+  var x = ma ? ISO.quyTrinh.filter(function(q){return q.maQT===ma;})[0] : null;
+  document.getElementById("iso-qt-title").innerHTML = (x?'✎ Sửa quy trình '+_esc(x.maQT):'➕ Thêm quy trình ISO')+' <span class="v19-x" onclick="kpiDongModal(\'iso-modal-qt\')">✕</span>';
+  document.getElementById("iso-f-ma").value  = x?x.maQT:"";
+  document.getElementById("iso-f-ma").readOnly = !!x;
+  document.getElementById("iso-f-ten").value = x?x.tenQT:"";
+  document.getElementById("iso-f-lv").value  = x?x.linhVuc:"";
+  document.getElementById("iso-f-dv").value  = x?x.donViChuTri:"";
+  document.getElementById("iso-f-pb").value  = x?x.phienBan:"1.0";
+  document.getElementById("iso-f-tt").value  = x?x.trangThai:"Hiệu lực";
+  document.getElementById("iso-f-nbh").value = x?x.ngayBanHanh:"";
+  document.getElementById("iso-f-nrs").value = x?x.ngayRaSoat:"";
+  document.getElementById("iso-f-ck").value  = x?x.chuKyRaSoat:12;
+  document.getElementById("iso-f-mota").value= x?x.moTa:"";
+  document.getElementById("iso-f-sodo").value = (x&&x.soDo) ? x.soDo.map(function(s){
+    return [s.buoc,s.trachNhiem||"",s.thoiHan||"",s.bieuMau||""].join(" | ");
+  }).join("\n") : "";
+  document.getElementById("iso-modal-qt").style.display="flex";
+}
+async function isoLuuQuyTrinh(){
+  var ma=document.getElementById("iso-f-ma").value.trim();
+  var ten=document.getElementById("iso-f-ten").value.trim();
+  if(!ma||!ten){ showToast("⚠ Bắt buộc nhập Mã và Tên quy trình"); return; }
+  var soDo = document.getElementById("iso-f-sodo").value.split("\n")
+    .map(function(l){ return l.trim(); }).filter(Boolean)
+    .map(function(l){ var p=l.split("|").map(function(s){return s.trim();});
+      return { buoc:p[0]||"", trachNhiem:p[1]||"", thoiHan:p[2]||"", bieuMau:p[3]||"" }; });
+  var qt = { maQT:ma, tenQT:ten,
+    linhVuc:document.getElementById("iso-f-lv").value.trim(),
+    donViChuTri:document.getElementById("iso-f-dv").value.trim(),
+    phienBan:document.getElementById("iso-f-pb").value.trim(),
+    trangThai:document.getElementById("iso-f-tt").value,
+    ngayBanHanh:document.getElementById("iso-f-nbh").value.trim(),
+    ngayRaSoat:document.getElementById("iso-f-nrs").value.trim(),
+    chuKyRaSoat:Number(document.getElementById("iso-f-ck").value)||0,
+    moTa:document.getElementById("iso-f-mota").value.trim(),
+    soDo:soDo };
+  try{
+    var r = await (await fetch(API,{method:"POST",body:JSON.stringify({action:"isoLuuQuyTrinh",pin:getAdminPin(),quyTrinh:qt,nguoiSua:"Admin"})})).json();
+    if(r.ok){ showToast("✓ Đã lưu quy trình "+ma); kpiDongModal("iso-modal-qt"); await loadISO(true); isoChon(ma); }
+    else showToast("⚠ "+(r.error||"Lưu thất bại"));
+  }catch(e){ showToast("⚠ Lỗi: "+e.message); }
+}
+async function isoXoaQuyTrinh(ma){
+  if(!requireAdminOrPrompt()) return;
+  if(!confirm("Xóa quy trình "+ma+"? (Tài liệu đính kèm vẫn giữ trên Drive)")) return;
+  try{
+    var r = await (await fetch(API,{method:"POST",body:JSON.stringify({action:"isoXoaQuyTrinh",pin:getAdminPin(),maQT:ma})})).json();
+    if(r.ok){ showToast("✓ Đã xóa"); ISO.chon=null; document.getElementById("iso-detail").innerHTML=""; await loadISO(true); }
+  }catch(e){ showToast("⚠ Lỗi: "+e.message); }
+}
+
+/* --- Upload tài liệu --- */
+function isoMoUpload(ma){
+  if(!requireAdminOrPrompt()) return;
+  document.getElementById("iso-up-ma").value=ma;
+  document.getElementById("iso-up-ten").value="";
+  document.getElementById("iso-up-mabieu").value="";
+  document.getElementById("iso-up-file").value="";
+  document.getElementById("iso-modal-up").style.display="flex";
+}
+function isoUpload(){
+  var f = document.getElementById("iso-up-file").files[0];
+  if(!f){ showToast("⚠ Chưa chọn file"); return; }
+  if(f.size > 5*1024*1024){ showToast("⚠ File > 5MB, vui lòng nén hoặc chia nhỏ"); return; }
+  var ma = document.getElementById("iso-up-ma").value;
+  var rd = new FileReader();
+  showToast("⏳ Đang tải lên...");
+  rd.onload = async function(ev){
+    var b64 = String(ev.target.result).split(",")[1];
+    try{
+      var r = await (await fetch(API,{method:"POST",body:JSON.stringify({
+        action:"isoUploadTaiLieu", pin:getAdminPin(), maQT:ma,
+        loai:document.getElementById("iso-up-loai").value,
+        tenTaiLieu:document.getElementById("iso-up-ten").value.trim()||f.name,
+        maBieu:document.getElementById("iso-up-mabieu").value.trim(),
+        fileName:f.name, mimeType:f.type||"application/octet-stream", base64:b64,
+        nguoiUpload:"Admin"
+      })})).json();
+      if(r.ok){ showToast("✓ Đã tải lên"); kpiDongModal("iso-modal-up"); await loadISO(true); isoChon(ma); }
+      else showToast("⚠ "+(r.error||"Tải lên thất bại"));
+    }catch(e){ showToast("⚠ Lỗi: "+e.message); }
+  };
+  rd.readAsDataURL(f);
+}
+async function isoXoaTaiLieu(id){
+  if(!confirm("Xóa tài liệu này?")) return;
+  var ma = ISO.chon;
+  try{
+    var r = await (await fetch(API,{method:"POST",body:JSON.stringify({action:"isoXoaTaiLieu",pin:getAdminPin(),id:id})})).json();
+    if(r.ok){ showToast("✓ Đã xóa"); await loadISO(true); isoChon(ma); }
+  }catch(e){ showToast("⚠ Lỗi: "+e.message); }
+}
+
+/* --- Theo dõi triển khai --- */
+function isoMoTheoDoi(ma){
+  document.getElementById("iso-td-ma").value=ma;
+  var sel=document.getElementById("iso-td-dv");
+  sel.innerHTML = DV_18.map(function(d){return '<option>'+_esc(d)+'</option>';}).join("");
+  var d=new Date();
+  document.getElementById("iso-td-ky").value = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+  ["iso-td-hs","iso-td-dh","iso-td-th","iso-td-nc"].forEach(function(i){document.getElementById(i).value=0;});
+  document.getElementById("iso-td-hd").value="";
+  document.getElementById("iso-modal-td").style.display="flex";
+}
+async function isoLuuTheoDoi(){
+  var ma=document.getElementById("iso-td-ma").value;
+  var hs=Number(document.getElementById("iso-td-hs").value)||0;
+  var dh=Number(document.getElementById("iso-td-dh").value)||0;
+  var th=Number(document.getElementById("iso-td-th").value)||0;
+  if(dh+th > hs){ showToast("⚠ Đúng hạn + trễ hạn ("+(dh+th)+") vượt tổng số hồ sơ ("+hs+")"); return; }
+  var t = { maQT:ma, donVi:document.getElementById("iso-td-dv").value,
+    ky:document.getElementById("iso-td-ky").value.trim(),
+    soHoSo:hs, soDungHan:dh, soTreHan:th,
+    soKhongPhuHop:Number(document.getElementById("iso-td-nc").value)||0,
+    hanhDongKhacPhuc:document.getElementById("iso-td-hd").value.trim(),
+    trangThai:document.getElementById("iso-td-tt").value };
+  if(!t.ky){ showToast("⚠ Chưa nhập kỳ"); return; }
+  try{
+    var r = await (await fetch(API,{method:"POST",body:JSON.stringify({action:"isoGhiTheoDoi",theoDoi:t,nguoiGhi:t.donVi})})).json();
+    if(r.ok){ showToast("✓ Đã ghi nhận"+(r.ghiDe?" (cập nhật)":"")); kpiDongModal("iso-modal-td"); await loadISO(true); isoChon(ma); }
+    else showToast("⚠ "+(r.error||"Ghi thất bại"));
+  }catch(e){ showToast("⚠ Lỗi: "+e.message); }
+}
+
+/* --- Xuất danh mục ISO --- */
+function isoXuatDanhMuc(){
+  if(!ISO.quyTrinh.length){ showToast("⚠ Chưa có quy trình"); return; }
+  var CB={QUA_HAN:"Quá hạn rà soát",SAP_DEN_HAN:"Sắp đến hạn rà soát",THIEU_MAU_BIEU:"Thiếu mẫu biểu"};
+  var rows=[["STT","Mã QT","Tên quy trình","Lĩnh vực","Đơn vị chủ trì","Phiên bản","Ngày ban hành","Ngày rà soát","Chu kỳ (tháng)","Hạn rà soát tiếp","Trạng thái","Số tài liệu","Cảnh báo"]];
+  ISO.quyTrinh.forEach(function(x,i){
+    rows.push([i+1,x.maQT,x.tenQT,x.linhVuc,x.donViChuTri,x.phienBan,x.ngayBanHanh,x.ngayRaSoat,
+      x.chuKyRaSoat,x.ngayHetHanRaSoat||"",x.trangThai,
+      ISO.taiLieu.filter(function(t){return t.maQT===x.maQT;}).length, CB[x.canhBao]||""]);
+  });
+  var ws=XLSX.utils.aoa_to_sheet(rows);
+  ws["!cols"]=[{wch:5},{wch:12},{wch:42},{wch:16},{wch:18},{wch:9},{wch:13},{wch:13},{wch:11},{wch:14},{wch:13},{wch:10},{wch:20}];
+  var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"DANH MUC ISO");
+  XLSX.writeFile(wb,"DanhMucISO_HQKV8.xlsx");
+  showToast("✓ Đã xuất danh mục");
+}
+/* =============== HẾT MODULE v19 =============== */
+
+
+/* ═══════════ MODULE v19B — XẾP LOẠI 3 NHÁNH (client) ═══════════ */
+var V19B_ON = false;
+var V19B_DATA = null;
+var V19B_TENLV = {
+  "II.1":"GSQL","II.2":"Thuế XNK","II.3":"KTSTQ","II.4":"QLRR",
+  "II.5":"KSHQ/CBL","II.6":"Đào tạo","II.7":"Tuyên truyền",
+  "NV":"Nhiệm vụ","ISO":"ISO"
+};
+var V19B_COT = ["II.1","II.2","II.3","II.4","II.5","NV","ISO","II.6","II.7"];
+
+function v19bToggle(){
+  V19B_ON = !V19B_ON;
+  var btn=document.getElementById("btn-3nhanh");
+  var wrap=document.getElementById("v19b-wrap");
+  var oldTbl=document.getElementById("kpi-table-wrap") || document.getElementById("kpi-body");
+  if(V19B_ON){
+    btn.classList.add("btn-primary"); btn.classList.remove("btn-outline");
+    btn.innerHTML="🎯 Đang xem: 3 nhánh";
+    wrap.style.display="";
+    if(oldTbl) oldTbl.style.display="none";
+    v19bTai();
+  } else {
+    btn.classList.remove("btn-primary"); btn.classList.add("btn-outline");
+    btn.innerHTML="🎯 Chế độ 3 nhánh";
+    wrap.style.display="none";
+    if(oldTbl) oldTbl.style.display="";
+  }
+}
+
+function v19bTai(){
+  var wrap=document.getElementById("v19b-wrap");
+  wrap.innerHTML='<div class="v19-loading">⏳ Đang chấm điểm 3 nhánh (đọc sheet NV + ISO)...</div>';
+  var sel=document.getElementById("kpi-ky");
+  var ky = sel ? (sel.value||"") : "";
+  var thang = "";
+  var m = String(ky).match(/(\d{1,2})\s*\/\s*(\d{4})/);
+  if(m) thang = m[2]+"-"+("0"+m[1]).slice(-2);
+  else { var m2=String(ky).match(/^(\d{4})-(\d{1,2})/); if(m2) thang=m2[1]+"-"+("0"+m2[2]).slice(-2); }
+
+  fetch(API + "?xeploai3=1&ky=" + encodeURIComponent(ky) + "&thang=" + encodeURIComponent(thang))
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(!j.ok){ wrap.innerHTML='<div class="v19-empty">Lỗi: '+(j.error||"?")+'</div>'; return; }
+      V19B_DATA=j; v19bRender(j);
+    })
+    .catch(function(e){ wrap.innerHTML='<div class="v19-empty">Không tải được: '+e+'</div>'; });
+}
+
+function v19bRender(j){
+  var h='';
+  // Cảnh báo điều hành
+  if(j.canhBao && j.canhBao.length){
+    h+='<div class="v19b-alert"><div class="v19b-alert-t">⚠ CẢNH BÁO ĐIỀU HÀNH</div><ul>';
+    j.canhBao.forEach(function(c){ h+='<li>'+v19bEsc(c)+'</li>'; });
+    h+='</ul></div>';
+  }
+  [1,2,3].forEach(function(nh){
+    var rows=(j.bang||[]).filter(function(x){return x.nhanh===nh;})
+                .sort(function(a,b){ return (a.hang||99)-(b.hang||99); });
+    if(!rows.length) return;
+    var ts=(j.trongSo||{})[nh]||{};
+    h+='<div class="v19b-block">';
+    h+='<div class="v19b-head"><span class="v19b-badge n'+nh+'">NHÁNH '+nh+'</span> '
+      +v19bEsc(j.tenNhanh[nh])+' <span class="v19b-sub">('+rows.length+' đơn vị)</span></div>';
+    // dòng trọng số
+    h+='<div class="v19b-ts">Trọng số: ';
+    V19B_COT.forEach(function(k){ if(ts[k]) h+='<span>'+V19B_TENLV[k]+' '+ts[k]+'</span>'; });
+    h+='</div>';
+    h+='<div class="v19b-tblwrap"><table class="v19b-tbl"><thead><tr>'
+      +'<th>Hạng</th><th class="l">Đơn vị</th>';
+    V19B_COT.forEach(function(k){ if(ts[k]) h+='<th>'+V19B_TENLV[k]+'</th>'; });
+    h+='<th>Độ phủ</th><th>Số NV</th><th>ĐIỂM</th><th class="l">Xếp loại</th></tr></thead><tbody>';
+    rows.forEach(function(x){
+      var cls = x.xepLoai==="Xuất sắc"?"xs":(x.xepLoai==="Tốt"?"t":(x.xepLoai==="Hoàn thành"?"ht":"ch"));
+      h+='<tr><td class="rk">'+(x.hang||"–")+'</td><td class="l"><b>'+v19bEsc(x.donVi)+'</b>'
+        +(x.thieuBangChung? ' <span class="v19b-warn" title="'+x.thieuBangChung+' NV thiếu bằng chứng">⚠'+x.thieuBangChung+'</span>':'')
+        +'</td>';
+      V19B_COT.forEach(function(k){
+        if(!ts[k]) return;
+        var v=x.linhVuc[k];
+        h+='<td>'+(v===null||v===undefined?'<span class="v19b-na">—</span>':v.toFixed(0))+'</td>';
+      });
+      h+='<td class="'+(x.doPhu<100?"v19b-lowcov":"")+'">'+x.doPhu+'</td>';
+      h+='<td>'+x.soNV+'</td>';
+      h+='<td class="v19b-diem">'+(x.diem===null?'—':x.diem.toFixed(1))+'</td>';
+      h+='<td class="l"><span class="v19b-xl '+cls+'">'+v19bEsc(x.xepLoai)+'</span></td></tr>';
+    });
+    h+='</tbody></table></div></div>';
+  });
+  h+='<div class="v19b-note">📌 <b>Nguyên tắc:</b> mỗi nhánh xếp hạng độc lập — không so sánh chéo giữa các nhánh. '
+    +'Điểm chuẩn hóa theo trọng số các lĩnh vực <b>thực có số liệu</b>. '
+    +'Nhiệm vụ tick "Hoàn thành" nhưng thiếu <b>ngày TH thực tế</b> hoặc <b>mô tả kết quả</b> sẽ <b>không được tính đúng hạn</b>.</div>';
+  h+='<div class="v19b-bar"><button class="btn btn-outline" onclick="v19bXuatExcel()">⬇ Xuất Excel 3 nhánh</button></div>';
+  document.getElementById("v19b-wrap").innerHTML=h;
+}
+
+function v19bXuatExcel(){
+  if(!V19B_DATA){ showToast("Chưa có dữ liệu"); return; }
+  var aoa=[["XẾP LOẠI ĐƠN VỊ THEO 3 NHÁNH — Chi cục Hải quan khu vực VIII"],
+           ["Kỳ: "+(V19B_DATA.ky||"—")+"   |   Chốt đến: "+(V19B_DATA.denNgay||"—")],[]];
+  [1,2,3].forEach(function(nh){
+    var rows=(V19B_DATA.bang||[]).filter(function(x){return x.nhanh===nh;})
+                .sort(function(a,b){return (a.hang||99)-(b.hang||99);});
+    if(!rows.length) return;
+    var ts=(V19B_DATA.trongSo||{})[nh]||{};
+    aoa.push(["NHÁNH "+nh+" — "+V19B_DATA.tenNhanh[nh]]);
+    var hdr=["Hạng","Đơn vị"];
+    V19B_COT.forEach(function(k){ if(ts[k]) hdr.push(V19B_TENLV[k]+" ("+ts[k]+")"); });
+    hdr=hdr.concat(["Độ phủ","Số NV","Thiếu BC","ĐIỂM","Xếp loại"]);
+    aoa.push(hdr);
+    rows.forEach(function(x){
+      var r=[x.hang||"",x.donVi];
+      V19B_COT.forEach(function(k){ if(ts[k]) r.push(x.linhVuc[k]===null||x.linhVuc[k]===undefined?"":+x.linhVuc[k].toFixed(1)); });
+      r=r.concat([x.doPhu,x.soNV,x.thieuBangChung,x.diem===null?"":+x.diem.toFixed(1),x.xepLoai]);
+      aoa.push(r);
+    });
+    aoa.push([]);
+  });
+  if(V19B_DATA.canhBao && V19B_DATA.canhBao.length){
+    aoa.push(["CẢNH BÁO ĐIỀU HÀNH"]);
+    V19B_DATA.canhBao.forEach(function(c){ aoa.push([c]); });
+  }
+  var ws=XLSX.utils.aoa_to_sheet(aoa);
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"XepLoai3Nhanh");
+  XLSX.writeFile(wb,"XepLoai_3Nhanh_"+(V19B_DATA.ky||"kỳ").replace(/[^\w]/g,"_")+".xlsx");
+}
+
+function v19bEsc(s){
+  return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
 
 </script>
 </body>
