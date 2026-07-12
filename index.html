@@ -1222,28 +1222,35 @@ function effectiveStatus(t) {
   const gc = (t.ghiChu || "").toUpperCase().trim();
   const tt = (t.tinhTrang || "").toLowerCase().trim();
 
-  // Đang có kết quả/đề xuất hoàn thành chờ Admin duyệt — ưu tiên hiển thị trước mọi trạng thái khác
+  // ===== SỬA v19B: NGÀY THẬT THẮNG CHỮ CŨ TRONG CỘT J =====
+  // Lỗi cũ: cột J còn lưu chữ "Sắp hết hạn" từ trước -> NV hạn 30/06 vẫn báo
+  // "Sắp hết hạn" vào 12/07. Chữ trong cột J là chữ chết, không tự cập nhật.
+  // Nay: chỉ đọc cột J cho các trạng thái KHÔNG suy ra được từ ngày
+  // (Chờ duyệt / Hoàn thành). Còn lại LUÔN tính theo ngày thực tế.
+
+  // 1. Chờ duyệt — không suy ra được từ ngày
   if (gc.includes("CHỜ DUYỆT")) return "⏳ Chờ duyệt";
 
-  // Hoàn thành
-  if (tt === "hoàn thành" || gc.includes("HOÀN THÀNH") || gc.includes("HT") || gc.includes("ĐÃ QUÁN TRIỆT") || gc.includes("ĐÃ XỬ LÝ")) return "✅ Hoàn thành";
+  // 2. Hoàn thành — không suy ra được từ ngày
+  //    (Đã BỎ điều kiện gc.includes("HT"): ghi chú như "Chờ ý kiến P.NHT",
+  //     "Đã gửi CHT" chứa 2 chữ HT -> bị chấm nhầm là Hoàn thành.)
+  if (tt === "hoàn thành" || gc.includes("HOÀN THÀNH") || gc.includes("ĐÃ QUÁN TRIỆT") || gc.includes("ĐÃ XỬ LÝ")) return "✅ Hoàn thành";
 
-  // Trễ hạn - từ cột J
-  if (gc === "QUÁ HẠN" || gc.includes("QUÁ HẠN") || gc.includes("OVERDUE")) return "🔴 Trễ hạn";
-
-  // Sắp hết hạn - từ cột J
-  if (gc.includes("SẮP HẾT HẠN") || gc.includes("CHÚ Ý - GẦN HẠN") || gc.includes("KIỂM TRA TIẾN ĐỘ")) return "🟡 Sắp hết hạn";
-
-  // Fallback: kiểm tra theo ngày thực tế
+  // 3. CHƯA hoàn thành -> LUÔN tính theo NGÀY THỰC TẾ
   if (t.thoiHan) {
     const d = parseDate(t.thoiHan);
     if (d) {
       const now = new Date(); now.setHours(0,0,0,0);
       const diff = Math.floor((d - now) / 86400000);
-      if (diff < 0) return "🔴 Trễ hạn";
+      if (diff < 0)  return "🔴 Trễ hạn";
       if (diff <= 3) return "🟡 Sắp hết hạn";
+      return "🔵 Tiến hành";
     }
   }
+
+  // 4. Không có thời hạn hợp lệ -> lúc này mới đọc chữ trong cột J
+  if (gc.includes("QUÁ HẠN") || gc.includes("OVERDUE")) return "🔴 Trễ hạn";
+  if (gc.includes("SẮP HẾT HẠN") || gc.includes("CHÚ Ý - GẦN HẠN") || gc.includes("KIỂM TRA TIẾN ĐỘ")) return "🟡 Sắp hết hạn";
 
   return "🔵 Tiến hành";
 }
