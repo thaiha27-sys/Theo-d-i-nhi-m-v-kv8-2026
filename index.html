@@ -1658,7 +1658,13 @@ function pctColor(pct, kyVong) {
   if (ratio >= 70) return COLORS.sap;
   return COLORS.tre;
 }
-var fmtN = v => (v != null && v !== "") ? Number(v).toLocaleString("vi-VN") : "—";
+// SỬA v20: chỉ tiêu định tính (chữ) -> giữ nguyên chữ, không ép Number gây "NaN"
+var fmtN = function(v){
+  if (v == null || v === "") return "—";
+  var n = Number(v);
+  if (isNaN(n)) return String(v);            // "Theo dõi định tính", "-", ...
+  return n.toLocaleString("vi-VN");
+};
 // v18-fix: pct trong dữ liệu là số thập phân (0.5466) -> hiển thị 54,7%
 var fmtPct = v => (v != null && v !== "" && !isNaN(v)) ? (Number(v)*100).toFixed(1).replace(".",",")+"%" : "—";
 
@@ -1699,7 +1705,8 @@ async function loadNSNN() {
       renderTongQuan(data.tongQuan || []);
       renderChiTieuChiCuc(data.chiTieuChiCuc || []);
       renderPhanGiao(data.phanGiao || {});
-      renderXepLoai(data.xepLoai || []);
+      // v20: xếp loại lấy từ Sheet KHUNG (7 lĩnh vực + phân 3 nhánh), KHÔNG dùng data.xepLoai của Sheet cũ
+      loadKhung().then(function(){ renderXepLoai([]); });
       renderDonDoc(data.chiTieuChiCuc || [], data.phanGiao || {});
       nsnnLoaded = true;
     } else {
@@ -1790,17 +1797,109 @@ function renderPhanGiao(phanGiao) {
 }
 
 // ===== XẾP LOẠI ĐƠN VỊ =====
+// ===== v20: DỮ LIỆU SHEET KHUNG TRỌNG SỐ =====
+var KHUNG = null;          // { thamSo, trongSo, phanGiao, xepLoai }
+var khungLoaded = false;
+
+async function loadKhung(force){
+  if (khungLoaded && !force && KHUNG) return KHUNG;
+  try{
+    var r = await fetch(API + "?khung=1&t=" + Date.now());
+    var j = await r.json();
+    if (j && j.ok){
+      KHUNG = j;
+      khungLoaded = true;
+      // Đồng bộ tiến độ kỳ vọng từ Sheet khung (tháng ÷ 12)
+      if (j.thamSo && j.thamSo.kyVong) KY_VONG_TS = Number(j.thamSo.kyVong);
+    } else {
+      console.warn("Không đọc được Sheet khung:", j && j.error);
+    }
+  }catch(e){ console.warn("Lỗi tải Sheet khung:", e); }
+  return KHUNG;
+}
+
+// ===== v20: XẾP LOẠI ĐỌC TỪ SHEET KHUNG TRỌNG SỐ + PHÂN 3 NHÁNH =====
+// Không dùng bảng "XẾP LOẠI ĐƠN VỊ" nguyên trạng của Excel: bảng đó xếp chung
+// mọi đơn vị nên Phòng QLRR (chỉ có số liệu 1/7 lĩnh vực) đứng nhất toàn Chi cục.
+var V20_NHANH = {
+  "HQCK QT Móng Cái":1,"HQCK Hoành Mô":1,"HQCK Bắc Phong Sinh":1,
+  "HQCK cảng Hòn Gai":1,"HQCK cảng Cẩm Phả":1,"HQCK cảng Vạn Gia":1,
+  "Đội KSHQ":2,"Đội PT&KTSTQ":2,
+  "Văn phòng":3,"Phòng TCCB":3,"Phòng CNTT":3,"Phòng QLRR":3,"Phòng NV":3
+};
+var V20_TEN_NHANH = {1:"Khối cửa khẩu",2:"Khối nghiệp vụ chuyên sâu",3:"Khối tham mưu"};
+var V20_LV = ["II.1","II.2","II.3","II.4","II.5","II.6","II.7"];
+var V20_LV_TEN = {"II.1":"GSQL","II.2":"Thuế XNK","II.3":"KTSTQ","II.4":"QLRR","II.5":"KSHQ/CBL","II.6":"Đào tạo","II.7":"Tuyên truyền"};
+
+function _v20ChuanDV(s){
+  var k = String(s||"").trim().replace(/\s+/g," ").replace(/HQ\s*\.?\s*CK/gi,"HQCK");
+  var keys = Object.keys(V20_NHANH);
+  for (var i=0;i<keys.length;i++){
+    if (keys[i].toLowerCase() === k.toLowerCase()) return keys[i];
+  }
+  if (/nvhq|nghiệp vụ/i.test(k)) return "Phòng NV";
+  return null;
+}
+function _v20XL(d){
+  if (d==null) return "Chưa đủ dữ liệu";
+  if (d>=100) return "Hoàn thành xuất sắc";
+  if (d>=85)  return "Hoàn thành tốt";
+  if (d>=70)  return "Hoàn thành";
+  return "Chưa hoàn thành";
+}
+
 function renderXepLoai(rows) {
-  if (!rows.length) { document.getElementById("xeploai-tbody").innerHTML = '<tr><td>Chưa có dữ liệu</td></tr>'; return; }
-  document.getElementById("xeploai-thead").innerHTML = '<tr><th style="text-align:left">Đơn vị</th><th>II.1 GSQL</th><th>II.2 Thuế XNK</th><th>II.3 KTSTQ</th><th>II.4 QLRR</th><th>II.5 KSHQ/CBL</th><th>Điểm % HT BQ</th><th>Xếp loại</th></tr>';
-  document.getElementById("xeploai-tbody").innerHTML = rows.map(function(r) {
-    var color = (r.diemBinhQuan||0) >= 100 ? COLORS.ht : (r.diemBinhQuan||0) >= 50 ? COLORS.sap : COLORS.tre;
-    return '<tr><td style="text-align:left;font-weight:600">' + r.donVi + '</td>' +
-      '<td>' + (r.gsql??'—') + '</td><td>' + (r.thueXNK??'—') + '</td><td>' + (r.ktstq??'—') + '</td>' +
-      '<td>' + (r.qlrr??'—') + '</td><td>' + (r.cbl??'—') + '</td>' +
-      '<td style="font-weight:700;color:' + color + '">' + (r.diemBinhQuan??'—') + '%</td>' +
-      '<td style="font-size:11.5px">' + (r.xepLoai||"") + '</td></tr>';
-  }).join("");
+  var host = document.getElementById("xeploai-tbody");
+  var thead = document.getElementById("xeploai-thead");
+  if (!KHUNG || !KHUNG.xepLoai || !KHUNG.xepLoai.length) {
+    if (thead) thead.innerHTML = "";
+    if (host) host.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--muted)">Chưa có dữ liệu từ Sheet khung trọng số</td></tr>';
+    return;
+  }
+  var ts = KHUNG.trongSo || {};
+
+  // Gom theo nhánh, chuẩn hóa điểm theo trọng số các lĩnh vực THỰC CÓ số liệu
+  var groups = {1:[],2:[],3:[]};
+  KHUNG.xepLoai.forEach(function(r){
+    var dv = _v20ChuanDV(r.donVi);
+    if (!dv) return;
+    var nh = V20_NHANH[dv];
+    var tong=0, tsCo=0;
+    V20_LV.forEach(function(k){
+      var w = ts[k]||0; if(!w) return;
+      var d = r.linhVuc ? r.linhVuc[k] : null;
+      if (d==null || isNaN(d)) return;
+      tong += d*w; tsCo += w;
+    });
+    var diem = tsCo>0 ? tong/tsCo : null;
+    groups[nh].push({ donVi:dv, linhVuc:r.linhVuc||{}, diem:diem, doPhu:tsCo, xepLoai:_v20XL(diem) });
+  });
+
+  var h = '';
+  [1,2,3].forEach(function(nh){
+    var g = groups[nh];
+    if (!g.length) return;
+    g.sort(function(a,b){ return (b.diem||0)-(a.diem||0); });
+    h += '<tr><td colspan="11" style="background:var(--navy);color:#fff;font-weight:700;padding:8px 10px;font-size:12.5px">'
+       + 'NHÁNH ' + nh + ' — ' + V20_TEN_NHANH[nh] + ' <span style="opacity:.75;font-weight:400">(' + g.length + ' đơn vị · xếp hạng độc lập)</span></td></tr>';
+    g.forEach(function(r,i){
+      var c = (r.diem==null) ? NAVY : (r.diem>=100 ? COLORS.ht : (r.diem>=85 ? "#1E40AF" : (r.diem>=70 ? COLORS.sap : COLORS.tre)));
+      h += '<tr><td style="text-align:center;font-weight:700;color:var(--navy)">' + (i+1) + '</td>'
+         + '<td style="text-align:left;font-weight:600">' + _esc(r.donVi) + '</td>';
+      V20_LV.forEach(function(k){
+        var v = r.linhVuc[k];
+        h += '<td>' + (v==null||isNaN(v) ? '<span style="color:#cbd5e1">—</span>' : Number(v).toFixed(0)) + '</td>';
+      });
+      h += '<td style="' + (r.doPhu<100?'color:#C0392B;font-weight:600':'') + '">' + r.doPhu + '</td>'
+         + '<td style="font-weight:700;font-size:15px;color:' + c + '">' + (r.diem==null?'—':r.diem.toFixed(1)) + '</td>'
+         + '<td style="font-size:11.5px">' + r.xepLoai + '</td></tr>';
+    });
+  });
+
+  thead.innerHTML = '<tr><th>Hạng</th><th style="text-align:left">Đơn vị</th>'
+    + V20_LV.map(function(k){ return '<th>' + V20_LV_TEN[k] + '<br><span style="font-weight:400;opacity:.7">TS' + (ts[k]||0) + '</span></th>'; }).join("")
+    + '<th>Độ phủ</th><th>ĐIỂM</th><th>Xếp loại</th></tr>';
+  host.innerHTML = h;
 }
 
 // ===== ĐÔN ĐỐC: tổng hợp cảnh báo theo quy ước 🟥 <70% tiến độ kỳ vọng =====
@@ -4326,6 +4425,7 @@ var V19B_TENLV = {
   "NV":"Nhiệm vụ","ISO":"ISO"
 };
 var V19B_COT = ["II.1","II.2","II.3","II.4","II.5","NV","ISO","II.6","II.7"];
+var V19B_MD_TEN = {3:"Khó",2:"TB",1:"Dễ"};
 
 function v19bToggle(){
   V19B_ON = !V19B_ON;
@@ -4388,7 +4488,7 @@ function v19bRender(j){
     h+='<div class="v19b-tblwrap"><table class="v19b-tbl"><thead><tr>'
       +'<th>Hạng</th><th class="l">Đơn vị</th>';
     V19B_COT.forEach(function(k){ if(ts[k]) h+='<th>'+V19B_TENLV[k]+'</th>'; });
-    h+='<th>Độ phủ</th><th>Số NV</th><th>ĐIỂM</th><th class="l">Xếp loại</th></tr></thead><tbody>';
+    h+='<th>Độ phủ</th><th>Số NV</th><th title="Σ(số NV hoàn thành × mức độ). Mức độ: Khó=3, TB=2, Dễ=1">Khối lượng<br><span style="font-weight:400;opacity:.7">Σ(NV×mức độ)</span></th><th>ĐIỂM</th><th class="l">Xếp loại</th></tr></thead><tbody>';
     rows.forEach(function(x){
       var cls = x.xepLoai==="Xuất sắc"?"xs":(x.xepLoai==="Tốt"?"t":(x.xepLoai==="Hoàn thành"?"ht":"ch"));
       h+='<tr><td class="rk">'+(x.hang||"–")+'</td><td class="l"><b>'+v19bEsc(x.donVi)+'</b>'
@@ -4401,6 +4501,11 @@ function v19bRender(j){
       });
       h+='<td class="'+(x.doPhu<100?"v19b-lowcov":"")+'">'+x.doPhu+'</td>';
       h+='<td>'+x.soNV+'</td>';
+      // Khối lượng = Σ(số NV hoàn thành × mức độ)
+      var kl = (x.khoiLuong!=null? x.khoiLuong : 0);
+      var klMax = (x.khoiLuongMax!=null? x.khoiLuongMax : 0);
+      var mdTip = "Khó:"+(x.soKho||0)+" · TB:"+(x.soTB||0)+" · Dễ:"+(x.soDe||0);
+      h+='<td title="'+mdTip+'"><b>'+kl+'</b>'+(klMax?'<span style="color:#94a3b8;font-size:11px"> /'+klMax+'</span>':'')+'</td>';
       h+='<td class="v19b-diem">'+(x.diem===null?'—':x.diem.toFixed(1))+'</td>';
       h+='<td class="l"><span class="v19b-xl '+cls+'">'+v19bEsc(x.xepLoai)+'</span></td></tr>';
     });
@@ -4425,12 +4530,12 @@ function v19bXuatExcel(){
     aoa.push(["NHÁNH "+nh+" — "+V19B_DATA.tenNhanh[nh]]);
     var hdr=["Hạng","Đơn vị"];
     V19B_COT.forEach(function(k){ if(ts[k]) hdr.push(V19B_TENLV[k]+" ("+ts[k]+")"); });
-    hdr=hdr.concat(["Độ phủ","Số NV","Thiếu BC","ĐIỂM","Xếp loại"]);
+    hdr=hdr.concat(["Độ phủ","Số NV","Khối lượng Σ(NV×mức độ)","Khó","TB","Dễ","Thiếu BC","ĐIỂM","Xếp loại"]);
     aoa.push(hdr);
     rows.forEach(function(x){
       var r=[x.hang||"",x.donVi];
       V19B_COT.forEach(function(k){ if(ts[k]) r.push(x.linhVuc[k]===null||x.linhVuc[k]===undefined?"":+x.linhVuc[k].toFixed(1)); });
-      r=r.concat([x.doPhu,x.soNV,x.thieuBangChung,x.diem===null?"":+x.diem.toFixed(1),x.xepLoai]);
+      r=r.concat([x.doPhu,x.soNV,x.khoiLuong||0,x.soKho||0,x.soTB||0,x.soDe||0,x.thieuBangChung,x.diem===null?"":+x.diem.toFixed(1),x.xepLoai]);
       aoa.push(r);
     });
     aoa.push([]);
@@ -4471,7 +4576,7 @@ function switchSub(nhom, sub){
   // Gọi lại hàm tải dữ liệu của tab con (giữ nguyên hàm cũ)
   try{
     if(sub === "nsnn"   && typeof loadNSNN     === "function" && !window.nsnnLoaded) loadNSNN();
-    if(sub === "kpi"    && typeof loadKPI      === "function" && !window.kpiLoaded)  loadKPI();
+    if(sub === "kpi"){ loadKhung().then(function(){ if(typeof renderXepLoai==="function") renderXepLoai([]); if(typeof loadKPI==="function" && !window.kpiLoaded) loadKPI(); }); }
     if(sub === "luutru" && typeof loadLuuTru   === "function") loadLuuTru();
     if(sub === "duyet"  && typeof loadChoDuyet === "function") loadChoDuyet();
   }catch(e){}
