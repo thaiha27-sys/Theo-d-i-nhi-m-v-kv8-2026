@@ -1,9 +1,29 @@
 <!DOCTYPE html>
+<!-- ═══════════════════════════════════════════════════════════════════
+     HỆ THỐNG THEO DÕI NHIỆM VỤ KV8 — GIAO DIỆN
+     PHIÊN BẢN: v20.1          Ngày: 12/07/2026
+     Dùng kèm: Code_v20.1.gs   (Apps Script)
+
+     ── NHẬT KÝ THAY ĐỔI ──
+     v20.1 (12/07/2026)
+       + Sơ đồ Smart ISO: thêm Nội dung thực hiện, Sản phẩm đầu ra,
+         Phối hợp, Thẩm quyền phê duyệt (trước chỉ có Bước/Trách nhiệm/Thời hạn)
+       + Bảng 3 nhánh: thêm cột "Khối lượng" = Σ(số NV × mức độ)
+     v20.0 (12/07/2026)
+       + Gộp 9 tab -> 6 nhóm (Phân tích vào Bảng điều khiển;
+         Chỉ tiêu + Xếp loại -> "Theo dõi chỉ tiêu nhiệm vụ"; Lưu trữ + Duyệt -> "Quản trị")
+       + Xếp loại đọc từ Sheet KHUNG_NHAP_CHI_TIEU_TRONGSO, phân 3 nhánh
+       + Sửa: %HT in số thô (0.03509090909%), màu luôn đỏ, lỗi NaN
+     v19.1 + Sửa: NV quá hạn vẫn báo "Sắp hết hạn" (ngày thật thắng chữ cũ cột J)
+           + Bỏ điều kiện gc.includes("HT") gây chấm nhầm Hoàn thành
+           + Rút gọn tiêu đề Báo cáo ngày -> "BÁO CÁO NGÀY dd/MM/yyyy"
+     v19.0 + Thêm tab Xếp loại đơn vị + Smart ISO
+     ═══════════════════════════════════════════════════════════════════ -->
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Theo dõi Nhiệm vụ KV8 – Quảng Ninh (v17)</title>
+<title>Theo dõi Nhiệm vụ KV8 – Quảng Ninh (v20.1)</title>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
@@ -296,6 +316,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
     <button class="btn btn-outline btn-orange admin-only-action" id="btn-normalize" onclick="chuanHoaDonVi()" title="Chuẩn hóa tên đơn vị chủ trì theo danh sách 18 đơn vị KV8" style="display:none">⚙ Chuẩn hóa ĐV</button>
     <button class="btn btn-outline" id="btn-admin-toggle" onclick="openAdminLogin()">🔒 Đăng nhập Admin</button>
     <span style="font-size:10.5px;opacity:.7">⏰ 8h → dangbohqqn@gmail.com · 💾 Backup 23h30</span>
+    <span id="app-ver" title="Phiên bản giao diện đang chạy" style="font-size:10px;font-weight:700;background:rgba(255,255,255,.18);color:#fff;padding:2px 8px;border-radius:10px;margin-left:8px">v20.1</span>
   </div>
 </div>
 <input type="file" id="excel-input" accept=".xlsx,.xls" style="display:none" onchange="handleExcel(event)">
@@ -1139,6 +1160,9 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
 // ============================================================
 // CẤU HÌNH
 // ============================================================
+const APP_VERSION = "v20.1";
+const APP_BUILD   = "12/07/2026";
+console.log("%cKV8 v20.1 (12/07/2026)","font-weight:700;color:#1A3A6B;font-size:13px");
 const API = "https://script.google.com/macros/s/AKfycbzRm_qI0sNQH7dSbM6UmAPS5ey-pMsGKiPLjXp_PEoDCPaMv6fzD1l2frG_6eK6uJvb/exec";
 const CACHE_KEY = "kv8_tasks_v2";
 const CACHE_TIME_KEY = "kv8_tasks_ts";
@@ -4477,6 +4501,7 @@ function v19bTai(){
     .then(function(j){
       if(!j.ok){ wrap.innerHTML='<div class="v19-empty">Lỗi: '+(j.error||"?")+'</div>'; return; }
       V19B_DATA=j; v19bRender(j);
+      v21TaiThamMuu(ky, thang);   // v21: Nhánh 3 dùng kiểm kê, không chấm điểm
     })
     .catch(function(e){ wrap.innerHTML='<div class="v19-empty">Không tải được: '+e+'</div>'; });
 }
@@ -4489,7 +4514,9 @@ function v19bRender(j){
     j.canhBao.forEach(function(c){ h+='<li>'+v19bEsc(c)+'</li>'; });
     h+='</ul></div>';
   }
-  [1,2,3].forEach(function(nh){
+  // v21: Nhánh 3 (khối tham mưu) KHÔNG chấm điểm theo khung nữa.
+  // -> chỉ vẽ Nhánh 1 & 2; Nhánh 3 do v21RenderThamMuu() vẽ ở khung riêng bên dưới.
+  [1,2].forEach(function(nh){
     var rows=(j.bang||[]).filter(function(x){return x.nhanh===nh;})
                 .sort(function(a,b){ return (a.hang||99)-(b.hang||99); });
     if(!rows.length) return;
@@ -4649,6 +4676,155 @@ document.addEventListener("DOMContentLoaded", function(){
   v20DiChuyenDOM();
   setInterval(v20SyncBadge, 1500);
 });
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   v21 — KIỂM KÊ NHIỆM VỤ KHỐI THAM MƯU (Nhánh 3) — thay chấm điểm theo khung
+   LÝ DO: khối tham mưu không được giao chỉ tiêu định lượng như khối cửa khẩu.
+          Chấm điểm theo khung 7 lĩnh vực -> đơn vị ít việc vẫn "xuất sắc".
+   QUY TẮC XẾP LOẠI:
+     1) Có >=1 NV TRỄ HẠN            -> "Không hoàn thành" (ưu tiên tuyệt đối)
+     2) Không trễ, tổng NV < 10      -> "Hoàn thành" (trần)
+     3) Không trễ, tổng NV >= 10     -> xét %HT + đào tạo/tuyên truyền
+   ══════════════════════════════════════════════════════════════════════════ */
+var V21_DATA = null;
+
+function v21TaiThamMuu(ky, thang){
+  var wrap = document.getElementById("v19b-wrap");
+  if(!wrap) return;
+  var box = document.getElementById("v21-thammuu");
+  if(!box){
+    box = document.createElement("div");
+    box.id = "v21-thammuu";
+    box.style.marginTop = "14px";
+    wrap.appendChild(box);
+  }
+  box.innerHTML = '<div class="v19-loading">⏳ Đang kiểm kê nhiệm vụ khối tham mưu...</div>';
+
+  fetch(API + "?thammuu=1&ky=" + encodeURIComponent(ky||"") + "&thang=" + encodeURIComponent(thang||""))
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(!d || !d.ok){
+        box.innerHTML = '<div class="v19-empty">Lỗi nạp kiểm kê tham mưu: ' + v19bEsc((d&&d.error)||"?") + '</div>';
+        return;
+      }
+      V21_DATA = d;
+      v21RenderThamMuu(d);
+    })
+    .catch(function(e){
+      box.innerHTML = '<div class="v19-empty">Không tải được kiểm kê tham mưu: ' + v19bEsc(String(e)) + '</div>';
+    });
+}
+
+function _v21Mau(xl){
+  if(xl === "Không hoàn thành") return "#C0392B";
+  if(xl === "Xuất sắc")         return "#1F9D55";
+  if(xl === "Tốt")              return "#1E40AF";
+  if(xl === "Chưa có nhiệm vụ") return "#94A3B8";
+  return "#C8960C";
+}
+function _v21Nen(xl){
+  if(xl === "Không hoàn thành") return "#FDEDEC";
+  if(xl === "Xuất sắc")         return "#E6F4EA";
+  if(xl === "Tốt")              return "#EAF0FB";
+  if(xl === "Chưa có nhiệm vụ") return "#F1F5F9";
+  return "#FEF9E7";
+}
+function _v21Pct(v){
+  if(v===null || v===undefined || isNaN(v)) return '<span style="color:#cbd5e1">—</span>';
+  return Number(v).toFixed(1).replace(".", ",") + "%";
+}
+
+function v21RenderThamMuu(d){
+  var box = document.getElementById("v21-thammuu");
+  if(!box) return;
+  var b = d.bang || [];
+
+  var soTre = 0, soKhongHT = 0, soThieuBC = 0;
+  b.forEach(function(a){
+    soTre     += (a.treHan||0);
+    soThieuBC += (a.thieuBangChung||0);
+    if(a.xepLoai === "Không hoàn thành") soKhongHT++;
+  });
+
+  var h = '<div class="v19b-block">';
+
+  // Tiêu đề
+  h += '<div class="v19b-head"><span class="v19b-badge n3">NHÁNH 3</span> Khối tham mưu '
+     + '<span class="v19b-sub">(' + b.length + ' đơn vị · KIỂM KÊ NHIỆM VỤ — không chấm điểm theo khung)</span></div>';
+
+  // Tóm tắt điều hành
+  h += '<div style="display:flex;gap:10px;flex-wrap:wrap;padding:10px 12px;background:#F8FAFC;border-bottom:1px solid #E2E8F0">'
+    +  '<div style="flex:1;min-width:140px;background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:8px 10px">'
+    +    '<div style="font-size:10.5px;color:#64748B">TỔNG NV TRỄ HẠN</div>'
+    +    '<div style="font-size:22px;font-weight:800;color:' + (soTre>0?"#C0392B":"#1F9D55") + '">' + soTre + '</div></div>'
+    +  '<div style="flex:1;min-width:140px;background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:8px 10px">'
+    +    '<div style="font-size:10.5px;color:#64748B">ĐV KHÔNG HOÀN THÀNH</div>'
+    +    '<div style="font-size:22px;font-weight:800;color:' + (soKhongHT>0?"#C0392B":"#1F9D55") + '">' + soKhongHT + '/' + b.length + '</div></div>'
+    +  '<div style="flex:2;min-width:210px;background:#fff;border:1px solid #E2E8F0;border-radius:8px;padding:8px 10px">'
+    +    '<div style="font-size:10.5px;color:#64748B">QUY TẮC XẾP LOẠI</div>'
+    +    '<div style="font-size:11px;line-height:1.55;margin-top:2px;color:#334155">'
+    +      '⛔ Có ≥1 NV trễ hạn → <b>Không hoàn thành</b><br>'
+    +      'ℹ Tổng NV &lt; ' + (d.nguongItViec||10) + ' → trần <b>Hoàn thành</b></div></div>'
+    + '</div>';
+
+  // Bảng kiểm kê
+  h += '<div class="v19b-tblwrap"><table class="v19b-tbl"><thead><tr>'
+    +  '<th class="l">Đơn vị</th><th>Tổng NV</th>'
+    +  '<th title="Tình trạng = Hoàn thành">Đã hoàn thành</th><th>Đang thực hiện</th>'
+    +  '<th title="Chưa HT, còn ≤7 ngày đến hạn">Sắp đến hạn</th>'
+    +  '<th title="Chưa HT và đã quá hạn">TRỄ HẠN</th>'
+    +  '<th>% HT</th><th title="Chỉ tiêu II.6">Đào tạo</th><th title="Chỉ tiêu II.7">Tuyên truyền</th>'
+    +  '<th class="l">XẾP LOẠI</th></tr></thead><tbody>';
+
+  if(!b.length){
+    h += '<tr><td colspan="10" style="text-align:center;padding:18px;color:#64748B">Chưa có dữ liệu</td></tr>';
+  }
+
+  b.forEach(function(a){
+    var c = _v21Mau(a.xepLoai), bg = _v21Nen(a.xepLoai);
+    h += '<tr style="background:' + bg + '">'
+      +  '<td class="l" style="font-weight:600">' + v19bEsc(a.donVi) + '</td>'
+      +  '<td style="font-weight:600">' + (a.tong||0) + '</td>'
+      +  '<td style="color:#1F9D55;font-weight:600">' + (a.daHT||0) + '</td>'
+      +  '<td>' + (a.dangTH||0) + '</td>'
+      +  '<td style="' + ((a.sapDenHan||0)>0 ? "color:#C8960C;font-weight:600" : "") + '">' + (a.sapDenHan||0) + '</td>'
+      +  '<td style="' + ((a.treHan||0)>0 ? "color:#C0392B;font-weight:800;font-size:15px" : "color:#1F9D55") + '">' + (a.treHan||0) + '</td>'
+      +  '<td style="font-weight:600">' + _v21Pct(a.tyLeHT) + '</td>'
+      +  '<td>' + _v21Pct(a.daoTao) + '</td>'
+      +  '<td>' + _v21Pct(a.tuyenTruyen) + '</td>'
+      +  '<td class="l"><div style="font-weight:700;color:' + c + '">' + v19bEsc(a.xepLoai||"") + '</div>'
+      +    '<div style="font-size:10.5px;color:#64748B;margin-top:1px">' + v19bEsc(a.lyDo||"") + '</div></td></tr>';
+
+    // Dòng phụ: liệt kê NV trễ hạn
+    if((a.treHan||0) > 0 && a.dsTreHan && a.dsTreHan.length){
+      h += '<tr><td colspan="10" style="background:#FFF5F5;padding:7px 10px 9px 20px;text-align:left">'
+        +  '<div style="font-size:11px;font-weight:700;color:#C0392B;margin-bottom:3px">⛔ NHIỆM VỤ TRỄ HẠN — ' + v19bEsc(a.donVi) + ' (' + a.treHan + ')</div>';
+      a.dsTreHan.forEach(function(t){
+        h += '<div style="font-size:11px;color:#7B1E1E;line-height:1.65">• ' + v19bEsc(t.nhiemVu)
+          +  ' <span style="color:#94A3B8">(hạn ' + v19bEsc(t.han) + ')</span>'
+          +  ' <b style="color:#C0392B">— trễ ' + t.treNgay + ' ngày</b></div>';
+      });
+      h += '</td></tr>';
+    }
+  });
+  h += '</tbody></table></div>';
+
+  // Cảnh báo chất lượng dữ liệu
+  if(soThieuBC > 0){
+    var tbc = b.filter(function(a){ return (a.thieuBangChung||0) > 0; });
+    h += '<div style="margin:10px 12px 12px;padding:9px 12px;background:#FEF9E7;border-left:4px solid #C8960C;border-radius:6px">'
+      +  '<div style="font-size:11.5px;font-weight:700;color:#8A6D0B">⚠ CẢNH BÁO CHẤT LƯỢNG DỮ LIỆU — ' + soThieuBC + ' nhiệm vụ tick "Hoàn thành" nhưng THIẾU bằng chứng</div>'
+      +  '<div style="font-size:11px;color:#8A6D0B;margin-top:3px;line-height:1.5">Thiếu ngày thực hiện thực tế hoặc mô tả kết quả tại cột Kết quả. Tỷ lệ % HT có thể chưa phản ánh đúng.</div>'
+      +  '<div style="font-size:11px;color:#8A6D0B;margin-top:3px">'
+      +    tbc.map(function(a){ return v19bEsc(a.donVi) + ': <b>' + a.thieuBangChung + '</b>'; }).join(" · ")
+      +  '</div></div>';
+  }
+
+  h += '</div>';
+  box.innerHTML = h;
+}
+/* ═══════════════ HẾT v21 ═══════════════ */
 
 </script>
 </body>
