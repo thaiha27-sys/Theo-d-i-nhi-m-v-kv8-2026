@@ -439,11 +439,11 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
 <!-- ═══ v20: NHÓM "QUẢN TRỊ" (bao Lưu trữ + Duyệt) ═══ -->
 <div id="tab-quantri" class="tab-content">
   <div class="subtab-bar">
-    <div class="subtab active" onclick="switchSub('quantri','luutru')">🗂 Lưu trữ</div>
-    <div class="subtab" onclick="switchSub('quantri','duyet')">🗳 Duyệt<span id="sub-duyet-badge" class="sub-badge" style="display:none">0</span></div>
+    <div class="subtab active" onclick="switchSub('quantri','duyet')">🗳 Duyệt<span id="sub-duyet-badge" class="sub-badge" style="display:none">0</span></div>
+    <div class="subtab" onclick="switchSub('quantri','luutru')">🗂 Lưu trữ</div>
   </div>
-  <div id="host-luutru" class="sub-content active"></div>
-  <div id="host-duyet"  class="sub-content"></div>
+  <div id="host-duyet"  class="sub-content active"></div>
+  <div id="host-luutru" class="sub-content"></div>
 </div>
 
 <div id="tab-phanich" class="tab-content">
@@ -1362,7 +1362,8 @@ function switchTab(id) {
   }
   // --- Nhóm "Quản trị" ---
   if (id === "quantri") {
-    const sub = V20_SUB.quantri || "luutru";
+    // v21: mặc định mở DUYỆT (việc hằng ngày), không phải Lưu trữ.
+    const sub = V20_SUB.quantri || "duyet";
     if (sub === "duyet" && !requireAdminOrPrompt()) { switchSub("quantri","luutru"); loadLuuTru(); return; }
     switchSub("quantri", sub);
     if (sub === "luutru") loadLuuTru();
@@ -4725,7 +4726,7 @@ function v19bEsc(s){
    Nguyên tắc: KHÔNG sửa nội dung/logic các tab cũ. Chỉ DI CHUYỂN khối DOM
    vào nhóm mới lúc khởi động. Mọi hàm cũ (loadNSNN, kpiRender, ...) giữ nguyên. */
 
-var V20_SUB = { chitieu:"nsnn", quantri:"luutru" };
+var V20_SUB = { chitieu:"nsnn", quantri:"duyet" };   // v21: Quản trị mặc định mở DUYỆT
 
 function switchSub(nhom, sub){
   var wrap = document.getElementById("tab-" + nhom);
@@ -4765,7 +4766,8 @@ function v20DiChuyenDOM(){
   }
 
   // 2. Chuyển các tab vào host của nhóm mới
-  [["nsnn","host-nsnn"],["kpi","host-kpi"],["luutru","host-luutru"],["duyet","host-duyet"]].forEach(function(p){
+  // v21: "duyet" đặt TRƯỚC "luutru" — Duyệt là việc hằng ngày, ưu tiên lên đầu
+  [["nsnn","host-nsnn"],["kpi","host-kpi"],["duyet","host-duyet"],["luutru","host-luutru"]].forEach(function(p){
     var src = document.getElementById("tab-" + p[0]);
     var host = document.getElementById(p[1]);
     if(src && host && !src.dataset.moved){
