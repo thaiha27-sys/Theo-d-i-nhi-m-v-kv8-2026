@@ -500,22 +500,32 @@ function veCham(j){
     <div class="kpi-box red"><div class="v">${j.tong}</div><div class="l">Việc chậm / không hoàn thành</div></div>
     <div class="kpi-box red"><div class="v">${j.tongSoNgayCham}</div><div class="l">Tổng số ngày chậm</div></div>
     <div class="kpi-box gold"><div class="v">${j.thieuLyDo}</div><div class="l">Việc chưa có lý do giải trình</div></div>
-    <div class="kpi-box"><div class="v">${j.theoDonVi.length}</div><div class="l">Đơn vị liên quan</div></div>`;
+    <div class="kpi-box gold"><div class="v">${j.chamTheoNgaySuyDoan||0}</div><div class="l">⚠ Tính chậm theo ngày suy đoán</div></div>
+    <div class="kpi-box green"><div class="v">${j.chamCoSoVanBan||0}</div><div class="l">Chậm có số văn bản đối chiếu</div></div>`;
 
-  $("ch-canhbao").innerHTML = j.thieuLyDo ?
-    `<div class="warn">⚠ Có <b>${j.thieuLyDo}</b> việc chậm/không hoàn thành <b>chưa có lý do giải trình</b>.
-     Đề nghị yêu cầu đơn vị bổ sung trước khi chốt kết quả kỳ.</div>` : "";
+  let cb="";
+  if(j.chamTheoNgaySuyDoan)
+    cb+=`<div class="warn" style="border-color:#EF9A9A;background:#FFEBEE">
+      🔎 <b>${j.chamTheoNgaySuyDoan}</b> việc bị tính chậm nhưng ngày thực hiện <b>suy ra từ ngày bấm nút trên hệ thống</b>,
+      không phải ngày hoàn thành thực tế. Đơn vị làm đúng hạn mà nhập liệu muộn sẽ bị tính chậm oan.
+      <b>Phải rà lại các việc này</b> (đối chiếu số, ngày văn bản sản phẩm) trước khi dùng số liệu làm căn cứ đánh giá.</div>`;
+  if(j.thieuLyDo)
+    cb+=`<div class="warn">⚠ Có <b>${j.thieuLyDo}</b> việc chậm/không hoàn thành <b>chưa có lý do giải trình</b>.
+     Đề nghị yêu cầu đơn vị bổ sung trước khi chốt kết quả kỳ.</div>`;
+  $("ch-canhbao").innerHTML = cb;
 
-  const dcols=["#","Đơn vị","HT chậm","Quá hạn chưa xong","Tổng ngày chậm","Thiếu lý do","Cảnh báo"];
+  const dcols=["#","Đơn vị","HT chậm","Quá hạn chưa xong","Tổng ngày chậm","Thiếu lý do","⚠ Chậm theo ngày suy đoán","Cảnh báo"];
   $("tb-cham-dv").querySelector("thead").innerHTML="<tr>"+dcols.map(c=>`<th>${c}</th>`).join("")+"</tr>";
   $("tb-cham-dv").querySelector("tbody").innerHTML=j.theoDonVi.map((x,i)=>`
     <tr><td class="num">${i+1}</td><td><b>${esc(x.donVi)}</b></td>
     <td class="num">${x.cham}</td><td class="num">${x.khongHT}</td>
     <td class="num">${x.tongNgay}</td><td class="num">${x.thieuLyDo}</td>
-    <td>${(x.cham+x.khongHT)>=3?'<span class="badge b-kht">Vượt ngưỡng 3 việc</span>':''}</td></tr>`).join("");
+    <td class="num" style="color:${x.ngaySuyDoan?'#C8960C':'inherit'};font-weight:${x.ngaySuyDoan?700:400}">${x.ngaySuyDoan||0}</td>
+    <td>${(x.cham+x.khongHT)>=3?'<span class="badge b-kht">Vượt ngưỡng 3 việc</span>':''}
+        ${x.ngaySuyDoan?'<span class="badge b-ht">Cần rà lại ngày</span>':''}</td></tr>`).join("");
 
   const cols=["#","Loại","Đơn vị","Người TH","LĐ đơn vị","LĐ chỉ đạo","LĐ ký","Nhiệm vụ","Nhóm lĩnh vực",
-              "Thời hạn","Ngày TH thực tế","Số ngày chậm","Lý do","Điểm"];
+              "Thời hạn","Ngày TH thực tế","Nguồn ngày TH","Số ngày chậm","Lý do","Điểm"];
   $("tb-cham").querySelector("thead").innerHTML="<tr>"+cols.map(c=>`<th>${c}</th>`).join("")+"</tr>";
   $("tb-cham").querySelector("tbody").innerHTML = j.rows.length? j.rows.map((x,i)=>`
     <tr>
@@ -525,10 +535,12 @@ function veCham(j){
       <td>${esc(x.ldChiDao)}</td><td>${esc(x.ldKy)}</td>
       <td style="max-width:340px">${esc(x.nhiemVu)}</td><td class="muted">${esc(x.linhVuc)}</td>
       <td>${esc(x.thoiHan)}</td><td>${esc(x.ngayTH)}</td>
+      <td><span class="badge ${x.nguonNgayTH==='VB'?'b-xs':x.nguonNgayTH==='KHAI'?'b-tot':'b-kht'}"
+           title="Nguồn xác định ngày hoàn thành thực tế">${esc(x.tenNguonNgayTH)}</span></td>
       <td class="num"><b style="color:#C0392B">${x.soNgayCham}</b></td>
       <td style="max-width:260px">${x.lyDo?esc(x.lyDo):'<span class="badge b-kht">Chưa giải trình</span>'}</td>
       <td class="num">${x.diem}</td>
-    </tr>`).join("") : `<tr><td colspan="14" class="loading">Không có việc chậm trong kỳ 👍</td></tr>`;
+    </tr>`).join("") : `<tr><td colspan="15" class="loading">Không có việc chậm trong kỳ 👍</td></tr>`;
 }
 
 /* ═══════════ TAB 4 — NHẬP CHẤM ĐIỂM ═══════════ */
@@ -819,31 +831,35 @@ function xuatExcelCham(){
   const j=DATA.cham; if(!j) return toast("Chưa có dữ liệu");
   const hdr=["TT","Loại","Đơn vị","Người thực hiện trực tiếp","LĐ đơn vị phụ trách","LĐ Chi cục chỉ đạo","LĐ Chi cục ký",
              "Nhiệm vụ","Căn cứ","Sản phẩm","Nhóm lĩnh vực","Mức độ","Mã ISO",
-             "Thời hạn","Ngày TH thực tế","Số ngày chậm","Lý do chậm / không hoàn thành","Điểm cộng","Điểm trừ","Điểm còn lại"];
+             "Thời hạn","Ngày TH thực tế","Nguồn ngày TH","Số ngày chậm","Lý do chậm / không hoàn thành",
+             "Điểm cộng","Điểm trừ","Điểm còn lại","Ngày TH xác minh lại","Số, ngày văn bản đối chiếu","Kết luận sau rà soát"];
   const aoa=[
     ["DANH SÁCH NHIỆM VỤ CHẬM / KHÔNG HOÀN THÀNH — KỲ "+j.ky],
     [`Tổng: ${j.tong} việc · ${j.tongSoNgayCham} ngày chậm · ${j.thieuLyDo} việc chưa có lý do giải trình`],
+    [`⚠ ${j.chamTheoNgaySuyDoan||0} việc tính chậm theo ngày suy đoán (ngày nhập liệu) — phải rà lại · ${j.chamCoSoVanBan||0} việc có số văn bản đối chiếu được`],
+    ["Cột V, W, X để trống cho đơn vị xác minh lại ngày thực hiện bằng số, ngày văn bản sản phẩm"],
     [],
     hdr
   ];
   j.rows.forEach((x,i)=>aoa.push([i+1,x.loai,x.donVi,x.nguoiTH,x.ldDonVi,x.ldChiDao,x.ldKy,
-    x.nhiemVu,x.canCu,x.sanPham,x.linhVuc,x.mucDo,x.maISO,x.thoiHan,x.ngayTH,x.soNgayCham,
-    x.lyDo||"CHƯA GIẢI TRÌNH",x.diemCong,x.diemTru,null]));
+    x.nhiemVu,x.canCu,x.sanPham,x.linhVuc,x.mucDo,x.maISO,x.thoiHan,x.ngayTH,x.tenNguonNgayTH,x.soNgayCham,
+    x.lyDo||"CHƯA GIẢI TRÌNH",x.diemCong,x.diemTru,null,"","",""]));
   const ws=XLSX.utils.aoa_to_sheet(aoa);
-  const r0=5;
-  j.rows.forEach((x,i)=>{ const r=r0+i; ws["T"+r]={t:"n",v:0,f:`MAX(0,R${r}-S${r})`}; });
-  ws["!cols"]=hdr.map((h,i)=>({wch:i===7?48:i===16?38:i===8?24:i===10?28:14}));
+  const r0=7;
+  j.rows.forEach((x,i)=>{ const r=r0+i; ws["U"+r]={t:"n",v:0,f:`MAX(0,S${r}-T${r})`}; });
+  ws["!cols"]=hdr.map((h,i)=>({wch:i===7?48:i===17?38:i===8?24:i===10?28:i===15?24:14}));
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,"Viec cham");
 
-  const d=[["TỔNG HỢP THEO ĐƠN VỊ"],[],["TT","Đơn vị","HT chậm","Quá hạn chưa xong","Tổng","Tổng ngày chậm","Thiếu lý do","Cảnh báo"]];
-  j.theoDonVi.forEach((x,i)=>d.push([i+1,x.donVi,x.cham,x.khongHT,null,x.tongNgay,x.thieuLyDo,null]));
+  const d=[["TỔNG HỢP THEO ĐƠN VỊ"],[],
+           ["TT","Đơn vị","HT chậm","Quá hạn chưa xong","Tổng","Tổng ngày chậm","Thiếu lý do","Chậm theo ngày suy đoán","Cảnh báo"]];
+  j.theoDonVi.forEach((x,i)=>d.push([i+1,x.donVi,x.cham,x.khongHT,null,x.tongNgay,x.thieuLyDo,x.ngaySuyDoan||0,null]));
   const ws2=XLSX.utils.aoa_to_sheet(d);
   j.theoDonVi.forEach((x,i)=>{ const r=4+i;
     ws2["E"+r]={t:"n",v:0,f:`C${r}+D${r}`};
-    ws2["H"+r]={t:"s",v:"",f:`IF(E${r}>=3,"Vượt ngưỡng 3 việc - Không hoàn thành","")`};
+    ws2["I"+r]={t:"s",v:"",f:`IF(E${r}>=3,"Vượt ngưỡng 3 việc - Không hoàn thành","")&IF(H${r}>0," | Cần rà lại "&H${r}&" ngày TH","")`};
   });
-  ws2["!cols"]=[{wch:5},{wch:24},{wch:11},{wch:19},{wch:9},{wch:15},{wch:12},{wch:40}];
+  ws2["!cols"]=[{wch:5},{wch:24},{wch:11},{wch:19},{wch:9},{wch:15},{wch:12},{wch:22},{wch:48}];
   XLSX.utils.book_append_sheet(wb,ws2,"Theo don vi");
   taiFile(wb,`VIEC_CHAM_${j.ky}.xlsx`);
 }
