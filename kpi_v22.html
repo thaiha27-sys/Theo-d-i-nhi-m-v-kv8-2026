@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<!-- ═══════════════════════════════════════════════════════════════════
+     KPI & CHẤM ĐIỂM NHIỆM VỤ — Chi cục Hải quan khu vực VIII
+     PHIÊN BẢN: v22.0   Ngày: 19/07/2026
+     Dùng kèm: Code_v22_KPI.txt (dán vào cuối Code.gs của Apps Script)
+
+     ⚠ TRANG ĐỘC LẬP — upload lên GitHub cùng thư mục với index.html.
+       KHÔNG sửa index.html (trừ 1 dòng nút liên kết, xem hướng dẫn).
+     ═══════════════════════════════════════════════════════════════════ -->
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KPI &amp; Chấm điểm nhiệm vụ — HQKV8</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--navy:#1A3A6B;--navy2:#15305A;--gold:#C8960C;--red:#C0392B;--green:#1F9D55;
+      --light:#F4F7FC;--white:#fff;--border:#E2E8F0;--text:#2D3748;--muted:#718096;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text);min-height:100vh;font-size:13px}
+.header{background:var(--navy);color:#fff;padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.header-title{font-size:14px;font-weight:700;line-height:1.3}
+.header-sub{font-size:10.5px;opacity:.75;margin-top:2px}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:.15s}
+.btn-outline{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3)}
+.btn-outline:hover{background:rgba(255,255,255,.22)}
+.btn-primary{background:var(--navy);color:#fff}.btn-primary:hover{background:var(--navy2)}
+.btn-gold{background:var(--gold);color:#fff}.btn-gold:hover{filter:brightness(.92)}
+.btn-green{background:var(--green);color:#fff}
+.btn-sm{padding:4px 9px;font-size:11px;border-radius:6px}
+.tab-bar{background:#fff;border-bottom:2px solid var(--border);padding:0 20px;display:flex;gap:4px;overflow-x:auto}
+.tab{padding:11px 16px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+.tab:hover{color:var(--navy)}.tab.active{color:var(--navy);border-bottom-color:var(--navy)}
+.tab-content{display:none}.tab-content.active{display:block}
+.main{max-width:1560px;margin:0 auto;padding:16px 20px 60px}
+.toolbar{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+label{font-size:12px;font-weight:600;color:var(--muted)}
+select,input[type=text],input[type=password],input[type=month],textarea{
+  border:1px solid var(--border);border-radius:7px;padding:6px 9px;font-size:12.5px;font-family:inherit;color:var(--text);background:#fff}
+select:focus,input:focus,textarea:focus{outline:2px solid rgba(26,58,107,.25);border-color:var(--navy)}
+.card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
+.card h3{font-size:13.5px;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:7px;justify-content:space-between}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi-box{background:#fff;border:1px solid var(--border);border-left:4px solid var(--navy);border-radius:9px;padding:11px 13px}
+.kpi-box .v{font-size:22px;font-weight:700;color:var(--navy);line-height:1.1}
+.kpi-box .l{font-size:11px;color:var(--muted);margin-top:3px}
+.kpi-box.red{border-left-color:var(--red)}.kpi-box.red .v{color:var(--red)}
+.kpi-box.green{border-left-color:var(--green)}.kpi-box.green .v{color:var(--green)}
+.kpi-box.gold{border-left-color:var(--gold)}.kpi-box.gold .v{color:var(--gold)}
+.table-wrap{overflow:auto;max-height:70vh;border:1px solid var(--border);border-radius:9px;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:var(--navy);color:#fff;padding:8px 7px;text-align:left;font-weight:600;position:sticky;top:0;z-index:5;font-size:11.5px;white-space:nowrap}
+td{padding:7px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:hover{background:#F7FAFF}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.badge{display:inline-block;padding:2px 7px;border-radius:11px;font-size:10.5px;font-weight:700;white-space:nowrap}
+.b-xs{background:#E8F5E9;color:#1B5E20}.b-tot{background:#E3F2FD;color:#0D47A1}
+.b-ht{background:#FFF8E1;color:#8D6E00}.b-kht{background:#FFEBEE;color:#B71C1C}
+.b-na{background:#ECEFF1;color:#546E7A}
+.b-iso{background:#EDE7F6;color:#4527A0}.b-dm{background:#E0F7FA;color:#006064}.b-st{background:#FFF3E0;color:#E65100}
+.warn{background:#FFF8E1;border:1px solid #FFE082;border-radius:8px;padding:10px 12px;font-size:12px;margin-bottom:12px}
+.muted{color:var(--muted);font-size:11.5px}
+.loading{text-align:center;padding:40px;color:var(--muted)}
+.toast{position:fixed;bottom:22px;right:22px;background:var(--navy);color:#fff;padding:11px 17px;border-radius:9px;font-size:12.5px;z-index:999;box-shadow:0 6px 20px rgba(0,0,0,.28);display:none}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg small{color:var(--muted);font-size:10.5px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:500;padding:16px}
+.overlay.show{display:flex}
+.modal{background:#fff;border-radius:12px;max-width:760px;width:100%;max-height:88vh;overflow:auto;padding:18px}
+.modal h3{color:var(--navy);font-size:15px;margin-bottom:4px}
+.formula{background:#F8FAFC;border:1px dashed var(--border);border-radius:8px;padding:10px 12px;font-size:11.5px;line-height:1.7;color:var(--muted)}
+.formula b{color:var(--navy)}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">🏆 KPI &amp; CHẤM ĐIỂM NHIỆM VỤ</div>
+    <div class="header-sub">Chi cục Hải quan khu vực VIII · Module v22</div>
+  </div>
+  <div class="header-right">
+    <span id="admin-state" class="muted" style="color:#fff;opacity:.8">Chưa đăng nhập</span>
+    <button class="btn btn-outline" onclick="moDangNhap()">🔑 Đăng nhập Văn phòng</button>
+    <button class="btn btn-outline" onclick="location.href='index.html'">← Về trang chính</button>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <div class="tab active" data-t="canhan"  onclick="chuyenTab('canhan')">👤 KPI cá nhân</div>
+  <div class="tab"        data-t="tapthe"  onclick="chuyenTab('tapthe')">🏛 KPI tập thể</div>
+  <div class="tab"        data-t="cham"    onclick="chuyenTab('cham')">⏰ Việc chậm / không hoàn thành</div>
+  <div class="tab"        data-t="nhap"    onclick="chuyenTab('nhap')">✍ Nhập chấm điểm</div>
+  <div class="tab"        data-t="huongdan" onclick="chuyenTab('huongdan')">📖 Quy tắc tính điểm</div>
+</div>
+
+<div class="main">
+
+  <div class="toolbar">
+    <label>Kỳ đánh giá</label>
+    <input type="month" id="ky" onchange="taiLai()">
+    <label>Đơn vị</label>
+    <select id="donvi" onchange="taiLai()"><option value="">— Tất cả —</option></select>
+    <button class="btn btn-primary" onclick="taiLai()">🔄 Tải dữ liệu</button>
+    <span id="trangthai" class="muted"></span>
+  </div>
+
+  <!-- ══ TAB 1: KPI CÁ NHÂN ══ -->
+  <div id="tab-canhan" class="tab-content active">
+    <div id="cn-kpi" class="kpi-row"></div>
+    <div class="card">
+      <h3>Bảng KPI cá nhân
+        <span>
+          <button class="btn btn-gold btn-sm" onclick="xuatExcelCaNhan()">⬇ Kết xuất Excel (có công thức)</button>
+        </span>
+      </h3>
+      <div class="table-wrap"><table id="tb-canhan"><thead></thead><tbody></tbody></table></div>
+      <p class="muted" style="margin-top:8px">Việc do nhiều người cùng thực hiện được <b>chia đều điểm</b> theo số người ghi ở cột "Người TH" (phân tách bằng dấu phẩy).</p>
+    </div>
+  </div>
+
+  <!-- ══ TAB 2: KPI TẬP THỂ ══ -->
+  <div id="tab-tapthe" class="tab-content">
+    <div id="tt-kpi" class="kpi-row"></div>
+    <div class="card">
+      <h3>Bảng KPI tập thể theo đơn vị
+        <span><button class="btn btn-gold btn-sm" onclick="xuatExcelTapThe()">⬇ Kết xuất Excel (có công thức)</button></span>
+      </h3>
+      <div class="table-wrap"><table id="tb-tapthe"><thead></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <h3>Phân bổ nhiệm vụ theo nhóm lĩnh vực (form báo cáo giao ban)</h3>
+      <div class="table-wrap" style="max-height:50vh"><table id="tb-linhvuc"><thead></thead><tbody></tbody></table></div>
+      <p class="muted" style="margin-top:8px">Nhóm lĩnh vực được nhận diện tự động theo từ khóa trong tên nhiệm vụ / căn cứ / sản phẩm. Sửa từ khóa tại mảng <code>V22_LINH_VUC</code> trong Code.gs.</p>
+    </div>
+  </div>
+
+  <!-- ══ TAB 3: VIỆC CHẬM ══ -->
+  <div id="tab-cham" class="tab-content">
+    <div id="ch-kpi" class="kpi-row"></div>
+    <div class="toolbar">
+      <label>Loại</label>
+      <select id="ch-loai" onchange="taiCham()">
+        <option value="all">Tất cả</option>
+        <option value="cham">Hoàn thành chậm</option>
+        <option value="khong">Chưa hoàn thành, quá hạn</option>
+      </select>
+      <button class="btn btn-gold btn-sm" onclick="xuatExcelCham()">⬇ Kết xuất danh sách (Excel)</button>
+    </div>
+    <div id="ch-canhbao"></div>
+    <div class="card">
+      <h3>Tổng hợp theo đơn vị</h3>
+      <div class="table-wrap" style="max-height:32vh"><table id="tb-cham-dv"><thead></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <h3>Chi tiết từng việc</h3>
+      <div class="table-wrap"><table id="tb-cham"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 4: NHẬP CHẤM ĐIỂM ══ -->
+  <div id="tab-nhap" class="tab-content">
+    <div class="warn">
+      <b>Thẩm quyền:</b> Văn phòng gán mức độ và thông tin chấm điểm khi nhập &middot; Lãnh đạo phụ trách xác nhận.
+      <b>Không để đơn vị thực hiện tự gán cho chính mình.</b> Thao tác yêu cầu mã PIN Văn phòng.
+    </div>
+    <div class="toolbar">
+      <label>Lọc theo người TH</label>
+      <input type="text" id="nh-nguoi" placeholder="gõ tên..." style="width:180px">
+      <label>Trạng thái</label>
+      <select id="nh-tt">
+        <option value="">Tất cả</option>
+        <option value="thieu">⚠ Thiếu thông tin chấm điểm</option>
+        <option value="HT_DUNG_HAN">Hoàn thành đúng hạn</option>
+        <option value="HT_CHAM">Hoàn thành chậm</option>
+        <option value="KHONG_HT">Quá hạn chưa xong</option>
+        <option value="DANG_TH">Đang thực hiện</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="taiChiTiet()">Lọc</button>
+      <span class="muted">Bấm vào dòng để nhập thông tin chấm điểm.</span>
+    </div>
+    <div class="card">
+      <h3>Danh sách nhiệm vụ trong kỳ</h3>
+      <div class="table-wrap"><table id="tb-chitiet"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 5: HƯỚNG DẪN ══ -->
+  <div id="tab-huongdan" class="tab-content">
+    <div class="card">
+      <h3>Công thức chấm điểm 1 nhiệm vụ (cộng dồn, có sàn 0)</h3>
+      <div class="formula">
+        <b>Điểm cộng</b> = Mức độ (1 Dễ · 2 Trung bình · 3 Khó — ô trống mặc định 1)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;+ <b>4</b> nếu thực hiện đúng quy trình ISO <i>(bắt buộc nhập mã QT, vd QT-08)</i><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;+ <b>5</b> nếu có đổi mới <i>(bắt buộc mô tả cách làm mới, ≥ 10 ký tự)</i><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;+ <b>10</b> nếu có sáng tạo <i>(bắt buộc ghi tên sản phẩm sáng tạo, ≥ 5 ký tự)</i><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;→ tối đa <b>22 điểm/việc</b><br><br>
+        <b>Điểm trừ</b> = 3 × số ngày chậm (ngày thực hiện thực tế − thời hạn)<br>
+        <b>Điểm việc</b> = MAX(0 ; Điểm cộng − Điểm trừ) &nbsp;<i>(có sàn 0, không âm)</i><br><br>
+        <b>Chốt chặn xếp loại:</b> ≥ <b>3 việc chậm hoặc không hoàn thành</b> trong tháng →
+        <span class="badge b-kht">Không hoàn thành nhiệm vụ</span> (áp dụng tuyệt đối, không xét điểm).
+      </div>
+    </div>
+    <div class="card">
+      <h3>Ngưỡng xếp loại cá nhân (khi đã qua chốt chặn)</h3>
+      <div class="table-wrap" style="max-height:none">
+        <table>
+          <thead><tr><th>Điểm bình quân/việc</th><th>Điều kiện kèm theo</th><th>Xếp loại</th></tr></thead>
+          <tbody>
+            <tr><td class="num">≥ 4,0</td><td>Không có việc chậm</td><td><span class="badge b-xs">Hoàn thành xuất sắc nhiệm vụ</span></td></tr>
+            <tr><td class="num">≥ 2,5</td><td>&lt; 3 việc chậm</td><td><span class="badge b-tot">Hoàn thành tốt nhiệm vụ</span></td></tr>
+            <tr><td class="num">&lt; 2,5</td><td>&lt; 3 việc chậm</td><td><span class="badge b-ht">Hoàn thành nhiệm vụ</span></td></tr>
+            <tr><td class="num">—</td><td>≥ 3 việc chậm / không HT</td><td><span class="badge b-kht">Không hoàn thành nhiệm vụ</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="muted" style="margin-top:8px">Sửa ngưỡng tại hằng <code>V22.BQ_XUAT_SAC / BQ_TOT / BQ_HOAN_THANH</code> trong Code.gs.</p>
+    </div>
+    <div class="card">
+      <h3>Nguyên tắc bảo đảm khách quan</h3>
+      <ul style="padding-left:20px;line-height:1.9;font-size:12.5px">
+        <li>Điểm cộng ISO / đổi mới / sáng tạo <b>chỉ được tính khi có bằng chứng nhập kèm</b> (mã QT, mô tả, tên sản phẩm) — hệ thống tự chặn.</li>
+        <li>Việc tick "Hoàn thành" nhưng <b>thiếu ngày thực hiện thực tế hoặc mô tả kết quả</b> bị đánh dấu ⚠ và không được coi là bằng chứng đầy đủ.</li>
+        <li>Việc chậm <b>bắt buộc có lý do</b>; hệ thống thống kê riêng số việc chậm thiếu lý do để lãnh đạo yêu cầu giải trình.</li>
+        <li>Kỳ đầu áp dụng là <b>kỳ hiệu chỉnh</b> — chưa dùng làm căn cứ thi đua.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL NHẬP CHẤM ĐIỂM -->
+<div class="overlay" id="ov-nhap">
+  <div class="modal">
+    <h3>Nhập thông tin chấm điểm</h3>
+    <p class="muted" id="md-nv" style="margin-bottom:12px"></p>
+    <div class="form-grid">
+      <div class="fg"><label>Người thực hiện trực tiếp</label>
+        <input type="text" id="f-nguoiTH"><small>Nhiều người: ngăn cách bằng dấu phẩy</small></div>
+      <div class="fg"><label>Lãnh đạo đơn vị phụ trách</label><input type="text" id="f-ldDonVi"></div>
+      <div class="fg"><label>Lãnh đạo Chi cục ký</label><input type="text" id="f-ldKy"></div>
+      <div class="fg"><label>Mức độ</label>
+        <select id="f-mucDo"><option value="1">1 — Dễ</option><option value="2">2 — Trung bình</option><option value="3">3 — Khó</option></select></div>
+      <div class="fg"><label>Mã quy trình ISO (+4đ)</label>
+        <input type="text" id="f-maISO" placeholder="VD: QT-08"><small>Bỏ trống nếu không theo quy trình ISO</small></div>
+      <div class="fg"><label>Sản phẩm sáng tạo (+10đ)</label>
+        <input type="text" id="f-sangTao" placeholder="Tên sản phẩm sáng tạo"><small>Tối thiểu 5 ký tự mới được cộng điểm</small></div>
+    </div>
+    <div class="fg" style="margin-top:10px"><label>Nội dung đổi mới (+5đ)</label>
+      <textarea id="f-doiMoi" rows="2" placeholder="Mô tả cụ thể cách làm mới"></textarea>
+      <small>Tối thiểu 10 ký tự mới được cộng điểm</small></div>
+    <div class="fg" style="margin-top:10px"><label>Lý do chậm</label>
+      <textarea id="f-lyDoCham" rows="2"></textarea></div>
+    <div class="fg" style="margin-top:10px"><label>Lý do không hoàn thành</label>
+      <textarea id="f-lyDoKHT" rows="2"></textarea></div>
+    <div id="md-xemtruoc" class="formula" style="margin-top:12px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+      <button class="btn btn-outline" style="background:#eee;color:#333;border:1px solid #ccc" onclick="dongModal()">Hủy</button>
+      <button class="btn btn-green" onclick="luuChamDiem()">💾 Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PIN -->
+<div class="overlay" id="ov-pin">
+  <div class="modal" style="max-width:380px">
+    <h3>Đăng nhập Văn phòng</h3>
+    <p class="muted" style="margin:6px 0 12px">Nhập mã PIN quản trị để được phép ghi dữ liệu chấm điểm.</p>
+    <input type="password" id="f-pin" style="width:100%" placeholder="Mã PIN" onkeydown="if(event.key==='Enter')dangNhap()">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+      <button class="btn btn-outline" style="background:#eee;color:#333;border:1px solid #ccc" onclick="dong('ov-pin')">Hủy</button>
+      <button class="btn btn-primary" onclick="dangNhap()">Đăng nhập</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════ CẤU HÌNH ═══════════ */
+const API = "https://script.google.com/macros/s/AKfycbzRm_qI0sNQH7dSbM6UmAPS5ey-pMsGKiPLjXp_PEoDCPaMv6fzD1l2frG_6eK6uJvb/exec";
+const PIN_KEY = "KV8_ADMIN_PIN";
+
+let DATA = { canhan:null, tapthe:null, cham:null, chitiet:null, meta:null };
+let TAB = "canhan";
+let DONG_DANG_SUA = null;
+
+/* ═══════════ TIỆN ÍCH ═══════════ */
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m){ const t=$("toast"); t.textContent=m; t.style.display="block"; setTimeout(()=>t.style.display="none",3000); }
+function pin(){ return sessionStorage.getItem(PIN_KEY)||""; }
+function kyHienTai(){ return $("ky").value || new Date().toISOString().slice(0,7); }
+function dong(id){ $(id).classList.remove("show"); }
+function dongModal(){ dong("ov-nhap"); DONG_DANG_SUA=null; }
+
+function badgeXL(x){
+  const m={"Hoàn thành xuất sắc nhiệm vụ":"b-xs","Hoàn thành tốt nhiệm vụ":"b-tot",
+           "Hoàn thành nhiệm vụ":"b-ht","Hoàn thành":"b-ht",
+           "Không hoàn thành nhiệm vụ":"b-kht","Chưa đủ căn cứ":"b-na"};
+  return `<span class="badge ${m[x]||"b-na"}">${esc(x)}</span>`;
+}
+
+async function getJSON(qs){
+  const r = await fetch(API + qs);
+  const j = await r.json();
+  if(!j.ok) throw new Error(j.error||"Lỗi không xác định");
+  return j;
+}
+async function postJSON(body){
+  const r = await fetch(API, { method:"POST", body: JSON.stringify(Object.assign({pin:pin()}, body)) });
+  const j = await r.json();
+  if(!j.ok) throw new Error(j.error||"Lỗi không xác định");
+  return j;
+}
+
+/* ═══════════ ĐĂNG NHẬP ═══════════ */
+function moDangNhap(){ $("ov-pin").classList.add("show"); setTimeout(()=>$("f-pin").focus(),80); }
+async function dangNhap(){
+  const p = $("f-pin").value.trim();
+  if(!p) return toast("Chưa nhập mã PIN");
+  try{
+    const r = await fetch(API,{method:"POST",body:JSON.stringify({action:"dangNhapAdmin",pin:p})});
+    const j = await r.json();
+    if(j.ok){ sessionStorage.setItem(PIN_KEY,p); capNhatTrangThaiAdmin(); dong("ov-pin"); toast("✅ Đã đăng nhập"); }
+    else toast("❌ Sai mã PIN");
+  }catch(e){ toast("Lỗi: "+e.message); }
+}
+function capNhatTrangThaiAdmin(){
+  $("admin-state").textContent = pin() ? "🔓 Văn phòng (được ghi)" : "Chưa đăng nhập";
+}
+
+/* ═══════════ ĐIỀU HƯỚNG ═══════════ */
+function chuyenTab(t){
+  TAB=t;
+  document.querySelectorAll(".tab").forEach(e=>e.classList.toggle("active", e.dataset.t===t));
+  document.querySelectorAll(".tab-content").forEach(e=>e.classList.remove("active"));
+  $("tab-"+t).classList.add("active");
+  if(t==="canhan"&&!DATA.canhan) taiCaNhan();
+  if(t==="tapthe"&&!DATA.tapthe) taiTapThe();
+  if(t==="cham"&&!DATA.cham) taiCham();
+  if(t==="nhap"&&!DATA.chitiet) taiChiTiet();
+}
+function taiLai(){
+  DATA={canhan:null,tapthe:null,cham:null,chitiet:null,meta:DATA.meta};
+  chuyenTab(TAB);
+  if(TAB==="canhan") taiCaNhan();
+  if(TAB==="tapthe") taiTapThe();
+  if(TAB==="cham")   taiCham();
+  if(TAB==="nhap")   taiChiTiet();
+}
+
+/* ═══════════ TAB 1 — KPI CÁ NHÂN ═══════════ */
+async function taiCaNhan(){
+  $("trangthai").textContent="Đang tải KPI cá nhân...";
+  try{
+    const dv = $("donvi").value;
+    const j = await getJSON(`?kpi22=canhan&thang=${kyHienTai()}${dv?"&donvi="+encodeURIComponent(dv):""}`);
+    DATA.canhan=j; veCaNhan(j);
+    $("trangthai").textContent=`Kỳ ${j.ky} · ${j.tong} cá nhân`;
+  }catch(e){ $("trangthai").textContent="❌ "+e.message; }
+}
+function veCaNhan(j){
+  const b=j.bang;
+  const tongDiem=b.reduce((s,x)=>s+x.diem,0);
+  const kht=b.filter(x=>x.xepLoai==="Không hoàn thành nhiệm vụ").length;
+  const tre=b.reduce((s,x)=>s+x.soViecTre,0);
+  const st=b.reduce((s,x)=>s+x.soSangTao,0)+b.reduce((s,x)=>s+x.soDoiMoi,0);
+  $("cn-kpi").innerHTML=`
+    <div class="kpi-box"><div class="v">${b.length}</div><div class="l">Cá nhân có nhiệm vụ</div></div>
+    <div class="kpi-box green"><div class="v">${tongDiem.toFixed(1)}</div><div class="l">Tổng điểm toàn kỳ</div></div>
+    <div class="kpi-box gold"><div class="v">${st}</div><div class="l">Lượt đổi mới / sáng tạo</div></div>
+    <div class="kpi-box red"><div class="v">${tre}</div><div class="l">Lượt việc chậm / quá hạn</div></div>
+    <div class="kpi-box red"><div class="v">${kht}</div><div class="l">Cá nhân không hoàn thành</div></div>`;
+
+  const cols=["#","Người thực hiện","Đơn vị","LĐ đơn vị","LĐ Chi cục ký","Tổng việc","HT đúng hạn","HT chậm",
+              "Quá hạn chưa xong","Đang TH","ISO","Đổi mới","Sáng tạo","Ngày chậm","Điểm cộng","Điểm trừ",
+              "ĐIỂM","BQ/việc","Xếp loại","Căn cứ xếp loại"];
+  $("tb-canhan").querySelector("thead").innerHTML="<tr>"+cols.map(c=>`<th>${c}</th>`).join("")+"</tr>";
+  $("tb-canhan").querySelector("tbody").innerHTML = b.length? b.map((x,i)=>`
+    <tr>
+      <td class="num">${i+1}</td><td><b>${esc(x.nguoiTH)}</b></td><td>${esc(x.donVi)}</td>
+      <td>${esc(x.lanhDaoDonVi)}</td><td>${esc(x.lanhDaoKy)}</td>
+      <td class="num">${x.tongViec}</td><td class="num">${x.htDungHan}</td>
+      <td class="num" style="color:${x.htCham?"#C0392B":"inherit"}">${x.htCham}</td>
+      <td class="num" style="color:${x.khongHT?"#C0392B":"inherit"};font-weight:${x.khongHT?700:400}">${x.khongHT}</td>
+      <td class="num">${x.dangTH}</td>
+      <td class="num">${x.soISO?`<span class="badge b-iso">${x.soISO}</span>`:0}</td>
+      <td class="num">${x.soDoiMoi?`<span class="badge b-dm">${x.soDoiMoi}</span>`:0}</td>
+      <td class="num">${x.soSangTao?`<span class="badge b-st">${x.soSangTao}</span>`:0}</td>
+      <td class="num">${x.tongNgayCham}</td>
+      <td class="num">${x.diemCong}</td><td class="num" style="color:#C0392B">${x.diemTru?"−"+x.diemTru:0}</td>
+      <td class="num"><b style="font-size:13px">${x.diem}</b></td><td class="num">${x.diemBinhQuan}</td>
+      <td>${badgeXL(x.xepLoai)}</td><td class="muted">${esc(x.lyDoXepLoai)}</td>
+    </tr>`).join("") : `<tr><td colspan="20" class="loading">Không có dữ liệu trong kỳ</td></tr>`;
+}
+
+/* ═══════════ TAB 2 — KPI TẬP THỂ ═══════════ */
+async function taiTapThe(){
+  $("trangthai").textContent="Đang tải KPI tập thể...";
+  try{
+    const j=await getJSON(`?kpi22=tapthe&thang=${kyHienTai()}`);
+    DATA.tapthe=j; veTapThe(j);
+    $("trangthai").textContent=`Kỳ ${j.ky} · ${j.bang.length} đơn vị`;
+  }catch(e){ $("trangthai").textContent="❌ "+e.message; }
+}
+function veTapThe(j){
+  const b=j.bang;
+  const tongViec=b.reduce((s,x)=>s+x.tongViec,0);
+  const tongHT=b.reduce((s,x)=>s+x.tongHT,0);
+  const tre=b.reduce((s,x)=>s+x.soViecTre,0);
+  const kht=b.filter(x=>x.xepLoai==="Không hoàn thành nhiệm vụ").length;
+  $("tt-kpi").innerHTML=`
+    <div class="kpi-box"><div class="v">${b.length}</div><div class="l">Đơn vị</div></div>
+    <div class="kpi-box"><div class="v">${tongViec}</div><div class="l">Tổng nhiệm vụ trong kỳ</div></div>
+    <div class="kpi-box green"><div class="v">${tongViec?(tongHT/tongViec*100).toFixed(1):0}%</div><div class="l">Tỷ lệ hoàn thành</div></div>
+    <div class="kpi-box red"><div class="v">${tre}</div><div class="l">Việc chậm / quá hạn</div></div>
+    <div class="kpi-box red"><div class="v">${kht}</div><div class="l">Đơn vị không hoàn thành</div></div>`;
+
+  const cols=["#","Đơn vị","Nhân sự có việc","Tổng việc","HT đúng hạn","HT chậm","Quá hạn chưa xong","Đang TH",
+              "% HT","% đúng hạn","ISO","Đổi mới","Sáng tạo","⚠ Thiếu bằng chứng","Điểm cộng","Điểm trừ","ĐIỂM",
+              "BQ/người","BQ/việc","Xếp loại"];
+  $("tb-tapthe").querySelector("thead").innerHTML="<tr>"+cols.map(c=>`<th>${c}</th>`).join("")+"</tr>";
+  $("tb-tapthe").querySelector("tbody").innerHTML = b.length? b.map((x,i)=>`
+    <tr>
+      <td class="num">${i+1}</td><td><b>${esc(x.donVi)}</b></td><td class="num">${x.soNhanSu}</td>
+      <td class="num">${x.tongViec}</td><td class="num">${x.htDungHan}</td>
+      <td class="num" style="color:${x.htCham?"#C0392B":"inherit"}">${x.htCham}</td>
+      <td class="num" style="color:${x.khongHT?"#C0392B":"inherit"};font-weight:${x.khongHT?700:400}">${x.khongHT}</td>
+      <td class="num">${x.dangTH}</td>
+      <td class="num">${x.tyLeHT}%</td><td class="num">${x.tyLeDungHan}%</td>
+      <td class="num">${x.soISO}</td><td class="num">${x.soDoiMoi}</td><td class="num">${x.soSangTao}</td>
+      <td class="num" style="color:${x.thieuBangChung?"#C8960C":"inherit"}">${x.thieuBangChung}</td>
+      <td class="num">${x.diemCong}</td><td class="num" style="color:#C0392B">${x.diemTru?"−"+x.diemTru:0}</td>
+      <td class="num"><b style="font-size:13px">${x.diem}</b></td>
+      <td class="num">${x.diemBinhQuanNguoi}</td><td class="num">${x.diemBinhQuanViec}</td>
+      <td>${badgeXL(x.xepLoai)}</td>
+    </tr>`).join("") : `<tr><td colspan="20" class="loading">Không có dữ liệu</td></tr>`;
+
+  const lcols=["#","Nhóm lĩnh vực","Tổng việc","Đã HT","% HT","HT chậm","Quá hạn chưa xong","Điểm"];
+  $("tb-linhvuc").querySelector("thead").innerHTML="<tr>"+lcols.map(c=>`<th>${c}</th>`).join("")+"</tr>";
+  $("tb-linhvuc").querySelector("tbody").innerHTML = j.linhVuc.map((x,i)=>`
+    <tr><td class="num">${i+1}</td><td>${esc(x.ten)}</td><td class="num">${x.tong}</td>
+    <td class="num">${x.ht}</td><td class="num">${x.tyLeHT}%</td>
+    <td class="num" style="color:${x.cham?"#C0392B":"inherit"}">${x.cham}</td>
+    <td class="num" style="color:${x.khongHT?"#C0392B":"inherit"}">${x.khongHT}</td>
+    <td class="num"><b>${x.diem}</b></td></tr>`).join("");
+}
+
+/* ═══════════ TAB 3 — VIỆC CHẬM ═══════════ */
+async function taiCham(){
+  $("trangthai").textContent="Đang tải danh sách việc chậm...";
+  try{
+    const dv=$("donvi").value, loai=$("ch-loai").value;
+    const j=await getJSON(`?kpi22=cham&thang=${kyHienTai()}&loai=${loai}${dv?"&donvi="+encodeURIComponent(dv):""}`);
+    DATA.cham=j; veCham(j);
+    $("trangthai").textContent=`Kỳ ${j.ky} · ${j.tong} việc`;
+  }catch(e){ $("trangthai").textContent="❌ "+e.message; }
+}
+function veCham(j){
+  $("ch-kpi").innerHTML=`
+    <div class="kpi-box red"><div class="v">${j.tong}</div><div class="l">Việc chậm / không hoàn thành</div></div>
+    <div class="kpi-box red"><div class="v">${j.tongSoNgayCham}</div><div class="l">Tổng số ngày chậm</div></div>
+    <div class="kpi-box gold"><div class="v">${j.thieuLyDo}</div><div class="l">Việc chưa có lý do giải trình</div></div>
+    <div class="kpi-box"><div class="v">${j.theoDonVi.length}</div><div class="l">Đơn vị liên quan</div></div>`;
+
+  $("ch-canhbao").innerHTML = j.thieuLyDo ?
+    `<div class="warn">⚠ Có <b>${j.thieuLyDo}</b> việc chậm/không hoàn thành <b>chưa có lý do giải trình</b>.
+     Đề nghị yêu cầu đơn vị bổ sung trước khi chốt kết quả kỳ.</div>` : "";
+
+  const dcols=["#","Đơn vị","HT chậm","Quá hạn chưa xong","Tổng ngày chậm","Thiếu lý do","Cảnh báo"];
+  $("tb-cham-dv").querySelector("thead").innerHTML="<tr>"+dcols.map(c=>`<th>${c}</th>`).join("")+"</tr>";
+  $("tb-cham-dv").querySelector("tbody").innerHTML=j.theoDonVi.map((x,i)=>`
+    <tr><td class="num">${i+1}</td><td><b>${esc(x.donVi)}</b></td>
+    <td class="num">${x.cham}</td><td class="num">${x.khongHT}</td>
+    <td class="num">${x.tongNgay}</td><td class="num">${x.thieuLyDo}</td>
+    <td>${(x.cham+x.khongHT)>=3?'<span class="badge b-kht">Vượt ngưỡng 3 việc</span>':''}</td></tr>`).join("");
+
+  const cols=["#","Loại","Đơn vị","Người TH","LĐ đơn vị","LĐ chỉ đạo","LĐ ký","Nhiệm vụ","Nhóm lĩnh vực",
+              "Thời hạn","Ngày TH thực tế","Số ngày chậm","Lý do","Điểm"];
+  $("tb-cham").querySelector("thead").innerHTML="<tr>"+cols.map(c=>`<th>${c}</th>`).join("")+"</tr>";
+  $("tb-cham").querySelector("tbody").innerHTML = j.rows.length? j.rows.map((x,i)=>`
+    <tr>
+      <td class="num">${i+1}</td>
+      <td><span class="badge ${x.loai==="Hoàn thành chậm"?"b-ht":"b-kht"}">${esc(x.loai)}</span></td>
+      <td>${esc(x.donVi)}</td><td>${esc(x.nguoiTH)}</td><td>${esc(x.ldDonVi)}</td>
+      <td>${esc(x.ldChiDao)}</td><td>${esc(x.ldKy)}</td>
+      <td style="max-width:340px">${esc(x.nhiemVu)}</td><td class="muted">${esc(x.linhVuc)}</td>
+      <td>${esc(x.thoiHan)}</td><td>${esc(x.ngayTH)}</td>
+      <td class="num"><b style="color:#C0392B">${x.soNgayCham}</b></td>
+      <td style="max-width:260px">${x.lyDo?esc(x.lyDo):'<span class="badge b-kht">Chưa giải trình</span>'}</td>
+      <td class="num">${x.diem}</td>
+    </tr>`).join("") : `<tr><td colspan="14" class="loading">Không có việc chậm trong kỳ 👍</td></tr>`;
+}
+
+/* ═══════════ TAB 4 — NHẬP CHẤM ĐIỂM ═══════════ */
+async function taiChiTiet(){
+  $("trangthai").textContent="Đang tải chi tiết nhiệm vụ...";
+  try{
+    const dv=$("donvi").value, ng=$("nh-nguoi").value.trim();
+    const j=await getJSON(`?kpi22=chitiet&thang=${kyHienTai()}${dv?"&donvi="+encodeURIComponent(dv):""}${ng?"&nguoi="+encodeURIComponent(ng):""}`);
+    DATA.chitiet=j; veChiTiet(j);
+    $("trangthai").textContent=`Kỳ ${j.ky} · ${j.tong} nhiệm vụ`;
+  }catch(e){ $("trangthai").textContent="❌ "+e.message; }
+}
+const TEN_TT={HT_DUNG_HAN:"HT đúng hạn",HT_CHAM:"HT chậm",KHONG_HT:"Quá hạn chưa xong",DANG_TH:"Đang thực hiện"};
+function veChiTiet(j){
+  const f=$("nh-tt").value;
+  let rows=j.rows;
+  if(f==="thieu") rows=rows.filter(x=>!x.ldDonVi||!x.nguoiTH||(x.soNgayCham>0&&!x.lyDoCham&&!x.lyDoKHT));
+  else if(f) rows=rows.filter(x=>x.trangThai===f);
+
+  const cols=["#","Nguồn/Dòng","Nhiệm vụ","Đơn vị","Người TH","LĐ đơn vị","LĐ ký","Mức độ","ISO","Đổi mới","Sáng tạo",
+              "Thời hạn","Ngày TH","Trạng thái","Ngày chậm","Điểm","Lý do","Thao tác"];
+  $("tb-chitiet").querySelector("thead").innerHTML="<tr>"+cols.map(c=>`<th>${c}</th>`).join("")+"</tr>";
+  $("tb-chitiet").querySelector("tbody").innerHTML = rows.length? rows.map((x,i)=>`
+    <tr>
+      <td class="num">${i+1}</td><td class="muted">${x.nguon}·${x.dong}</td>
+      <td style="max-width:320px">${esc(x.nhiemVu)}</td>
+      <td>${esc(x.donVi)}</td>
+      <td>${x.nguoiTH?esc(x.nguoiTH):'<span class="badge b-kht">chưa ghi</span>'}</td>
+      <td>${x.ldDonVi?esc(x.ldDonVi):'<span class="badge b-na">—</span>'}</td>
+      <td>${esc(x.ldKy)}</td>
+      <td class="num">${x.mucDo}</td>
+      <td>${x.maISO?`<span class="badge b-iso">${esc(x.maISO)}</span>`:""}</td>
+      <td>${x.doiMoi?'<span class="badge b-dm">✓</span>':""}</td>
+      <td>${x.sangTao?'<span class="badge b-st">✓</span>':""}</td>
+      <td>${esc(x.thoiHan)}</td><td>${esc(x.ngayTH)}</td>
+      <td><span class="badge ${x.trangThai==="KHONG_HT"?"b-kht":x.trangThai==="HT_CHAM"?"b-ht":x.trangThai==="HT_DUNG_HAN"?"b-xs":"b-na"}">${TEN_TT[x.trangThai]||""}</span>
+          ${x.thieuBangChung?'<br><span class="badge b-kht" title="Tick hoàn thành nhưng thiếu ngày TH hoặc mô tả kết quả">⚠ thiếu bằng chứng</span>':""}</td>
+      <td class="num">${x.soNgayCham||""}</td>
+      <td class="num"><b>${x.diem}</b></td>
+      <td style="max-width:200px" class="muted">${esc(x.lyDoCham||x.lyDoKHT)}</td>
+      <td><button class="btn btn-primary btn-sm" onclick='moNhap(${JSON.stringify(JSON.stringify(x))})'>✍ Nhập</button></td>
+    </tr>`).join("") : `<tr><td colspan="18" class="loading">Không có nhiệm vụ phù hợp bộ lọc</td></tr>`;
+}
+
+function moNhap(s){
+  if(!pin()){ toast("Cần đăng nhập Văn phòng trước"); return moDangNhap(); }
+  const x=JSON.parse(s); DONG_DANG_SUA=x;
+  $("md-nv").innerHTML=`<b>${esc(x.nhiemVu)}</b><br>Đơn vị: ${esc(x.donVi)} · Thời hạn: ${esc(x.thoiHan)} · Nguồn: ${x.nguon} dòng ${x.dong}`;
+  $("f-nguoiTH").value=x.nguoiTH||""; $("f-ldDonVi").value=x.ldDonVi||"";
+  $("f-ldKy").value=x.ldKy||""; $("f-mucDo").value=x.mucDo||1;
+  $("f-maISO").value=x.maISO||""; $("f-doiMoi").value=x.doiMoi||"";
+  $("f-sangTao").value=x.sangTao||""; $("f-lyDoCham").value=x.lyDoCham||"";
+  $("f-lyDoKHT").value=x.lyDoKHT||"";
+  xemTruoc();
+  ["f-mucDo","f-maISO","f-doiMoi","f-sangTao"].forEach(id=>$(id).oninput=$(id).onchange=xemTruoc);
+  $("ov-nhap").classList.add("show");
+}
+
+function xemTruoc(){
+  const x=DONG_DANG_SUA; if(!x) return;
+  const md=Number($("f-mucDo").value)||1;
+  const iso=/QT[-\s.]?\d{1,2}/i.test($("f-maISO").value);
+  const dm=$("f-doiMoi").value.trim().length>=10;
+  const st=$("f-sangTao").value.trim().length>=5;
+  const cong=md+(iso?4:0)+(dm?5:0)+(st?10:0);
+  const ngay=x.soNgayCham&&x.trangThai==="HT_CHAM"?x.soNgayCham:0;
+  const tru=ngay*3;
+  const diem=Math.max(0,cong-tru);
+  $("md-xemtruoc").innerHTML=
+    `<b>Xem trước điểm:</b> Mức độ +${md}${iso?" · ISO +4":""}${dm?" · Đổi mới +5":""}${st?" · Sáng tạo +10":""}
+     = <b>${cong}đ</b>${tru?` · chậm ${ngay} ngày −${tru}đ`:""} → <b style="font-size:15px;color:#1A3A6B">${diem} điểm</b>
+     ${cong-tru<0?' <span class="badge b-na">đã áp sàn 0</span>':""}`;
+}
+
+async function luuChamDiem(){
+  const x=DONG_DANG_SUA; if(!x) return;
+  try{
+    const j=await postJSON({ action:"v22GhiChamDiem", nguon:x.nguon, row:x.dong,
+      nguoiTH:$("f-nguoiTH").value.trim(), ldDonVi:$("f-ldDonVi").value.trim(),
+      ldKy:$("f-ldKy").value.trim(), mucDo:$("f-mucDo").value,
+      maISO:$("f-maISO").value.trim(), doiMoi:$("f-doiMoi").value.trim(),
+      sangTao:$("f-sangTao").value.trim(), lyDoCham:$("f-lyDoCham").value.trim(),
+      lyDoKHT:$("f-lyDoKHT").value.trim() });
+    toast(`✅ Đã lưu · điểm chốt: ${j.diem}`);
+    dongModal(); DATA.chitiet=null; DATA.canhan=null; DATA.tapthe=null; DATA.cham=null;
+    taiChiTiet();
+  }catch(e){ toast("❌ "+e.message); }
+}
+
+/* ═══════════ KẾT XUẤT EXCEL (có công thức sống) ═══════════ */
+function taiFile(wb,ten){ XLSX.writeFile(wb, ten); toast("⬇ Đã tải "+ten); }
+
+function xuatExcelCaNhan(){
+  const j=DATA.canhan; if(!j) return toast("Chưa có dữ liệu");
+  const hdr=["TT","Người thực hiện","Đơn vị","LĐ đơn vị phụ trách","LĐ Chi cục ký","Tổng việc",
+             "HT đúng hạn","HT chậm","Quá hạn chưa xong","Đang TH","Việc theo ISO","Việc đổi mới","Việc sáng tạo",
+             "Tổng ngày chậm","Điểm cộng","Điểm trừ","ĐIỂM (=O−P, sàn 0)","Số việc HT","BQ/việc","Xếp loại","Căn cứ"];
+  const aoa=[
+    ["BẢNG TỔNG HỢP KPI CÁ NHÂN — KỲ "+j.ky],
+    ["Công thức: Điểm cộng = Mức độ(1-3) + 4(ISO) + 5(đổi mới) + 10(sáng tạo) · Điểm trừ = 3 × số ngày chậm · Điểm việc có sàn 0"],
+    ["Chốt chặn: ≥ "+j.thamSo.nguongViecCham+" việc chậm/không hoàn thành trong tháng → Không hoàn thành nhiệm vụ"],
+    [],
+    hdr
+  ];
+  j.bang.forEach((x,i)=>aoa.push([i+1,x.nguoiTH,x.donVi,x.lanhDaoDonVi,x.lanhDaoKy,x.tongViec,
+    x.htDungHan,x.htCham,x.khongHT,x.dangTH,x.soISO,x.soDoiMoi,x.soSangTao,x.tongNgayCham,
+    x.diemCong,x.diemTru,null,x.tongHT,null,x.xepLoai,x.lyDoXepLoai]));
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  const r0=6;  // dòng dữ liệu đầu tiên trên Excel (1-based)
+  j.bang.forEach((x,i)=>{
+    const r=r0+i;
+    ws["Q"+r]={t:"n",v:0,f:`MAX(0,O${r}-P${r})`};              // ĐIỂM
+    ws["S"+r]={t:"n",v:0,f:`IF(R${r}=0,0,ROUND(Q${r}/R${r},2))`}; // BQ/việc
+  });
+  const n=j.bang.length, rEnd=r0+n-1;
+  if(n){
+    XLSX.utils.sheet_add_aoa(ws,[["","TỔNG CỘNG"]],{origin:"A"+(rEnd+2)});
+    ["F","G","H","I","J","K","L","M","N","O","P","Q","R"].forEach(c=>{
+      ws[c+(rEnd+2)]={t:"n",v:0,f:`SUM(${c}${r0}:${c}${rEnd})`};
+    });
+  }
+  ws["!cols"]=hdr.map((h,i)=>({wch:i===1?22:i===2?16:i===19?26:i===20?30:12}));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"KPI ca nhan");
+  taiFile(wb,`KPI_CA_NHAN_${j.ky}.xlsx`);
+}
+
+function xuatExcelTapThe(){
+  const j=DATA.tapthe; if(!j) return toast("Chưa có dữ liệu");
+  const hdr=["TT","Đơn vị","Nhân sự có việc","Tổng việc","HT đúng hạn","HT chậm","Quá hạn chưa xong","Đang TH",
+             "% HT (=E+F)/D","% đúng hạn","Việc theo ISO","Việc đổi mới","Việc sáng tạo","⚠ Thiếu bằng chứng",
+             "Điểm cộng","Điểm trừ","ĐIỂM","BQ/người","BQ/việc","Xếp loại","Căn cứ",
+             "Chỉ tiêu cấp trên giao","Chỉ tiêu Chi cục giao","Chỉ tiêu tự phấn đấu","Đánh giá tuân thủ ISO (+/−)","Ghi chú"];
+  const aoa=[
+    ["BẢNG TỔNG HỢP KPI TẬP THỂ — KỲ "+j.ky],
+    ["Cột V–Z để trống, đơn vị/Văn phòng điền tay: chỉ tiêu cấp trên giao, chỉ tiêu Chi cục giao, chỉ tiêu tự phấn đấu, đánh giá ISO"],
+    [],
+    hdr
+  ];
+  j.bang.forEach((x,i)=>aoa.push([i+1,x.donVi,x.soNhanSu,x.tongViec,x.htDungHan,x.htCham,x.khongHT,x.dangTH,
+    null,null,x.soISO,x.soDoiMoi,x.soSangTao,x.thieuBangChung,x.diemCong,x.diemTru,null,null,null,
+    x.xepLoai,x.lyDoXepLoai,"","","","",""]));
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  const r0=5;
+  j.bang.forEach((x,i)=>{
+    const r=r0+i;
+    ws["I"+r]={t:"n",v:0,f:`IF(D${r}=0,0,ROUND((E${r}+F${r})/D${r}*100,1))`};
+    ws["J"+r]={t:"n",v:0,f:`IF((E${r}+F${r})=0,0,ROUND(E${r}/(E${r}+F${r})*100,1))`};
+    ws["Q"+r]={t:"n",v:0,f:`MAX(0,O${r}-P${r})`};
+    ws["R"+r]={t:"n",v:0,f:`IF(C${r}=0,0,ROUND(Q${r}/C${r},1))`};
+    ws["S"+r]={t:"n",v:0,f:`IF((E${r}+F${r})=0,0,ROUND(Q${r}/(E${r}+F${r}),2))`};
+  });
+  const n=j.bang.length, rEnd=r0+n-1;
+  if(n){
+    XLSX.utils.sheet_add_aoa(ws,[["","TOÀN CHI CỤC"]],{origin:"A"+(rEnd+2)});
+    ["C","D","E","F","G","H","K","L","M","N","O","P","Q"].forEach(c=>{
+      ws[c+(rEnd+2)]={t:"n",v:0,f:`SUM(${c}${r0}:${c}${rEnd})`};
+    });
+  }
+  ws["!cols"]=hdr.map((h,i)=>({wch:i===1?20:i>=19?26:13}));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"KPI tap the");
+
+  // Sheet 2 — phân bổ theo lĩnh vực
+  const lv=[["PHÂN BỔ NHIỆM VỤ THEO NHÓM LĨNH VỰC — KỲ "+j.ky],[],
+            ["TT","Nhóm lĩnh vực","Tổng việc","Đã HT","% HT","HT chậm","Quá hạn chưa xong","Điểm",
+             "Chỉ tiêu giao","Kết quả đạt","% so chỉ tiêu","Đánh giá"]];
+  j.linhVuc.forEach((x,i)=>lv.push([i+1,x.ten,x.tong,x.ht,null,x.cham,x.khongHT,x.diem,"","",null,""]));
+  const ws2=XLSX.utils.aoa_to_sheet(lv);
+  j.linhVuc.forEach((x,i)=>{
+    const r=4+i;
+    ws2["E"+r]={t:"n",v:0,f:`IF(C${r}=0,0,ROUND(D${r}/C${r}*100,1))`};
+    ws2["K"+r]={t:"n",v:0,f:`IF(N(I${r})=0,"",ROUND(J${r}/I${r}*100,1))`};
+  });
+  ws2["!cols"]=[{wch:5},{wch:42},{wch:11},{wch:9},{wch:9},{wch:10},{wch:16},{wch:9},{wch:13},{wch:12},{wch:12},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,ws2,"Theo linh vuc");
+  taiFile(wb,`KPI_TAP_THE_${j.ky}.xlsx`);
+}
+
+function xuatExcelCham(){
+  const j=DATA.cham; if(!j) return toast("Chưa có dữ liệu");
+  const hdr=["TT","Loại","Đơn vị","Người thực hiện trực tiếp","LĐ đơn vị phụ trách","LĐ Chi cục chỉ đạo","LĐ Chi cục ký",
+             "Nhiệm vụ","Căn cứ","Sản phẩm","Nhóm lĩnh vực","Mức độ","Mã ISO",
+             "Thời hạn","Ngày TH thực tế","Số ngày chậm","Lý do chậm / không hoàn thành","Điểm cộng","Điểm trừ","Điểm còn lại"];
+  const aoa=[
+    ["DANH SÁCH NHIỆM VỤ CHẬM / KHÔNG HOÀN THÀNH — KỲ "+j.ky],
+    [`Tổng: ${j.tong} việc · ${j.tongSoNgayCham} ngày chậm · ${j.thieuLyDo} việc chưa có lý do giải trình`],
+    [],
+    hdr
+  ];
+  j.rows.forEach((x,i)=>aoa.push([i+1,x.loai,x.donVi,x.nguoiTH,x.ldDonVi,x.ldChiDao,x.ldKy,
+    x.nhiemVu,x.canCu,x.sanPham,x.linhVuc,x.mucDo,x.maISO,x.thoiHan,x.ngayTH,x.soNgayCham,
+    x.lyDo||"CHƯA GIẢI TRÌNH",x.diemCong,x.diemTru,null]));
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  const r0=5;
+  j.rows.forEach((x,i)=>{ const r=r0+i; ws["T"+r]={t:"n",v:0,f:`MAX(0,R${r}-S${r})`}; });
+  ws["!cols"]=hdr.map((h,i)=>({wch:i===7?48:i===16?38:i===8?24:i===10?28:14}));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"Viec cham");
+
+  const d=[["TỔNG HỢP THEO ĐƠN VỊ"],[],["TT","Đơn vị","HT chậm","Quá hạn chưa xong","Tổng","Tổng ngày chậm","Thiếu lý do","Cảnh báo"]];
+  j.theoDonVi.forEach((x,i)=>d.push([i+1,x.donVi,x.cham,x.khongHT,null,x.tongNgay,x.thieuLyDo,null]));
+  const ws2=XLSX.utils.aoa_to_sheet(d);
+  j.theoDonVi.forEach((x,i)=>{ const r=4+i;
+    ws2["E"+r]={t:"n",v:0,f:`C${r}+D${r}`};
+    ws2["H"+r]={t:"s",v:"",f:`IF(E${r}>=3,"Vượt ngưỡng 3 việc - Không hoàn thành","")`};
+  });
+  ws2["!cols"]=[{wch:5},{wch:24},{wch:11},{wch:19},{wch:9},{wch:15},{wch:12},{wch:40}];
+  XLSX.utils.book_append_sheet(wb,ws2,"Theo don vi");
+  taiFile(wb,`VIEC_CHAM_${j.ky}.xlsx`);
+}
+
+/* ═══════════ KHỞI TẠO ═══════════ */
+(async function init(){
+  const d=new Date();
+  $("ky").value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+  capNhatTrangThaiAdmin();
+  try{
+    const m=await getJSON("?kpi22=meta");
+    DATA.meta=m;
+    $("donvi").innerHTML='<option value="">— Tất cả —</option>'+m.donVi.map(x=>`<option>${esc(x)}</option>`).join("");
+  }catch(e){ $("trangthai").textContent="⚠ Chưa kết nối được API: "+e.message; }
+  taiCaNhan();
+})();
+</script>
+</body>
+</html>
