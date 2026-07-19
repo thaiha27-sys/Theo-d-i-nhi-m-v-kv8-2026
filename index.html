@@ -1139,6 +1139,10 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
       <div class="form-group">
         <label class="form-label">Ngày hoàn thành thực tế *</label>
         <input class="form-input" id="kq-ngay-th" type="date" onchange="checkKQMuon()">
+        <div style="font-size:11px;color:var(--muted);margin-top:3px;line-height:1.45">
+          Là ngày <b>thực tế hoàn thành</b>, không phải ngày nhập liệu.<br>
+          Nếu có văn bản sản phẩm, lấy đúng <b>ngày ký văn bản</b>.
+        </div>
       </div>
     </div>
     <div class="form-group">
@@ -2200,9 +2204,11 @@ function openKQModal(row) {
     (t.ketQua ? '<br><span style="color:var(--green);font-size:11.5px">📌 Kết quả hiện tại: ' + t.ketQua + '</span>' : '');
   document.getElementById("kq-input").value = "";
   document.getElementById("kq-so-vb").value = "";
-  // Ngày mặc định = hôm nay
-  const today = new Date();
-  document.getElementById("kq-ngay-th").value = today.toISOString().slice(0,10);
+  // v22.2: KHÔNG điền sẵn ngày hôm nay.
+  // Trước đây điền sẵn khiến người nhập không sửa -> ngày NHẬP LIỆU bị ghi thành
+  // ngày THỰC HIỆN, làm sai số ngày chậm (đơn vị làm đúng hạn nhưng nhập muộn
+  // vẫn bị tính chậm). Buộc người nhập phải chọn ngày một cách có ý thức.
+  document.getElementById("kq-ngay-th").value = "";
   document.getElementById("kq-done-chk").checked = true;
   document.getElementById("kq-muon-warn").style.display = "none";
   document.getElementById("kq-error").style.display = "none";
