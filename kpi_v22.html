@@ -92,6 +92,7 @@ tbody tr:hover{background:#F7FAFF}
   <div class="tab active" data-t="canhan"  onclick="chuyenTab('canhan')">👤 KPI cá nhân</div>
   <div class="tab"        data-t="tapthe"  onclick="chuyenTab('tapthe')">🏛 KPI tập thể</div>
   <div class="tab"        data-t="cham"    onclick="chuyenTab('cham')">⏰ Việc chậm / không hoàn thành</div>
+  <div class="tab"        data-t="mucdo"   onclick="chuyenTab('mucdo')">🎚 Gán mức độ hàng loạt</div>
   <div class="tab"        data-t="nhap"    onclick="chuyenTab('nhap')">✍ Nhập chấm điểm</div>
   <div class="tab"        data-t="huongdan" onclick="chuyenTab('huongdan')">📖 Quy tắc tính điểm</div>
 </div>
@@ -157,6 +158,39 @@ tbody tr:hover{background:#F7FAFF}
     <div class="card">
       <h3>Chi tiết từng việc</h3>
       <div class="table-wrap"><table id="tb-cham"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 3B: GÁN MỨC ĐỘ HÀNG LOẠT ══ -->
+  <div id="tab-mucdo" class="tab-content">
+    <div class="warn">
+      <b>Cách làm:</b> với mỗi nhiệm vụ, chọn 3 dấu hiệu khách quan → hệ thống tự tính mức độ (0–1đ = Dễ · 2–3đ = TB · 4–6đ = Khó).
+      Chọn xong nhiều dòng rồi bấm <b>Lưu tất cả thay đổi</b> một lần. Chỉ những dòng có thay đổi mới được ghi.
+      <br><b>Thẩm quyền:</b> Văn phòng gán · Phó Chi cục trưởng phụ trách xác nhận · đơn vị thực hiện không tự gán cho mình.
+    </div>
+    <div id="md-kpi" class="kpi-row"></div>
+    <div class="toolbar">
+      <label>Hiển thị</label>
+      <select id="md-loc" onchange="veMucDo()">
+        <option value="chua">Chỉ việc chưa gán mức độ</option>
+        <option value="all">Tất cả nhiệm vụ trong kỳ</option>
+        <option value="cham">Chỉ việc chậm / quá hạn</option>
+      </select>
+      <label>Tìm</label>
+      <input type="text" id="md-tim" placeholder="tên nhiệm vụ..." style="width:200px" oninput="veMucDo()">
+      <span style="border-left:1px solid var(--border);padding-left:10px">Đặt nhanh cho mọi dòng đang hiện:</span>
+      <button class="btn btn-outline btn-sm" style="background:#eee;color:#333;border:1px solid #ccc" onclick="datNhanh(1)">Tất cả Dễ</button>
+      <button class="btn btn-outline btn-sm" style="background:#eee;color:#333;border:1px solid #ccc" onclick="datNhanh(2)">Tất cả TB</button>
+      <button class="btn btn-outline btn-sm" style="background:#eee;color:#333;border:1px solid #ccc" onclick="datNhanh(3)">Tất cả Khó</button>
+      <button class="btn btn-green" onclick="luuMucDo()">💾 Lưu tất cả thay đổi (<span id="md-dem">0</span>)</button>
+    </div>
+    <div class="card">
+      <h3>Gán mức độ theo 3 dấu hiệu khách quan</h3>
+      <div class="table-wrap"><table id="tb-mucdo"><thead></thead><tbody></tbody></table></div>
+      <p class="muted" style="margin-top:8px">
+        Cột <b>Cấp duyệt</b> được gợi ý sẵn từ cột "Lãnh đạo chỉ đạo" đang có trên hệ thống — vẫn cần rà lại.
+        Hai cột còn lại hệ thống không suy ra được, phải chọn tay hoặc lấy từ Mẫu 01 do đơn vị cung cấp.
+      </p>
     </div>
   </div>
 
@@ -342,6 +376,7 @@ function chuyenTab(t){
   if(t==="tapthe"&&!DATA.tapthe) taiTapThe();
   if(t==="cham"&&!DATA.cham) taiCham();
   if(t==="nhap"&&!DATA.chitiet) taiChiTiet();
+  if(t==="mucdo"){ if(!DATA.chitiet) taiChiTiet(); else veMucDo(); }
 }
 function taiLai(){
   DATA={canhan:null,tapthe:null,cham:null,chitiet:null,meta:DATA.meta};
@@ -350,6 +385,7 @@ function taiLai(){
   if(TAB==="tapthe") taiTapThe();
   if(TAB==="cham")   taiCham();
   if(TAB==="nhap")   taiChiTiet();
+  if(TAB==="mucdo")  taiChiTiet();
 }
 
 /* ═══════════ TAB 1 — KPI CÁ NHÂN ═══════════ */
@@ -501,7 +537,7 @@ async function taiChiTiet(){
   try{
     const dv=$("donvi").value, ng=$("nh-nguoi").value.trim();
     const j=await getJSON(`?kpi22=chitiet&thang=${kyHienTai()}${dv?"&donvi="+encodeURIComponent(dv):""}${ng?"&nguoi="+encodeURIComponent(ng):""}`);
-    DATA.chitiet=j; veChiTiet(j);
+    DATA.chitiet=j; veChiTiet(j); if(TAB==="mucdo") veMucDo();
     $("trangthai").textContent=`Kỳ ${j.ky} · ${j.tong} nhiệm vụ`;
   }catch(e){ $("trangthai").textContent="❌ "+e.message; }
 }
@@ -580,6 +616,113 @@ async function luuChamDiem(){
     dongModal(); DATA.chitiet=null; DATA.canhan=null; DATA.tapthe=null; DATA.cham=null;
     taiChiTiet();
   }catch(e){ toast("❌ "+e.message); }
+}
+
+/* ═══════════ TAB 3B — GÁN MỨC ĐỘ HÀNG LOẠT ═══════════ */
+let MD = {};        // key "nguon:dong" -> {a,b,c,mucDo,goc}
+
+// Gợi ý cấp phê duyệt từ cột "Lãnh đạo chỉ đạo" đang có sẵn
+function goiYCapDuyet(x){
+  const s=(x.lanhDaoChiDao||"")+" "+(x.ldKy||"")+" "+(x.canCu||"");
+  const t=s.toLowerCase();
+  // ⚠ Phải kiểm tra PCCT TRƯỚC, vì chuỗi "pcct" có chứa "cct".
+  if(/pcct|phó chi cục|phó cct/.test(t)) return 1;
+  if(/\bchi cục trưởng\b|\bcct\b|cục hải quan|ubnd|tỉnh ủy|bộ tài chính|trung ương|\bcục\b|\btỉnh\b/.test(t)) return 2;
+  if((x.lanhDaoChiDao||"").trim()) return 1;
+  return 0;
+}
+function tinhMucDo(a,b,c){ const s=(+a)+(+b)+(+c); return s>=4?3:(s>=2?2:1); }
+const TEN_MD={1:"Dễ",2:"Trung bình",3:"Khó"};
+
+function veMucDo(){
+  const j=DATA.chitiet; if(!j) return;
+  const loc=$("md-loc").value, tim=$("md-tim").value.trim().toLowerCase();
+  let rows=j.rows.slice();
+  if(loc==="chua") rows=rows.filter(x=>x.mucDo===1);
+  else if(loc==="cham") rows=rows.filter(x=>x.trangThai==="HT_CHAM"||x.trangThai==="KHONG_HT");
+  if(tim) rows=rows.filter(x=>x.nhiemVu.toLowerCase().includes(tim));
+
+  // khởi tạo trạng thái cho từng dòng
+  rows.forEach(x=>{
+    const k=x.nguon+":"+x.dong;
+    if(!MD[k]) MD[k]={a:0,b:goiYCapDuyet(x),c:0,mucDo:x.mucDo,goc:x.mucDo,nhiemVu:x.nhiemVu};
+  });
+
+  const chua=j.rows.filter(x=>x.mucDo===1).length;
+  $("md-kpi").innerHTML=`
+    <div class="kpi-box"><div class="v">${j.rows.length}</div><div class="l">Nhiệm vụ trong kỳ</div></div>
+    <div class="kpi-box gold"><div class="v">${chua}</div><div class="l">Đang ở mức 1 (có thể chưa gán)</div></div>
+    <div class="kpi-box"><div class="v">${rows.length}</div><div class="l">Đang hiển thị</div></div>
+    <div class="kpi-box green"><div class="v" id="md-dem2">0</div><div class="l">Dòng đã thay đổi, chờ lưu</div></div>`;
+
+  const cols=["#","Nhiệm vụ","Đơn vị","Người TH","LĐ chỉ đạo","Số ĐV phối hợp","Cấp phê duyệt","Thời gian được giao","Tổng","Mức độ","Điểm hiện tại"];
+  $("tb-mucdo").querySelector("thead").innerHTML="<tr>"+cols.map(c=>`<th>${c}</th>`).join("")+"</tr>";
+  const sel=(k,f,v,opts)=>`<select onchange="datMD('${k}','${f}',this.value)" style="width:100%;font-size:11.5px">`+
+    opts.map((o,i)=>`<option value="${i}"${(+v)===i?" selected":""}>${o}</option>`).join("")+`</select>`;
+
+  $("tb-mucdo").querySelector("tbody").innerHTML = rows.length? rows.map((x,i)=>{
+    const k=x.nguon+":"+x.dong, m=MD[k];
+    const doi = m.mucDo!==m.goc;
+    return `<tr id="tr-${k.replace(':','-')}" style="${doi?'background:#E8F5E9':''}">
+      <td class="num">${i+1}</td>
+      <td style="max-width:330px">${esc(x.nhiemVu)}<br><span class="muted">${x.nguon}·${x.dong} · hạn ${esc(x.thoiHan)}</span></td>
+      <td>${esc(x.donVi)}</td><td>${esc(x.nguoiTH)}</td><td class="muted">${esc(x.lanhDaoChiDao)}</td>
+      <td style="min-width:118px">${sel(k,'a',m.a,["1 đơn vị","2–3 đơn vị","≥4 ĐV / ngoài ngành"])}</td>
+      <td style="min-width:118px">${sel(k,'b',m.b,["LĐ đơn vị","Phó Chi cục trưởng","CCT / Cục, Tỉnh"])}</td>
+      <td style="min-width:118px">${sel(k,'c',m.c,["≤ 5 ngày","6–15 ngày","> 15 ngày"])}</td>
+      <td class="num" id="tong-${k.replace(':','-')}">${(+m.a)+(+m.b)+(+m.c)}</td>
+      <td id="md-${k.replace(':','-')}"><span class="badge ${m.mucDo===3?'b-kht':m.mucDo===2?'b-ht':'b-na'}">${m.mucDo} — ${TEN_MD[m.mucDo]}</span></td>
+      <td class="num">${x.diem}</td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="11" class="loading">Không có nhiệm vụ phù hợp bộ lọc</td></tr>`;
+  demThayDoi();
+}
+
+function datMD(k,f,v){
+  const m=MD[k]; if(!m) return;
+  m[f]=+v;
+  m.mucDo=tinhMucDo(m.a,m.b,m.c);
+  const id=k.replace(':','-');
+  const eT=$("tong-"+id), eM=$("md-"+id), eR=$("tr-"+id);
+  if(eT) eT.textContent=(+m.a)+(+m.b)+(+m.c);
+  if(eM) eM.innerHTML=`<span class="badge ${m.mucDo===3?'b-kht':m.mucDo===2?'b-ht':'b-na'}">${m.mucDo} — ${TEN_MD[m.mucDo]}</span>`;
+  if(eR) eR.style.background = (m.mucDo!==m.goc) ? "#E8F5E9" : "";
+  demThayDoi();
+}
+
+function datNhanh(md){
+  // đặt bộ 3 dấu hiệu tối thiểu cho ra đúng mức độ mong muốn
+  const bo={1:[0,0,0],2:[0,1,1],3:[1,2,2]}[md];
+  document.querySelectorAll("#tb-mucdo tbody tr").forEach(tr=>{
+    const k=tr.id.replace("tr-","").replace("-",":");
+    if(!MD[k]) return;
+    MD[k].a=bo[0]; MD[k].b=bo[1]; MD[k].c=bo[2]; MD[k].mucDo=md;
+  });
+  veMucDo();
+  toast(`Đã đặt ${TEN_MD[md]} cho các dòng đang hiển thị — nhớ bấm Lưu`);
+}
+
+function demThayDoi(){
+  const n=Object.keys(MD).filter(k=>MD[k].mucDo!==MD[k].goc).length;
+  const a=$("md-dem"), b=$("md-dem2");
+  if(a) a.textContent=n; if(b) b.textContent=n;
+  return n;
+}
+
+async function luuMucDo(){
+  if(!pin()){ toast("Cần đăng nhập Văn phòng trước"); return moDangNhap(); }
+  const ds=Object.keys(MD).filter(k=>MD[k].mucDo!==MD[k].goc);
+  if(!ds.length) return toast("Chưa có dòng nào thay đổi");
+  if(!confirm(`Ghi mức độ cho ${ds.length} nhiệm vụ?\n\nCác thông tin khác (mã ISO, đổi mới, sáng tạo, lý do) được giữ nguyên.`)) return;
+  const rows=ds.map(k=>{ const [nguon,dong]=k.split(":"); return { nguon:nguon, row:+dong, mucDo:MD[k].mucDo }; });
+  $("trangthai").textContent=`Đang ghi ${rows.length} dòng...`;
+  try{
+    const j=await postJSON({ action:"v22GhiHangLoat", rows:rows });
+    toast(`✅ Đã ghi ${j.daGhi}/${rows.length} dòng`);
+    if(j.loi && j.loi.length) console.warn("Lỗi:", j.loi);
+    MD={}; DATA.chitiet=null; DATA.canhan=null; DATA.tapthe=null; DATA.cham=null;
+    taiChiTiet();
+  }catch(e){ toast("❌ "+e.message); $("trangthai").textContent="❌ "+e.message; }
 }
 
 /* ═══════════ KẾT XUẤT EXCEL (có công thức sống) ═══════════ */
