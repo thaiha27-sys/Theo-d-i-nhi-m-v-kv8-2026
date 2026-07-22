@@ -1166,6 +1166,29 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
   </div>
 </div>
 
+<!-- ========= MODAL ĐỀ NGHỊ GIA HẠN (v23) ========= -->
+<div class="modal-overlay" id="modal-giahan" onclick="closeModal('modal-giahan',event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-giahan')">✕</button>
+    <div class="modal-title">⏱ Đề nghị điều chỉnh thời hạn</div>
+    <div class="kq-task-info" id="gh-task-info"></div>
+    <div class="form-group">
+      <label class="form-label">Hạn mới đề nghị *</label>
+      <input class="form-input" id="gh-han" type="date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Lý do xin gia hạn *</label>
+      <textarea class="form-textarea" id="gh-lydo" placeholder="Nêu rõ lý do khách quan cần điều chỉnh thời hạn..." style="min-height:70px"></textarea>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">Đề nghị này vào hàng chờ; Văn phòng duyệt mới đổi hạn. Có lưu vết hạn cũ → hạn mới.</div>
+    </div>
+    <div id="gh-error" class="form-error"></div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeModal('modal-giahan')">Hủy</button>
+      <button class="btn btn-save" id="btn-gh-submit" onclick="submitGiaHan()">💾 Gửi đề nghị</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ============================================================
 // CẤU HÌNH
@@ -1184,6 +1207,7 @@ const LD_ROLES = {"Phạm Quốc Hưng":"Chi cục trưởng","Bùi Ngọc Lợi
 const LD_INI = {"Phạm Quốc Hưng":"PQH","Bùi Ngọc Lợi":"BNL","Ngô Tùng Dương":"NTD","Nguyễn Cảnh Thắng":"NCT"};
 
 let allTasks = [], curKQRow = null, curKQDeadline = null, paLoaded = false, nsnnLoaded = false;
+let curGHRow = null;   // v23
 
 // ============================================================
 // ADMIN: xác thực bằng mã PIN (server-side, lưu ở Script Properties)
@@ -1616,6 +1640,7 @@ function renderTable() {
       statusCell = '<div><span class="badge" style="background:' + b.bg + ';color:' + b.c + ';display:block;margin-bottom:4px">' + s + '</span>' +
         '<div style="display:flex;gap:3px;flex-wrap:wrap">' + btnXong +
         '<button class="btn-sm btn-blue" style="font-size:11px" onclick="openKQModal(' + t.row + ')">📝 KQ</button>' +
+        '<button class="btn-sm" style="background:#8a5a00;color:#fff;border:none;padding:4px 8px;border-radius:5px;cursor:pointer;font-size:11px" onclick="openGiaHan(' + t.row + ')">⏱ Gia hạn</button>' +
         (isAdmin() ? '<button class="btn-sm" style="background:#1A3A6B;color:#fff;border:none;padding:3px 7px;border-radius:4px;cursor:pointer;font-size:10.5px" onclick="openEditModal(' + t.row + ')" title="Sửa chi tiết (Admin)">✎</button>' : '') +
         (isAdmin() ? '<button class="btn-sm" style="background:#c62828;color:#fff;border:none;padding:3px 7px;border-radius:4px;cursor:pointer;font-size:10.5px" onclick="deleteTask(' + t.row + ',\'' + (t.nhiemVu||"").replace(/'/g,"\\'").substring(0,30) + '\')">🗑</button>' : '') +
         '</div></div>';
@@ -2208,6 +2233,7 @@ function openKQModal(row) {
     '<span style="color:var(--muted)">' + (t.donVi||"") + ' · Hạn: ' + fmtDate(t.thoiHan) + ' · ' + (normLanhDao(t.lanhDao)||"") + '</span>' +
     (t.ketQua ? '<br><span style="color:var(--green);font-size:11.5px">📌 Kết quả hiện tại: ' + t.ketQua + '</span>' : '');
   document.getElementById("kq-input").value = "";
+  document.getElementById("kq-lydo").value = "";
   document.getElementById("kq-so-vb").value = "";
   // v22.2: KHÔNG điền sẵn ngày hôm nay.
   // Trước đây điền sẵn khiến người nhập không sửa -> ngày NHẬP LIỆU bị ghi thành
@@ -2267,6 +2293,40 @@ async function submitKQ() {
   btn.textContent = "💾 Lưu kết quả"; btn.disabled = false;
 }
 
+// ===== v23: ĐỀ NGHỊ GIA HẠN =====
+function openGiaHan(row) {
+  const t = allTasks.find(x => x.row === row);
+  if (!t) return;
+  curGHRow = row;
+  document.getElementById("gh-task-info").innerHTML =
+    '<b>' + t.tt + '. ' + (t.nhiemVu||"") + '</b><br>' +
+    '<span style="color:var(--muted)">' + (t.donVi||"") + ' · Hạn hiện tại: ' + fmtDate(t.thoiHan) + '</span>';
+  document.getElementById("gh-han").value = "";
+  document.getElementById("gh-lydo").value = "";
+  document.getElementById("gh-error").style.display = "none";
+  document.getElementById("modal-giahan").classList.add("open");
+}
+async function submitGiaHan() {
+  const hanDeNghi = (document.getElementById("gh-han").value||"").trim();
+  const lyDo = (document.getElementById("gh-lydo").value||"").trim();
+  const errEl = document.getElementById("gh-error");
+  if (!hanDeNghi) { errEl.textContent = "⚠ Vui lòng chọn hạn mới"; errEl.style.display = "block"; return; }
+  if (!lyDo) { errEl.textContent = "⚠ Vui lòng nhập lý do xin gia hạn"; errEl.style.display = "block"; return; }
+  const btn = document.getElementById("btn-gh-submit");
+  btn.textContent = "⏳ Đang gửi..."; btn.disabled = true; errEl.style.display = "none";
+  try {
+    const res = await fetch(API, {method:"POST", body:JSON.stringify({
+      action: "deXuatGiaHan", row: curGHRow, hanDeNghi: hanDeNghi, lyDo: lyDo
+    })});
+    const d = await res.json();
+    if (d.ok) {
+      closeModal("modal-giahan");
+      showToast("✅ Đã gửi đề nghị gia hạn, chờ Văn phòng duyệt");
+    } else { errEl.textContent = "⚠ " + (d.error||"Lỗi không xác định"); errEl.style.display = "block"; }
+  } catch(e) { errEl.textContent = "⚠ Lỗi kết nối: " + e.message; errEl.style.display = "block"; }
+  btn.textContent = "💾 Gửi đề nghị"; btn.disabled = false;
+}
+
 // ============================================================
 // MARK DONE (nhanh từ bảng)
 // ============================================================
@@ -2290,6 +2350,7 @@ function closeModal(id, e) {
   if (e && e.target !== document.getElementById(id)) return;
   document.getElementById(id).classList.remove("open");
   if (id === "modal-kq") curKQRow = null;
+  if (id === "modal-giahan") curGHRow = null;   // v23
 }
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") { closeModal("modal-add"); closeModal("modal-kq"); closeModal("modal-admin-login"); closeModal("modal-edit"); }
@@ -3107,11 +3168,12 @@ function renderChoDuyetKQ() {
   empty.style.display = "none";
   list.innerHTML = choDuyetKQCache.map(t => (
     '<div style="border:1px solid #E5E7EB;border-radius:8px;padding:10px 14px;margin-bottom:8px;background:#F9FAFB">' +
-    '<div style="font-weight:600;font-size:13px;color:var(--navy)">#' + t.rowGoc + ' · ' + (t.nhiemVu||"—") + '</div>' +
+    '<div style="font-weight:600;font-size:13px;color:var(--navy)">#' + t.rowGoc + ' · ' + (t.nhiemVu||"—") + (t.hanDeNghi ? ' <span style="background:#F6C343;color:#000;padding:1px 6px;border-radius:4px;font-size:10px">⏱ XIN GIA HẠN</span>' : '') + '</div>' +
     '<div style="font-size:11.5px;color:#555;margin-top:4px;line-height:1.5">' +
       '<b>Đơn vị:</b> ' + (t.donVi||"—") + (t.danhDauHT ? ' · <span style="color:#2e7d32;font-weight:600">Đề xuất đánh dấu Hoàn thành</span>' : '') + '<br>' +
       (t.soVanBan ? '<b>Số văn bản:</b> ' + t.soVanBan + ' · ' : '') + (t.ngayTH ? '<b>Ngày TH:</b> ' + fmtDate(t.ngayTH) : '') + '<br>' +
-      '<b>Mô tả/kết quả:</b> ' + (t.moTa||"—") + '<br>' +
+      (t.hanDeNghi ? '<b>Hạn đề nghị:</b> ' + fmtDate(t.hanDeNghi) + '<br>' : '<b>Mô tả/kết quả:</b> ' + (t.moTa||"—") + '<br>') +
+      (t.lyDo ? '<b style="color:#b26a00">Lý do:</b> <span style="color:#b26a00">' + t.lyDo + '</span><br>' : '') +
       '<b>Người đề xuất:</b> ' + (t.nguoiDeXuat||"—") + (t.thoiGianDeXuat ? ' · ' + t.thoiGianDeXuat : '') +
     '</div>' +
     '<div style="display:flex;gap:6px;margin-top:8px">' +
