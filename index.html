@@ -1149,6 +1149,11 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
       <label class="form-label">Mô tả kết quả cụ thể *</label>
       <textarea class="form-textarea" id="kq-input" placeholder="Đã ban hành / nộp báo cáo / ký kết / hoàn thành..." style="min-height:80px"></textarea>
     </div>
+    <div class="form-group" id="kq-lydo-group">
+      <label class="form-label" id="kq-lydo-label">Lý do chậm / chưa hoàn thành <span style="color:var(--muted);font-weight:400">(bắt buộc nếu quá hạn)</span></label>
+      <textarea class="form-textarea" id="kq-lydo" placeholder="VD: chờ ý kiến cấp trên; phối hợp liên ngành kéo dài; văn bản đã ký ngày ... nhưng nhập muộn..." style="min-height:60px"></textarea>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">Nội dung này lưu vào cột R/S, phục vụ Văn phòng thẩm định trước khi trừ điểm KPI.</div>
+    </div>
     <label class="kq-done-chk">
       <input type="checkbox" id="kq-done-chk" style="width:16px;height:16px" checked>
       <span>✅ Đánh dấu <strong>Hoàn thành</strong> nhiệm vụ này</span>
@@ -2231,10 +2236,13 @@ async function submitKQ() {
   const ngayTH = (document.getElementById("kq-ngay-th").value||"").trim();
   const moTa   = (document.getElementById("kq-input").value||"").trim();
   const soVB   = (document.getElementById("kq-so-vb").value||"").trim();
+  const lyDo   = (document.getElementById("kq-lydo").value||"").trim();
   const isDone = document.getElementById("kq-done-chk").checked;
   const errEl  = document.getElementById("kq-error");
   if (!ngayTH) { errEl.textContent = "⚠ Vui lòng nhập ngày hoàn thành"; errEl.style.display = "block"; return; }
   if (!moTa)   { errEl.textContent = "⚠ Vui lòng nhập mô tả kết quả"; errEl.style.display = "block"; return; }
+  const _dlMuon = (typeof curKQDeadline!=="undefined" && curKQDeadline) ? parseDate(document.getElementById("kq-ngay-th").value) > curKQDeadline : false;
+  if (_dlMuon && !lyDo) { errEl.textContent = "⚠ Việc quá hạn: vui lòng nhập lý do chậm / chưa hoàn thành"; errEl.style.display = "block"; return; }
   const btn = document.getElementById("btn-kq-submit");
   btn.textContent = "⏳ Đang lưu..."; btn.disabled = true; errEl.style.display = "none";
   try {
@@ -2244,6 +2252,7 @@ async function submitKQ() {
       soVanBan: soVB,
       ngayTH: ngayTH,
       moTa: moTa,
+      lyDo: lyDo,
       danhDauHT: isDone
     })});
     const d = await res.json();
