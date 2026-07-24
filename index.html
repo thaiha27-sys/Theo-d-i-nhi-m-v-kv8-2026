@@ -1160,7 +1160,13 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
       </div>
       <div class="form-group">
         <label class="form-label">Ngày hoàn thành thực tế *</label>
-        <input class="form-input" id="kq-ngay-th" type="date" onchange="checkKQMuon()">
+        <input class="form-input" id="kq-ngay-th" type="date" onchange="checkKQMuon();v26CheckNgay()">
+        <div id="v26-ngay-hint" style="font-size:11.5px;color:#7a5800;background:#FEF9E7;border:1px solid #F6C343;
+             border-radius:6px;padding:7px 10px;margin-top:6px;display:none;line-height:1.5"></div>
+        <div style="font-size:11px;color:#8895A5;margin-top:5px;line-height:1.5">
+          Nhập <b>ngày ghi trên văn bản sản phẩm</b>, không phải ngày nhập liệu hôm nay.
+          Hệ thống dùng ngày này để tính chậm/đúng hạn.
+        </div>
         <div style="font-size:11px;color:var(--muted);margin-top:3px;line-height:1.45">
           Là ngày <b>thực tế hoàn thành</b>, không phải ngày nhập liệu.<br>
           Nếu có văn bản sản phẩm, lấy đúng <b>ngày ký văn bản</b>.
@@ -2262,6 +2268,7 @@ function openKQModal(row) {
   // ngày THỰC HIỆN, làm sai số ngày chậm (đơn vị làm đúng hạn nhưng nhập muộn
   // vẫn bị tính chậm). Buộc người nhập phải chọn ngày một cách có ý thức.
   document.getElementById("kq-ngay-th").value = "";
+  { const _b = document.getElementById("v26-ngay-hint"); if(_b) _b.style.display = "none"; }
   document.getElementById("kq-done-chk").checked = true;
   document.getElementById("kq-muon-warn").style.display = "none";
   document.getElementById("kq-error").style.display = "none";
@@ -2278,6 +2285,33 @@ function checkKQMuon() {
   const th = parseDate(ngayTH);
   if (dl && th && th > dl) { warn.style.display = "block"; }
   else { warn.style.display = "none"; }
+}
+
+/* ═══ v26: cảnh báo ngày hoàn thành nghi khai theo ngày nhập liệu ═══ */
+function v26CheckNgay(){
+  const el = document.getElementById("kq-ngay-th");
+  const box = document.getElementById("v26-ngay-hint");
+  if(!el || !box) return;
+  const v = (el.value||"").trim();
+  if(!v){ box.style.display="none"; return; }
+
+  const hn = new Date(); hn.setHours(0,0,0,0);
+  const d  = new Date(v + "T00:00:00");
+  if(isNaN(d)){ box.style.display="none"; return; }
+
+  if(d.getTime() > hn.getTime()){
+    box.innerHTML = "⛔ <b>Ngày ở tương lai.</b> Vui lòng kiểm tra lại — hệ thống sẽ từ chối.";
+    box.style.background="#FDECEA"; box.style.borderColor="#EF9A9A"; box.style.color="#C0392B";
+    box.style.display="block"; return;
+  }
+  if(d.getTime() === hn.getTime()){
+    box.innerHTML = "⚠ <b>Ngày hoàn thành trùng ngày hôm nay.</b> "
+      + "Nếu văn bản sản phẩm đã ban hành trước đó, vui lòng sửa lại theo <b>ngày ghi trên văn bản</b>. "
+      + "Khai theo ngày nhập liệu sẽ làm việc đúng hạn bị tính chậm oan.";
+    box.style.background="#FEF9E7"; box.style.borderColor="#F6C343"; box.style.color="#7a5800";
+    box.style.display="block"; return;
+  }
+  box.style.display="none";
 }
 
 async function submitKQ() {
@@ -2306,7 +2340,7 @@ async function submitKQ() {
     const d = await res.json();
     if (d.ok) {
       closeModal("modal-kq");
-      showToast("✅ Đã gửi đề xuất kết quả, chờ Admin duyệt");
+      showToast(d.canhBao ? ("✅ Đã gửi — ⚠ " + d.canhBao) : "✅ Đã gửi đề xuất kết quả, chờ Admin duyệt");
       bcLoaded = false;
       localStorage.removeItem(CACHE_KEY);
       await loadData(true);
