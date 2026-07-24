@@ -329,7 +329,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
   <div class="tab" onclick="switchTab('bcngay')">📊 Báo cáo ngày</div>
   <div class="tab" onclick="switchTab('iso')">📐 Smart ISO</div>
   <div class="tab" onclick="switchTab('quantri')">🗄 Quản trị <span id="tab-duyet-badge" style="display:none;background:#c62828;color:#fff;font-size:10px;font-weight:700;border-radius:9px;padding:1px 6px;margin-left:3px">0</span></div>
-  <div class="tab" onclick="location.href='kpi_v22.html'" title="KPI và chấm điểm nhiệm vụ - module v22">🏆 KPI &amp; Chấm điểm</div>
+  <div class="tab" onclick="location.href='kpi_v24.html'" title="KPI và chấm điểm nhiệm vụ - module v24">🏆 KPI &amp; Chấm điểm</div>
 </div>
 
 <div class="main">
@@ -442,9 +442,31 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
   <div class="subtab-bar">
     <div class="subtab active" onclick="switchSub('quantri','duyet')">🗳 Duyệt<span id="sub-duyet-badge" class="sub-badge" style="display:none">0</span></div>
     <div class="subtab" onclick="switchSub('quantri','luutru')">🗂 Lưu trữ</div>
+    <div class="subtab" onclick="switchSub('quantri','giaitrinh');taiLyDoDuyet()">✍ Giải trình<span id="sub-gt-badge" class="sub-badge" style="display:none">0</span></div>
   </div>
   <div id="host-duyet"  class="sub-content active"></div>
   <div id="host-luutru" class="sub-content"></div>
+  <div id="host-giaitrinh" class="sub-content">
+    <div class="section">
+      <div class="section-title">✍ Giải trình việc chậm chờ duyệt</div>
+      <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px;line-height:1.6">
+        Đơn vị gửi giải trình từ trang <b>KPI &amp; Chấm điểm</b> — không cần mã PIN.
+        Việc đang chờ duyệt được <b>tạm dừng cộng ngày chậm</b>.<br>
+        Duyệt xong: lý do ghi vào cột <b>R/S</b>, ngày hoàn thành ghi vào cột <b>U</b>,
+        số văn bản ghi vào cột <b>V</b> của Sheet NHIỆM VỤ.
+      </div>
+      <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn" onclick="taiLyDoDuyet()">🔄 Tải danh sách chờ duyệt</button>
+        <button class="btn" onclick="taiLyDoDuyet('')">📋 Xem tất cả (kể cả đã xử lý)</button>
+        <span id="gt-trangthai" style="font-size:12px;color:var(--muted)"></span>
+      </div>
+      <div style="overflow:auto">
+        <table id="tb-lydo" style="width:100%;font-size:12.5px;border-collapse:collapse">
+          <thead></thead><tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="tab-phanich" class="tab-content">
@@ -4878,6 +4900,115 @@ document.addEventListener("DOMContentLoaded", function(){
   setInterval(v20SyncBadge, 15000);   // v21: 1,5s -> 15s (giảm tải nền)
 });
 
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   v24 — DUYỆT GIẢI TRÌNH VIỆC CHẬM (Văn phòng, có PIN)
+   ═══════════════════════════════════════════════════════════════ */
+let LYDO_ROWS = [];
+
+async function taiLyDoDuyet(trangThai){
+  const loc = (trangThai === undefined) ? "CHỜ" : trangThai;
+  const el = document.getElementById("gt-trangthai");
+  if(el) el.textContent = "Đang tải…";
+  try{
+    const r = await fetch(API + "?v24=lydo" + (loc ? "&trangthai=" + encodeURIComponent(loc) : ""));
+    const j = await r.json();
+    LYDO_ROWS = j.rows || [];
+    veLyDoDuyet();
+    if(el) el.textContent = LYDO_ROWS.length + " bản ghi" + (loc ? " (đang lọc: chờ duyệt)" : " (tất cả)");
+    const bd = document.getElementById("sub-gt-badge");
+    if(bd){
+      const cho = LYDO_ROWS.filter(x => String(x.trangThai||"").indexOf("CHỜ") >= 0).length;
+      bd.textContent = cho; bd.style.display = cho ? "inline-block" : "none";
+    }
+  }catch(e){
+    if(el) el.textContent = "❌ " + e.message;
+  }
+}
+
+function _gtEsc(s){
+  return String(s==null?"":s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+function veLyDoDuyet(){
+  const cols = ["Thời điểm gửi","Đơn vị","Nhiệm vụ","Người đề xuất","Loại",
+                "Lý do giải trình","Ngày TH đề nghị","Số VB","Trạng thái","Thao tác"];
+  const th = document.querySelector("#tb-lydo thead");
+  const tb = document.querySelector("#tb-lydo tbody");
+  th.innerHTML = "<tr>" + cols.map(c =>
+    '<th style="background:#1E3A5F;color:#fff;padding:8px;text-align:left;font-size:12px;position:sticky;top:0">' + c + '</th>'
+  ).join("") + "</tr>";
+
+  if(!LYDO_ROWS.length){
+    tb.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:#8895A5">Không có giải trình nào</td></tr>';
+    return;
+  }
+
+  tb.innerHTML = LYDO_ROWS.map(r => {
+    const tt = String(r.trangThai||"");
+    let badge, thaoTac;
+    if(tt.indexOf("CHỜ") >= 0){
+      badge = '<span style="background:#FEF9E7;color:#7a5800;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">🟡 Chờ duyệt</span>';
+      thaoTac = '<button class="btn" style="padding:4px 10px;font-size:11px" onclick="duyetLyDo(' + r.hang + ',\'DUYET\')">✔ Duyệt</button> '
+              + '<button class="btn" style="padding:4px 10px;font-size:11px;background:#fff;color:#C0392B;border:1px solid #C0392B" onclick="duyetLyDo(' + r.hang + ',\'TUCHOI\')">✘ Từ chối</button>';
+    } else if(tt.indexOf("ĐÃ DUYỆT") >= 0){
+      badge = '<span style="background:#E3F4E8;color:#1E7A46;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">🟢 Đã duyệt</span>'
+            + '<br><span style="font-size:10px;color:#8895A5">' + _gtEsc(r.nguoiDuyet) + ' · ' + _gtEsc(r.thoiDiemDuyet) + '</span>';
+      thaoTac = '<span style="color:#8895A5;font-size:11px">—</span>';
+    } else {
+      badge = '<span style="background:#FDECEA;color:#C0392B;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">🔴 Từ chối</span>'
+            + (r.ghiChuDuyet ? '<br><span style="font-size:10px;color:#8895A5">' + _gtEsc(r.ghiChuDuyet) + '</span>' : '');
+      thaoTac = '<span style="color:#8895A5;font-size:11px">—</span>';
+    }
+    const td = 'style="padding:7px 8px;border-bottom:1px solid #E8ECF2;vertical-align:top"';
+    return '<tr>'
+      + '<td ' + td + '>' + _gtEsc(r.thoiDiem) + '</td>'
+      + '<td ' + td + '><b>' + _gtEsc(r.donVi) + '</b></td>'
+      + '<td ' + td + ' width="26%">' + _gtEsc(r.nhiemVu) + '</td>'
+      + '<td ' + td + '>' + _gtEsc(r.nguoiDeXuat) + '</td>'
+      + '<td ' + td + '>' + (r.loai === "KHT" ? "Không HT" : "Chậm") + '</td>'
+      + '<td ' + td + ' width="24%">' + _gtEsc(r.lyDo) + '</td>'
+      + '<td ' + td + '>' + (_gtEsc(r.ngayDeNghi) || "—") + '</td>'
+      + '<td ' + td + '>' + (_gtEsc(r.soVB) || "—") + '</td>'
+      + '<td ' + td + '>' + badge + '</td>'
+      + '<td ' + td + ' style="white-space:nowrap;padding:7px 8px;border-bottom:1px solid #E8ECF2">' + thaoTac + '</td>'
+      + '</tr>';
+  }).join("");
+}
+
+async function duyetLyDo(hang, qd){
+  let p = "";
+  try { p = getAdminPin(); } catch(e) { p = ""; }
+  if(!p) p = prompt("Nhập mã PIN Văn phòng:") || "";
+  if(!p) return;
+
+  let ghiChu = "";
+  if(qd === "TUCHOI"){
+    ghiChu = prompt("Lý do từ chối giải trình:") || "";
+    if(!ghiChu){ alert("Phải nêu lý do từ chối."); return; }
+  } else {
+    if(!confirm("Duyệt giải trình này?\n\nLý do sẽ ghi vào cột R/S, ngày hoàn thành ghi vào cột U, số văn bản ghi vào cột V.")) return;
+  }
+
+  try{
+    const res = await fetch(API, {
+      method:"POST", redirect:"follow",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify({
+        action:"v24DuyetLyDo", pin: p, hang: hang,
+        quyetDinh: qd, nguoiDuyet: "Văn phòng", ghiChu: ghiChu
+      })
+    });
+    const j = await res.json();
+    if(!j.ok) throw new Error(j.error);
+    alert(qd === "DUYET" ? "✔ Đã duyệt giải trình" : "✔ Đã từ chối giải trình");
+    taiLyDoDuyet();
+  }catch(e){
+    alert("❌ " + e.message);
+  }
+}
 </script>
 </body>
 </html>
