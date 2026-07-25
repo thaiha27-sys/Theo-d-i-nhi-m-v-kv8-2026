@@ -564,7 +564,7 @@ function veCham(j){
           ${x.canRaTay?'<br><span class="badge b-ht" style="font-size:10px">Nhiều ngày · rà tay</span>':''}</td>
       <td style="max-width:250px">${x.lyDo?esc(x.lyDo):'<span class="badge b-kht">Chưa giải trình</span>'}</td>
       <td>${veTrangThaiDuyet(x)}</td>
-      <td><button class="btn-gt" onclick="moGiaiTrinh(${x.dong},${JSON.stringify(String(x.nhiemVu||"").slice(0,90))},'${x.loai==="Hoàn thành chậm"?"CHAM":"KHT"}')">✍ Gửi giải trình</button></td>
+      <td><button class="btn-gt" onclick="moGiaiTrinh(${x.dong},'${x.loai==="Hoàn thành chậm"?"CHAM":"KHT"}')">✍ Gửi giải trình</button></td>
       <td class="num">${x.diem}</td>
     </tr>`).join("") : `<tr><td colspan="17" class="loading">Không có việc chậm trong kỳ 👍</td></tr>`;
 }
@@ -595,7 +595,12 @@ function veTrangThaiDuyet(x){
   return '<span class="badge b-kht" title="'+esc(t.ghiChuDuyet||"Không nêu lý do")+'">🔴 Từ chối</span>';
 }
 
-function moGiaiTrinh(dong, tenNV, loai){
+function moGiaiTrinh(dong, loai){
+  let tenNV = "";
+  try{
+    const r = (DATA.cham && DATA.cham.rows || []).find(v => v.dong === dong);
+    if(r) tenNV = String(r.nhiemVu||"").slice(0,90);
+  }catch(e){}
   const cu = document.getElementById("gt-modal"); if(cu) cu.remove();
   const nen = document.createElement("div");
   nen.id = "gt-modal"; nen.className = "gt-mask";
