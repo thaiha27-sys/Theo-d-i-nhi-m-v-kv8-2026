@@ -5044,5 +5044,247 @@ async function duyetLyDo(hang, qd){
   }
 }
 </script>
+
+<!-- ================================================================= -->
+<!--  PATCH GIAO DIỆN SMART ISO v2 — Chi cục Hải quan khu vực VIII       -->
+<!--  CÁCH DÙNG: DÁN TOÀN BỘ KHỐI NÀY VÀO index.html, NGAY TRƯỚC </body> -->
+<!--  Không cần sửa chỗ nào khác. Nó tự ghi đè isoRender & isoChon,       -->
+<!--  nhúng sẵn Mục tiêu chất lượng (không gọi thêm mạng → mở tức thì).   -->
+<!-- ================================================================= -->
+<style id="si2-css">
+#iso-list, #iso-detail{--si-navy:#0B2C5E;--si-navy2:#1e4a86;--si-gold:#C8960C;--si-ink:#1B2733;--si-muted:#6B7A8F;--si-line:#E4E9F0;--si-ok:#0E8A5F;--si-red:#C0392B;--si-amber:#B9770E}
+/* ---- Mục tiêu chất lượng ---- */
+#si2-obj{margin:0 0 14px;background:linear-gradient(180deg,#fffdf6,#fff);border:1px solid #f0e2bf;border-left:5px solid #C8960C;border-radius:12px;overflow:hidden;box-shadow:0 3px 12px rgba(200,150,12,.07)}
+#si2-obj>summary{cursor:pointer;list-style:none;padding:12px 16px;display:flex;align-items:center;gap:10px;font-weight:700;color:#0B2C5E;font-size:13.5px}
+#si2-obj>summary::-webkit-details-marker{display:none}
+#si2-obj .si2-chev{margin-left:auto;color:#C8960C;font-weight:800;transition:.2s}
+#si2-obj[open] .si2-chev{transform:rotate(90deg)}
+#si2-obj .si2-qtag{background:#C8960C;color:#fff;font-size:10.5px;padding:3px 9px;border-radius:20px;font-weight:700;letter-spacing:.3px}
+#si2-obj .si2-ob{padding:2px 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#si2-obj .si2-oi{background:#fff;border:1px solid #E4E9F0;border-radius:10px;padding:11px 13px;display:flex;gap:11px}
+#si2-obj .si2-oi .ic{font-size:20px}
+#si2-obj .si2-oi .t{font-weight:700;color:#0B2C5E;font-size:12.8px}
+#si2-obj .si2-oi .d{color:#6B7A8F;font-size:12px;margin-top:2px}
+#si2-obj .si2-oi .k{margin-top:6px;display:inline-block;background:#fdf4e0;color:#8a6608;border:1px solid #f0dfb4;font-weight:700;font-size:11.3px;padding:3px 9px;border-radius:8px}
+#si2-obj .si2-of{grid-column:1/-1;text-align:right;color:#98a2b3;font-size:11.3px;font-style:italic}
+/* ---- Danh mục quy trình ---- */
+#iso-list .si2-qt{padding:10px 12px;border:1px solid var(--si-line);border-radius:10px;margin-bottom:7px;cursor:pointer;border-left:4px solid var(--si-navy);transition:transform .12s,background .12s,box-shadow .12s}
+#iso-list .si2-qt:hover{background:#f7faff;transform:translateX(2px)}
+#iso-list .si2-qt.on{background:linear-gradient(90deg,#eef4ff,#fff);border-color:var(--si-navy);box-shadow:0 2px 8px rgba(20,57,111,.12)}
+#iso-list .si2-qt .ma{font-weight:800;color:var(--si-navy);font-size:12.5px}
+#iso-list .si2-qt .tn{font-size:12.5px;color:var(--si-ink);margin-top:1px;line-height:1.35}
+#iso-list .si2-qt .mt{margin-top:5px;font-size:10.5px;color:var(--si-muted);display:flex;gap:9px;flex-wrap:wrap}
+#iso-list .si2-qt .mt b{color:var(--si-amber)}
+/* ---- Chi tiết: đầu quy trình ---- */
+#iso-detail .si2-head{background:linear-gradient(120deg,#0B2C5E,#1e4a86);color:#fff;padding:16px 18px;border-radius:12px 12px 0 0;margin:-2px -2px 0}
+#iso-detail .si2-code{display:inline-block;background:#C8960C;color:#3a2a00;font-weight:800;padding:3px 11px;border-radius:7px;font-size:12.5px;letter-spacing:.5px}
+#iso-detail .si2-head h2{margin:9px 0 4px;font-size:18px;font-weight:800;line-height:1.25}
+#iso-detail .si2-head .mota{opacity:.9;font-size:12.5px}
+#iso-detail .si2-badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+#iso-detail .si2-badges .b{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);padding:5px 10px;border-radius:20px;font-size:11px}
+#iso-detail .si2-badges .b.ok{background:rgba(46,204,113,.25);border-color:rgba(46,204,113,.5)}
+#iso-detail .si2-badges .b.hi{background:rgba(192,57,43,.3);border-color:rgba(192,57,43,.55)}
+/* ---- Thẻ thống kê ---- */
+#iso-detail .si2-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--si-line);border:1px solid var(--si-line);border-top:none}
+#iso-detail .si2-stat{background:#fff;padding:12px 8px;text-align:center}
+#iso-detail .si2-stat .n{font-size:20px;font-weight:800;color:var(--si-navy)}
+#iso-detail .si2-stat .l{font-size:10.5px;color:var(--si-muted);margin-top:2px}
+/* ---- Chú giải vai trò ---- */
+#iso-detail .si2-legend{padding:12px 4px 6px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+#iso-detail .si2-legend .lb{font-size:11.3px;font-weight:700;color:var(--si-muted)}
+#iso-detail .si2-rc{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:20px;font-size:11.3px;font-weight:600;cursor:pointer;border:1.5px solid transparent;background:#f3f6fb;transition:.12s}
+#iso-detail .si2-rc .dot{width:9px;height:9px;border-radius:50%}
+#iso-detail .si2-rc.dim{opacity:.4}
+#iso-detail .si2-rc.sel{border-color:currentColor;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+/* ---- Timeline ---- */
+#iso-detail .si2-flow{padding:6px 0 4px}
+#iso-detail .si2-step{display:grid;grid-template-columns:44px 1fr}
+#iso-detail .si2-rail{display:flex;flex-direction:column;align-items:center}
+#iso-detail .si2-node{width:30px;height:30px;border-radius:50%;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.15);z-index:2}
+#iso-detail .si2-line{width:3px;flex:1;background:#dbe3ee;margin:2px 0;border-radius:2px;min-height:10px}
+#iso-detail .si2-step:last-child .si2-line{display:none}
+#iso-detail .si2-body{padding:0 0 13px 12px}
+#iso-detail .si2-card{border:1px solid var(--si-line);border-left:4px solid var(--rc,#2471A3);border-radius:11px;padding:11px 13px;background:#fff;box-shadow:0 2px 8px rgba(20,57,111,.05);transition:.12s}
+#iso-detail .si2-step.dim .si2-card{opacity:.4}
+#iso-detail .si2-step.hi .si2-card{box-shadow:0 4px 14px rgba(20,57,111,.16);border-left-width:6px}
+#iso-detail .si2-t{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+#iso-detail .si2-bn{font-weight:800;color:var(--si-navy);font-size:13px}
+#iso-detail .si2-badge{font-size:10.5px;font-weight:700;color:#fff;padding:3px 9px;border-radius:20px;background:var(--rc,#2471A3)}
+#iso-detail .si2-nd{margin:6px 0;color:#2a3744;font-size:12.5px;line-height:1.5}
+#iso-detail .si2-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+#iso-detail .si2-chip{display:inline-flex;align-items:center;gap:5px;font-size:11.2px;padding:4px 9px;border-radius:8px;font-weight:600;border:1px solid;text-decoration:none}
+#iso-detail .si2-chip.th{background:#eaf5ff;border-color:#c7e2fb;color:#1b6fb3}
+#iso-detail .si2-chip.ph{background:#f3eefc;border-color:#e0d3f6;color:#6c3483}
+#iso-detail .si2-chip.pd{background:#eafaf1;border-color:#cdeede;color:#0e8a5f}
+#iso-detail .si2-chip.bm{background:#fff7e6;border-color:#f3e2b6;color:#8a6608}
+#iso-detail .si2-chip.warn{background:#fdecea;border-color:#f8cdc7;color:#c0392b}
+#iso-detail .si2-sp{margin-top:8px;background:#fbfdf7;border:1px dashed #cfe3bd;border-radius:8px;padding:7px 11px;font-size:12.3px}
+#iso-detail .si2-sp b{color:#356b1a}
+#iso-detail .si2-sec{font-size:12px;font-weight:700;color:var(--si-navy);text-transform:uppercase;letter-spacing:.4px;margin:18px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--si-line)}
+@media(max-width:820px){#si2-obj .si2-ob{grid-template-columns:1fr}#iso-detail .si2-stats{grid-template-columns:1fr 1fr}}
+</style>
+
+<script id="si2-js">
+(function(){
+  // ===== Mục tiêu chất lượng 2026 (QĐ 54/QĐ-HQKV8, 16/01/2026) — nhúng sẵn, không gọi mạng =====
+  var OBJ=[
+    {i:"🎯",t:"Cải cách TTHC, hiện đại hóa & chuyển đổi số",k:"Hài lòng > 95%",d:"Đẩy mạnh cải cách thủ tục hành chính, hiện đại hóa hải quan gắn với chuyển đổi số."},
+    {i:"🏛️",t:"Tham mưu hoàn thiện thể chế, chính sách",k:"",d:"Chủ động tham mưu Bộ, Ngành, Tỉnh; đề xuất giải pháp phát triển KT–XH gắn với nhiệm vụ hải quan."},
+    {i:"📊",t:"Hoàn thành chỉ tiêu nghiệp vụ",k:"Thu NSNN 17.500–18.300 tỷ · Giải ngân >95% · KT thực tế ≤5% · Vi phạm ≥4% · Thu thập TT ≥80% DN",d:"Thu ngân sách vượt chỉ tiêu; giải ngân, kiểm tra, kiểm soát, KTSTQ, kiểm tra nội bộ đạt chỉ tiêu."},
+    {i:"👥",t:"Bộ máy hiệu lực, nhân lực, kỷ cương",k:"",d:"Tổ chức bộ máy hiệu quả; phát triển nguồn nhân lực; kỷ luật, kỷ cương; chống phiền hà, sách nhiễu, tiêu cực."}
+  ];
+  var ROLES=[
+    {re:/lãnh đạo|chi cục trưởng|phó chi cục/i,name:"Lãnh đạo Chi cục",c:"#B02A2A"},
+    {re:/kế toán/i,name:"Kế toán/Văn phòng",c:"#1A5276"},
+    {re:/văn phòng/i,name:"Văn phòng",c:"#1A5276"},
+    {re:/tccb|tổ chức cán bộ/i,name:"Phòng TCCB",c:"#0E7C66"},
+    {re:/ban iso|thư ký|đoàn đánh giá|đánh giá viên/i,name:"Ban ISO / Đoàn ĐG",c:"#6C3483"},
+    {re:/công chức/i,name:"Công chức chủ trì",c:"#2471A3"},
+    {re:/đội/i,name:"Đội",c:"#B9770E"},
+    {re:/phòng/i,name:"Phòng chuyên môn",c:"#2471A3"}
+  ];
+  function role(n){n=n||"";for(var i=0;i<ROLES.length;i++)if(ROLES[i].re.test(n))return ROLES[i];return {name:n||"Đơn vị liên quan",c:"#5D6D7E"};}
+  function E(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  function numNgay(s){var m=String(s||"").match(/([\d.,]+)\s*(ngày|giờ)/i);if(!m)return 0;var v=parseFloat(m[1].replace(",","."))||0;return /giờ/i.test(m[2])?v/8:v;}
+  window.__siRoleFilter=null;
+
+  // Chèn bảng Mục tiêu chất lượng 1 lần, ngay trên phần tổng quan
+  function ensureObj(){
+    if(document.getElementById("si2-obj")) return;
+    var anchor=document.getElementById("iso-tongquan"); if(!anchor||!anchor.parentNode) return;
+    var d=document.createElement("details"); d.id="si2-obj"; d.open=true;
+    d.innerHTML='<summary><span class="si2-qtag">MỤC TIÊU CHẤT LƯỢNG 2026</span> Định hướng chất lượng toàn hệ thống — QĐ 54/QĐ-HQKV8 (16/01/2026)<span class="si2-chev">›</span></summary>'+
+      '<div class="si2-ob">'+OBJ.map(function(o){return '<div class="si2-oi"><div class="ic">'+o.i+'</div><div><div class="t">'+E(o.t)+'</div><div class="d">'+E(o.d)+'</div>'+(o.k?'<span class="k">'+E(o.k)+'</span>':'')+'</div></div>';}).join('')+
+      '<div class="si2-of">Chi cục trưởng Phạm Quốc Hưng ký ban hành · Gắn với từng quy trình qua chỉ tiêu đúng hạn & điểm không phù hợp.</div></div>';
+    anchor.parentNode.insertBefore(d, anchor);
+  }
+
+  // ===== GHI ĐÈ isoRender: giữ tổng quan (kpiCard), làm mới danh mục =====
+  window.isoRender=function(){
+    ensureObj();
+    var q=String((document.getElementById("iso-search")||{}).value||"").toLowerCase().trim();
+    var f=(document.getElementById("iso-filter")||{}).value||"";
+    var ds=ISO.quyTrinh.filter(function(x){ if(f&&x.canhBao!==f)return false; if(!q)return true;
+      return (x.maQT+" "+x.tenQT+" "+x.linhVuc+" "+x.donViChuTri).toLowerCase().indexOf(q)>=0; });
+    // Tổng quan — tái sử dụng kpiCard sẵn có
+    var all=ISO.quyTrinh;
+    var quaHan=all.filter(function(x){return x.canhBao==="QUA_HAN";}).length;
+    var sapHan=all.filter(function(x){return x.canhBao==="SAP_DEN_HAN";}).length;
+    var thieuBM=all.filter(function(x){return x.canhBao==="THIEU_MAU_BIEU";}).length;
+    var soBM=ISO.taiLieu.filter(function(t){return t.loai==="mau_bieu";}).length;
+    var td=ISO.theoDoi;
+    var tongHS=td.reduce(function(s,t){return s+(t.soHoSo||0);},0);
+    var tongDH=td.reduce(function(s,t){return s+(t.soDungHan||0);},0);
+    var tyLe=tongHS?Math.round(tongDH/tongHS*1000)/10:null;
+    var tongNC=td.reduce(function(s,t){return s+(t.soKhongPhuHop||0);},0);
+    var tq=document.getElementById("iso-tongquan");
+    if(tq&&typeof kpiCard==="function"){ tq.innerHTML=[
+      kpiCard("Quy trình đang quản lý",all.length,all.filter(function(x){return x.trangThai==="Hiệu lực";}).length+" đang hiệu lực",""),
+      kpiCard("Mẫu biểu đính kèm",soBM,thieuBM+" quy trình chưa có mẫu biểu",thieuBM>0?"gold":"green"),
+      kpiCard("Quá hạn rà soát",quaHan,sapHan+" quy trình sắp đến hạn",quaHan>0?"red":"green"),
+      kpiCard("Tỷ lệ hồ sơ đúng hạn",tyLe===null?"—":tyLe+"%",tongHS?(tongDH+"/"+tongHS+" hồ sơ"):"chưa có số liệu",tyLe===null?"":(tyLe>=95?"green":(tyLe>=85?"gold":"red"))),
+      kpiCard("Điểm không phù hợp (NC)",tongNC,"cần hành động khắc phục",tongNC>0?"red":"green")
+    ].join(""); }
+    // Danh mục — markup mới, viền màu theo đơn vị chủ trì
+    var list=document.getElementById("iso-list");
+    list.innerHTML=ds.length?ds.map(function(x){
+      var nBM=ISO.taiLieu.filter(function(t){return t.maQT===x.maQT;}).length;
+      var nStep=(x.soDo||[]).length;
+      var nRole=(function(){var s={};(x.soDo||[]).forEach(function(st){s[role(st.trachNhiem).name]=1;});return Object.keys(s).length;})();
+      var miss=(x.soDo||[]).filter(function(st){return !st.thoiHan||!st.sanPham;}).length;
+      var c=role(x.donViChuTri).c;
+      return '<div class="si2-qt '+(ISO.chon===x.maQT?"on":"")+'" style="border-left-color:'+c+'" onclick="isoChon(\''+E(x.maQT).replace(/'/g,"\\'")+'\')">'+
+        '<div class="ma">'+E(x.maQT)+'</div><div class="tn">'+E(x.tenQT)+'</div>'+
+        '<div class="mt"><span>🧭 '+nStep+' bước</span><span>👥 '+nRole+' vai trò</span><span>📎 '+nBM+'</span>'+
+        (miss?'<span><b>⚠ '+miss+' cần bổ sung</b></span>':'<span style="color:#0E8A5F">✓ đủ 7 rõ</span>')+'</div></div>';
+    }).join(""):'<div class="v19-empty-sub" style="padding:24px;text-align:center">Chưa có quy trình. Đăng nhập Admin → <b>Thêm quy trình</b>.</div>';
+  };
+
+  // Bấm chú giải vai trò → soi các bước của vai trò đó
+  window.siRole=function(rn){ window.__siRoleFilter = (window.__siRoleFilter===rn?null:rn); if(ISO.chon) window.isoChon(ISO.chon); };
+
+  // ===== GHI ĐÈ isoChon: infographic timeline phân vai trò =====
+  window.isoChon=function(ma){
+    ISO.chon=ma; window.isoRender();
+    var x=ISO.quyTrinh.filter(function(q){return q.maQT===ma;})[0]; if(!x)return;
+    var tl=ISO.taiLieu.filter(function(t){return t.maQT===ma;});
+    var td=ISO.theoDoi.filter(function(t){return t.maQT===ma;});
+    var admin=(typeof isAdmin==="function")?isAdmin():(typeof getAdminPin==="function"&&!!getAdminPin());
+    var rf=window.__siRoleFilter;
+    var titleEl=document.getElementById("iso-detail-title"); if(titleEl) titleEl.innerHTML='📐 '+E(x.maQT)+' — '+E(x.tenQT);
+    var so=x.soDo||[];
+    var rolesUsed=(function(){var o={},a=[];so.forEach(function(s){var n=role(s.trachNhiem).name;if(!o[n]){o[n]=1;a.push(n);}});return a;})();
+    var totDays=so.reduce(function(a,s){return a+numNgay(s.thoiHan);},0);
+    var miss=so.filter(function(s){return !s.thoiHan||!s.sanPham;}).length;
+    var cbTxt={QUA_HAN:'<span class="b hi">⛔ Quá hạn rà soát '+Math.abs(x.soNgayConLai||0)+' ngày</span>',
+               SAP_DEN_HAN:'<span class="b">⏰ Còn '+(x.soNgayConLai||0)+' ngày đến hạn</span>',
+               THIEU_MAU_BIEU:'<span class="b">📎 Chưa đính kèm mẫu biểu</span>'}[x.canhBao]||'<span class="b ok">✓ Trong hạn rà soát</span>';
+    var h='';
+    // Đầu quy trình
+    h+='<div class="si2-head"><span class="si2-code">'+E(x.maQT)+'</span><h2>'+E(x.tenQT)+'</h2>'+
+       (x.moTa?'<div class="mota">'+E(x.moTa)+'</div>':'')+
+       '<div class="si2-badges"><span class="b">📂 '+E(x.linhVuc||"—")+'</span><span class="b">🏢 Chủ trì: '+E(x.donViChuTri||"—")+'</span>'+
+       '<span class="b">v'+E(x.phienBan)+'</span><span class="b ok">✓ '+E(x.trangThai)+'</span><span class="b">🔄 Rà soát: '+E(x.ngayRaSoat||"—")+'</span>'+cbTxt+'</div></div>';
+    // Thống kê nhanh
+    h+='<div class="si2-stats">'+
+       '<div class="si2-stat"><div class="n">'+so.length+'</div><div class="l">Bước quy trình</div></div>'+
+       '<div class="si2-stat"><div class="n">'+rolesUsed.length+'</div><div class="l">Vai trò tham gia</div></div>'+
+       '<div class="si2-stat"><div class="n">'+(totDays?(totDays%1?totDays.toFixed(2):totDays):'—')+'</div><div class="l">Tổng ngày làm việc</div></div>'+
+       '<div class="si2-stat"><div class="n" style="color:'+(miss?'#c0392b':'#0E8A5F')+'">'+(miss||'✓')+'</div><div class="l">'+(miss?'Bước cần bổ sung':'Đủ 7 rõ')+'</div></div></div>';
+    // Sơ đồ
+    h+='<div class="si2-sec">🔀 Sơ đồ quy trình — bấm vai trò để soi việc của mình</div>';
+    if(so.length){
+      var leg='<div class="si2-legend"><span class="lb">VAI TRÒ:</span>'+rolesUsed.map(function(rn){var c=role(rn).c;
+        return '<span class="si2-rc '+(rf&&rf!==rn?'dim':'')+' '+(rf===rn?'sel':'')+'" style="color:'+c+'" onclick="siRole(\''+E(rn).replace(/'/g,"\\'")+'\')"><span class="dot" style="background:'+c+'"></span>'+E(rn)+'</span>';}).join('')+'</div>';
+      var steps='<div class="si2-flow">'+so.map(function(s,i){var r=role(s.trachNhiem);var st=rf?(r.name===rf?'hi':'dim'):'';
+        var chips=[];
+        chips.push(s.thoiHan?'<span class="si2-chip th">⏱ '+E(s.thoiHan)+'</span>':'<span class="si2-chip warn">⏱ cần bổ sung</span>');
+        if(s.phoiHop&&s.phoiHop!=="—")chips.push('<span class="si2-chip ph">🤝 '+E(s.phoiHop)+'</span>');
+        if(s.pheDuyet&&s.pheDuyet!=="—")chips.push('<span class="si2-chip pd">✔ '+E(s.pheDuyet)+'</span>');
+        if(s.bieuMau){var f=tl.filter(function(t){return t.maBieu&&t.maBieu.toLowerCase()===String(s.bieuMau).toLowerCase();})[0];
+          chips.push(f&&f.fileUrl?'<a class="si2-chip bm" href="'+E(f.fileUrl)+'" target="_blank">📋 '+E(s.bieuMau)+'</a>':'<span class="si2-chip bm">📋 '+E(s.bieuMau)+'</span>');}
+        var nd=s.noiDung?'<div class="si2-nd">'+E(String(s.noiDung).slice(0,320))+'</div>':'';
+        var sp=s.sanPham?'<div class="si2-sp">📦 <b>Sản phẩm:</b> '+E(s.sanPham)+'</div>':'<div class="si2-sp" style="border-color:#f3d2cc">📦 <b style="color:#c0392b">Sản phẩm: cần bổ sung</b></div>';
+        return '<div class="si2-step '+st+'"><div class="si2-rail"><div class="si2-node" style="background:'+r.c+'">'+(i+1)+'</div><div class="si2-line"></div></div>'+
+          '<div class="si2-body"><div class="si2-card" style="--rc:'+r.c+'"><div class="si2-t"><span class="si2-bn">'+E(s.buoc||("Bước "+(i+1)))+'</span><span class="si2-badge" style="--rc:'+r.c+'">'+E(r.name)+'</span></div>'+
+          nd+'<div class="si2-chips">'+chips.join('')+'</div>'+sp+'</div></div></div>';
+      }).join('')+'</div>';
+      h+=leg+steps;
+    } else h+='<div class="v19-empty-sub">Chưa khai báo sơ đồ. Sửa quy trình để thêm các bước.</div>';
+    // Tài liệu đính kèm
+    var LOAI={quy_trinh:"📄",mau_bieu:"📋",so_do:"🔀",huong_dan:"📖"};
+    h+='<div class="si2-sec">📎 Tài liệu, mẫu biểu đính kèm ('+tl.length+')</div>';
+    if(tl.length){ h+='<div class="v19-files">'+tl.map(function(t){
+        return '<div class="v19-file"><span>'+(LOAI[t.loai]||"📎")+'</span><a href="'+E(t.fileUrl)+'" target="_blank" title="'+E(t.tenTaiLieu)+'">'+(t.maBieu?E(t.maBieu)+" · ":"")+E(t.tenTaiLieu)+'</a>'+
+          (admin?'<span class="x" onclick="isoXoaTaiLieu(\''+E(t.id)+'\')" title="Xóa">✕</span>':'')+'</div>';
+      }).join('')+'</div>';
+    } else h+='<div class="v19-empty-sub">Chưa có tài liệu.</div>';
+    // Tình hình triển khai theo đơn vị
+    h+='<div class="si2-sec">📊 Tình hình triển khai theo đơn vị</div>';
+    if(td.length){
+      h+='<table class="v19-table"><thead><tr><th style="text-align:left">Đơn vị</th><th>Kỳ</th><th>Hồ sơ</th><th>Đúng hạn</th><th>Trễ hạn</th><th>% đúng hạn</th><th>NC</th><th>Trạng thái</th></tr></thead><tbody>';
+      td.sort(function(a,b){return a.ky<b.ky?1:-1;}).forEach(function(t){var p=t.soHoSo?Math.round(t.soDungHan/t.soHoSo*1000)/10:null;var cls=p===null?"na":(p>=95?"xs":(p>=85?"ht":"chua"));
+        h+='<tr><td class="l">'+E(t.donVi)+'</td><td>'+E(t.ky)+'</td><td>'+t.soHoSo+'</td><td>'+t.soDungHan+'</td><td'+(t.soTreHan>0?' style="color:var(--red);font-weight:700"':'')+'>'+t.soTreHan+'</td>'+
+          '<td><span class="v19-d '+cls+'">'+(p===null?"—":p+"%")+'</span></td><td'+(t.soKhongPhuHop>0?' style="color:var(--red);font-weight:700"':'')+'>'+t.soKhongPhuHop+'</td><td>'+E(t.trangThai)+'</td></tr>';
+      });
+      h+='</tbody></table>';
+      var nc=td.filter(function(t){return t.soKhongPhuHop>0&&t.trangThai!=="Đã khắc phục";});
+      if(nc.length)h+='<div class="v19-alert hi" style="margin-top:10px">⛔ <div><b>'+nc.length+' đơn vị</b> còn điểm không phù hợp chưa khắc phục: '+E(nc.map(function(t){return t.donVi;}).join(", "))+'. Đề nghị đưa vào giao ban tháng.</div></div>';
+    } else h+='<div class="v19-empty-sub">Chưa có đơn vị nào ghi nhận triển khai.</div>';
+    // Nút thao tác (giữ nguyên chức năng cũ)
+    h+='<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">'+
+      '<button class="btn btn-primary" onclick="isoMoTheoDoi(\''+E(x.maQT)+'\')">📊 Ghi nhận triển khai</button>'+
+      (admin?'<button class="btn btn-outline" onclick="isoMoUpload(\''+E(x.maQT)+'\')">📎 Đính kèm tài liệu</button>'+
+             '<button class="btn btn-outline btn-orange" onclick="isoMoQuyTrinh(\''+E(x.maQT)+'\')">✎ Sửa quy trình</button>'+
+             '<button class="btn btn-outline" style="color:var(--red)" onclick="isoXoaQuyTrinh(\''+E(x.maQT)+'\')">🗑 Xóa</button>':'')+'</div>';
+    document.getElementById("iso-detail").innerHTML=h;
+  };
+
+  // Nếu tab ISO đã nạp dữ liệu trước khi patch chạy, vẽ lại ngay
+  try{ if(window.ISO && ISO.quyTrinh && ISO.quyTrinh.length){ window.isoRender(); if(ISO.chon) window.isoChon(ISO.chon); } }catch(e){}
+})();
+</script>
+<!-- ===================== HẾT PATCH SMART ISO v2 ===================== -->
+
 </body>
 </html>
