@@ -1223,8 +1223,36 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
 // ============================================================
 const APP_VERSION = "v20.1";
 const APP_BUILD   = "12/07/2026";
-console.log("%cKV8 v20.1 (12/07/2026)","font-weight:700;color:#1A3A6B;font-size:13px");
+console.log("%cKV8 v20.2 (03/08/2026) - chan doan loi trien khai","font-weight:700;color:#1A3A6B;font-size:13px");
 const API = "https://script.google.com/macros/s/AKfycbzRm_qI0sNQH7dSbM6UmAPS5ey-pMsGKiPLjXp_PEoDCPaMv6fzD1l2frG_6eK6uJvb/exec";
+
+// ============================================================
+// v20.2 — DOC JSON AN TOAN + CHAN DOAN LOI TRIEN KHAI
+// Thay cho res.json() truc tiep. Neu may chu tra ve trang HTML
+// (bat dau bang "<") thi KHONG phai loi ma nguon ma la loi
+// TRIEN KHAI Web App -> bao thong bao de hieu thay vi
+// "Unexpected token '<', <!DOCTYPE ...".
+// ============================================================
+async function apiJson(res) {
+  const raw = (await res.text()).trim();
+  if (raw.startsWith("<") || raw.slice(0, 9).toUpperCase() === "<!DOCTYPE") {
+    const low = raw.toLowerCase();
+    let ly;
+    if (low.includes("sign in") || low.includes("\u0111\u0103ng nh\u1eadp") ||
+        low.includes("accounts.google") || low.includes("authorization")) {
+      ly = "Web App dang YEU CAU DANG NHAP GOOGLE. Vao Trien khai -> Quan ly ban trien khai -> Chinh sua -> dat \u201cAi co quyen truy cap = Bat ky ai (Anyone)\u201d \u2014 KHONG chon \u201cBat ky ai co Tai khoan Google\u201d.";
+    } else if (low.includes("not found") || low.includes("moved") ||
+               low.includes("does not exist") || low.includes("temporarily")) {
+      ly = "URL /exec khong khop ban trien khai hien tai (co the da tao \u201cBan trien khai moi\u201d lam doi URL). Chep URL trong Quan ly ban trien khai va cap nhat lai hang so API o dau file.";
+    } else {
+      ly = "Ban trien khai Web App chua dung. Kiem tra: Thuc thi voi tu cach = Toi; Ai co quyen = Bat ky ai; va URL /exec khop ban trien khai hien tai.";
+    }
+    throw new Error("May chu tra ve trang HTML thay vi du lieu. " + ly);
+  }
+  try { return JSON.parse(raw); }
+  catch (e) { throw new Error("Phan hoi khong phai JSON hop le: " + raw.slice(0, 120)); }
+}
+
 const CACHE_KEY = "kv8_tasks_v2";
 const CACHE_TIME_KEY = "kv8_tasks_ts";
 const CACHE_TTL = 5 * 60 * 1000;
@@ -1266,7 +1294,7 @@ async function submitAdminLogin() {
       method: "POST",
       body: JSON.stringify({ action: "dangNhapAdmin", pin: pin })
     });
-    const data = await res.json();
+    const data = await apiJson(res);
     if (data.ok) {
       sessionStorage.setItem(ADMIN_PIN_SESSION_KEY, pin);
       closeModal("modal-admin-login");
@@ -1479,7 +1507,7 @@ async function loadData(forceRefresh = false) {
   try {
     const res = await fetch(API + "?t=" + Date.now());
     if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
+    const data = await apiJson(res);
     if (data.ok && data.rows) {
       allTasks = data.rows;
       localStorage.setItem(CACHE_KEY, JSON.stringify(allTasks));
@@ -1784,7 +1812,7 @@ async function loadNSNN() {
   try {
     const res = await fetch(API + "?sheet=CHI-TIEU&t=" + Date.now());
     if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
+    const data = await apiJson(res);
     document.getElementById("nsnn-loading").style.display = "none";
     if (data.ok) {
       // Tiến độ kỳ vọng dạng TỶ SỐ = số tháng / 12 (VD tháng 6 -> 0,5)
@@ -1893,7 +1921,7 @@ async function loadKhung(force){
   if (khungLoaded && !force && KHUNG) return KHUNG;
   try{
     var r = await fetch(API + "?khung=1&t=" + Date.now());
-    var j = await r.json();
+    var j = await apiJson(r);
     if (j && j.ok){
       KHUNG = j;
       khungLoaded = true;
@@ -2019,7 +2047,7 @@ function v21TaiNhanh3(){
   if(!thang){ var n = new Date(); thang = n.getFullYear() + "-" + ("0"+(n.getMonth()+1)).slice(-2); }
 
   fetch(API + "?thammuu=1&thang=" + encodeURIComponent(thang))
-    .then(function(r){ return r.json(); })
+    .then(function(r){ return apiJson(r); })
     .then(function(d){ v21VeNhanh3(d); })
     .catch(function(e){
       var tb = document.getElementById("xl-nhanh3");
@@ -2236,7 +2264,7 @@ async function submitAdd() {
       nguonChiDao: document.getElementById("add-cancu").value,
       mucDo: document.getElementById("add-mucdo").value,
     }})});
-    const j = await res.json();
+    const j = await apiJson(res);
     if (j.ok) {
       closeModal("modal-add");
       showToast("✅ Đã gửi đề xuất nhiệm vụ mới, chờ Admin duyệt");
@@ -2337,7 +2365,7 @@ async function submitKQ() {
       lyDo: lyDo,
       danhDauHT: isDone
     })});
-    const d = await res.json();
+    const d = await apiJson(res);
     if (d.ok) {
       closeModal("modal-kq");
       showToast(d.canhBao ? ("✅ Đã gửi — ⚠ " + d.canhBao) : "✅ Đã gửi đề xuất kết quả, chờ Admin duyệt");
@@ -2374,7 +2402,7 @@ async function submitGiaHan() {
     const res = await fetch(API, {method:"POST", body:JSON.stringify({
       action: "deXuatGiaHan", row: curGHRow, hanDeNghi: hanDeNghi, lyDo: lyDo
     })});
-    const d = await res.json();
+    const d = await apiJson(res);
     if (d.ok) {
       closeModal("modal-giahan");
       showToast("✅ Đã gửi đề nghị gia hạn, chờ Văn phòng duyệt");
@@ -2390,7 +2418,7 @@ async function markDone(row, name) {
   if (!confirm("Xác nhận đề xuất hoàn thành:\n" + (name||"NV #"+row) + "?\n(Sẽ chờ Admin duyệt trước khi cập nhật chính thức)")) return;
   try {
     const res = await fetch(API, {method:"POST", body:JSON.stringify({action:"hoanThanh", row})});
-    const d = await res.json();
+    const d = await apiJson(res);
     if (d.ok) {
       showToast("✅ Đã gửi đề xuất hoàn thành, chờ Admin duyệt");
       localStorage.removeItem(CACHE_KEY);
@@ -2678,7 +2706,7 @@ async function confirmNorm() {
       method: "POST",
       body: JSON.stringify({ action: "chuanHoaDV", plan: normPlan, pin: getAdminPin() })
     });
-    const d = await res.json();
+    const d = await apiJson(res);
     if (d.ok) {
       showToast("✅ Đã chuẩn hóa " + d.updated + " dòng đơn vị");
       closeModal("modal-norm");
@@ -2807,7 +2835,7 @@ async function confirmDedup() {
       method: "POST",
       body: JSON.stringify({ action: "xoaDongTrung", rows: rows, pin: getAdminPin() })
     });
-    const d = await res.json();
+    const d = await apiJson(res);
     if (d.ok) {
       showToast("✅ Đã xóa " + d.deleted + " dòng trùng");
       closeModal("modal-dedup");
@@ -2946,7 +2974,7 @@ async function handleExcel(e) {
         method: "POST",
         body: JSON.stringify({action: "addBatch", rows: batch})
       });
-      const d = await res.json();
+      const d = await apiJson(res);
       if (d.ok) {
         let toastMsg = "✅ Đã gửi " + d.successCount + "/" + batch.length + " nhiệm vụ vào hàng chờ duyệt";
         if (d.skipCount > 0) toastMsg += " · Bỏ qua " + d.skipCount + " trùng trên server";
@@ -3003,7 +3031,7 @@ async function loadBaoCao(force) {
   if (thang)   url += '&thang='   + encodeURIComponent(thang);
   try {
     const res = await fetch(url);
-    const data = await res.json();
+    const data = await apiJson(res);
     if (data.ok) {
       bcData = data; bcLoaded = true;
       renderBcContent();
@@ -3119,7 +3147,7 @@ async function deleteTask(row, name) {
   try {
     showToast("⏳ Đang xóa...", 2000);
     const res = await fetch(API, { method: "POST", body: JSON.stringify({ action: "deleteTask", row, pin: getAdminPin() }) });
-    const d = await res.json();
+    const d = await apiJson(res);
     if (d.ok) {
       showToast("✅ Đã xóa nhiệm vụ #" + row);
       localStorage.removeItem(CACHE_KEY);
@@ -3165,7 +3193,7 @@ async function submitEditTask() {
   try {
     showToast("⏳ Đang lưu...", 2000);
     const res = await fetch(API, { method: "POST", body: JSON.stringify({ action: "editTask", row, fields, pin: getAdminPin() }) });
-    const d = await res.json();
+    const d = await apiJson(res);
     if (d.ok) {
       showToast("✅ Đã lưu chỉnh sửa nhiệm vụ #" + row);
       closeModal("modal-edit");
@@ -3182,8 +3210,8 @@ async function loadChoDuyet() {
   if (!isAdmin()) return;
   try {
     const [r1, r2] = await Promise.all([
-      fetch(API, { method: "POST", body: JSON.stringify({ action: "layChoDuyetNV", pin: getAdminPin() }) }).then(r => r.json()),
-      fetch(API, { method: "POST", body: JSON.stringify({ action: "layChoDuyetKQ", pin: getAdminPin() }) }).then(r => r.json())
+      fetch(API, { method: "POST", body: JSON.stringify({ action: "layChoDuyetNV", pin: getAdminPin() }) }).then(r => apiJson(r)),
+      fetch(API, { method: "POST", body: JSON.stringify({ action: "layChoDuyetKQ", pin: getAdminPin() }) }).then(r => apiJson(r))
     ]);
     choDuyetNVCache = (r1.ok && r1.rows) ? r1.rows : [];
     choDuyetKQCache = (r2.ok && r2.rows) ? r2.rows : [];
@@ -3244,7 +3272,7 @@ async function _duyetAction(action, row, okMsg) {
   try {
     showToast("⏳ Đang xử lý...", 1500);
     const res = await fetch(API, { method: "POST", body: JSON.stringify({ action, row, pin: getAdminPin() }) });
-    const d = await res.json();
+    const d = await apiJson(res);
     if (d.ok) {
       showToast(okMsg);
       localStorage.removeItem(CACHE_KEY);
@@ -3562,7 +3590,7 @@ async function xuatBaoCaoFormMau(mode) {
 
   showToast("⏳ Đang tạo báo cáo đúng form mẫu, vui lòng chờ...");
   try {
-    const res = await fetch(API, { method: "POST", body: JSON.stringify({ action: "xuatBaoCaoChuanMau", tieuDe, ky, rows }) }).then(r => r.json());
+    const res = await fetch(API, { method: "POST", body: JSON.stringify({ action: "xuatBaoCaoChuanMau", tieuDe, ky, rows }) }).then(r => apiJson(r));
     if (res.ok) {
       window.open(res.xlsxUrl, "_blank");
       showToast("✅ Đã tạo báo cáo (" + tasks.length + " nhiệm vụ) — đang mở file Excel để tải xuống");
@@ -3812,7 +3840,7 @@ async function loadLuuTru(force) {
   document.getElementById("lt-loading").style.display = "";
   try {
     const res = await fetch(API + "?sheet=LUUTRU&t=" + Date.now());
-    const d = await res.json();
+    const d = await apiJson(res);
     if (d.ok) {
       ltData = d; ltLoaded = true;
       const sel = document.getElementById("lt-ky");
@@ -3852,7 +3880,7 @@ async function runLuuTruThang() {
   showToast("⏳ Đang lưu trữ, vui lòng chờ...", 6000);
   try {
     const res = await fetch(API, { method:"POST", body: JSON.stringify({ action:"luuTruThang", pin: getAdminPin() }) });
-    const d = await res.json();
+    const d = await apiJson(res);
     if (d.ok) {
       showToast("✅ Đã lưu trữ " + d.moved + " nhiệm vụ hoàn thành tháng trước");
       localStorage.removeItem(CACHE_KEY);
@@ -3980,7 +4008,7 @@ async function loadBCNgay(ngay, force){
     // tải danh sách ngày (cho dropdown)
     var _nc = force ? ("&nocache=" + Date.now()) : "";   // v21: chỉ phá cache khi BẤM "Tải lại"
     var resList=await fetch(API+"?bcngay=list"+_nc);
-    var dList=await resList.json();
+    var dList=await apiJson(resList);
     if(dList.ok && dList.ngayList && dList.ngayList.length){
       // v21: LUÔN sắp xếp MỚI → CŨ ở phía client (không tin thứ tự server trả về)
       var ds=dList.ngayList.slice().sort(function(a,b){ return _bcnKey(b.ngayBC)-_bcnKey(a.ngayBC); });
@@ -3992,7 +4020,7 @@ async function loadBCNgay(ngay, force){
     }
     var url=API+"?bcngay=get"+(ngay?("&ngay="+encodeURIComponent(ngay)):"")+_nc;
     var res=await fetch(url);
-    var d=await res.json();
+    var d=await apiJson(res);
     loading.style.display='none';
     if(d.ok && d.data){
       bcngayData=d.data; bcngayLoaded=true;
@@ -4041,7 +4069,7 @@ async function luuBCNgay(){
   showToast('⏳ Đang lưu báo cáo ngày '+ngayBC+'...');
   try{
     var res=await fetch(API,{method:"POST",body:JSON.stringify({action:"importBaoCaoNgay",pin:getAdminPin(),ngayBC:ngayBC,data:data,nguoiNhap:"Admin"})});
-    var r=await res.json();
+    var r=await apiJson(res);
     if(r.ok){
       showToast('✓ Đã lưu báo cáo ngày '+ngayBC+(r.ghiDe?' (ghi đè)':''));
       dongModalNhapBCNgay();
@@ -4137,7 +4165,7 @@ function kpiClass(xl){
 async function loadKPI(ky, force){
   if(kpiLoaded && !force) return;
   try{
-    var rl = await (await fetch(API+"?kpi=list")).json();
+    var rl = await apiJson(await fetch(API+"?kpi=list"));
     var ds = (rl && rl.danhSach) || [];
     var sel = document.getElementById("kpi-ky");
     sel.innerHTML = ds.map(function(k){ return '<option value="'+_esc(k.ky)+'">Kỳ '+_esc(k.ky)+' · tháng '+k.thang+'</option>'; }).join("");
@@ -4147,7 +4175,7 @@ async function loadKPI(ky, force){
       kpiLoaded=true; return;
     }
     if(ky) sel.value=ky;
-    var r = await (await fetch(API+"?kpi=get&ky="+encodeURIComponent(sel.value||""))).json();
+    var r = await apiJson(await fetch(API+"?kpi=get&ky="+encodeURIComponent(sel.value||"")));
     if(!r.ok||r.trong){
       document.getElementById("kpi-empty").style.display="block";
       document.getElementById("kpi-body").style.display="none"; kpiLoaded=true; return;
@@ -4303,7 +4331,7 @@ async function kpiLuuTrongSo(){
   var t=cfg.linhVuc.reduce(function(s,l){return s+l.trongSo;},0);
   if(Math.abs(t-100)>0.01){ showToast("⚠ Tổng trọng số = "+t+", phải bằng 100"); return; }
   try{
-    var r = await (await fetch(API,{method:"POST",body:JSON.stringify({action:"kpiLuuTrongSo",pin:getAdminPin(),config:cfg,nguoiSua:"Admin"})})).json();
+    var r = await apiJson(await fetch(API,{method:"POST",body:JSON.stringify({action:"kpiLuuTrongSo",pin:getAdminPin(),config:cfg,nguoiSua:"Admin"})}));
     if(r.ok){ showToast("✓ Đã lưu cấu hình trọng số"); kpiDongModal("kpi-modal-ts"); kpiLoaded=false; loadKPI(KPI.ky,true); }
     else showToast("⚠ "+(r.error||"Lưu thất bại"));
   }catch(e){ showToast("⚠ Lỗi: "+e.message); }
@@ -4391,9 +4419,9 @@ async function kpiLuuKy(){
   if(!ky){ showToast("⚠ Chưa nhập mã kỳ"); return; }
   showToast("⏳ Đang lưu kỳ "+ky+"...");
   try{
-    var r = await (await fetch(API,{method:"POST",body:JSON.stringify({
+    var r = await apiJson(await fetch(API,{method:"POST",body:JSON.stringify({
       action:"kpiLuuKy", pin:getAdminPin(), ky:ky, thang:KPI_NAP.thang, data:KPI_NAP.data, nguoiNhap:"Admin"
-    })})).json();
+    })}));
     if(r.ok){
       showToast("✓ Đã lưu kỳ "+ky+(r.ghiDe?" (ghi đè)":""));
       kpiDongModal("kpi-modal-nap"); kpiLoaded=false; loadKPI(ky, true);
@@ -4428,7 +4456,7 @@ function kpiXuatExcel(){
 async function loadISO(force){
   if(isoLoaded && !force) return;
   try{
-    var r = await (await fetch(API+"?iso=all")).json();
+    var r = await apiJson(await fetch(API+"?iso=all"));
     if(!r.ok){ showToast("⚠ "+(r.error||"Lỗi tải ISO")); return; }
     ISO.quyTrinh=r.quyTrinh||[]; ISO.taiLieu=r.taiLieu||[]; ISO.theoDoi=r.theoDoi||[];
     isoRender(); isoLoaded=true;
@@ -4609,7 +4637,7 @@ async function isoLuuQuyTrinh(){
     moTa:document.getElementById("iso-f-mota").value.trim(),
     soDo:soDo };
   try{
-    var r = await (await fetch(API,{method:"POST",body:JSON.stringify({action:"isoLuuQuyTrinh",pin:getAdminPin(),quyTrinh:qt,nguoiSua:"Admin"})})).json();
+    var r = await apiJson(await fetch(API,{method:"POST",body:JSON.stringify({action:"isoLuuQuyTrinh",pin:getAdminPin(),quyTrinh:qt,nguoiSua:"Admin"})}));
     if(r.ok){ showToast("✓ Đã lưu quy trình "+ma); kpiDongModal("iso-modal-qt"); await loadISO(true); isoChon(ma); }
     else showToast("⚠ "+(r.error||"Lưu thất bại"));
   }catch(e){ showToast("⚠ Lỗi: "+e.message); }
@@ -4618,7 +4646,7 @@ async function isoXoaQuyTrinh(ma){
   if(!requireAdminOrPrompt()) return;
   if(!confirm("Xóa quy trình "+ma+"? (Tài liệu đính kèm vẫn giữ trên Drive)")) return;
   try{
-    var r = await (await fetch(API,{method:"POST",body:JSON.stringify({action:"isoXoaQuyTrinh",pin:getAdminPin(),maQT:ma})})).json();
+    var r = await apiJson(await fetch(API,{method:"POST",body:JSON.stringify({action:"isoXoaQuyTrinh",pin:getAdminPin(),maQT:ma})}));
     if(r.ok){ showToast("✓ Đã xóa"); ISO.chon=null; document.getElementById("iso-detail").innerHTML=""; await loadISO(true); }
   }catch(e){ showToast("⚠ Lỗi: "+e.message); }
 }
@@ -4642,14 +4670,14 @@ function isoUpload(){
   rd.onload = async function(ev){
     var b64 = String(ev.target.result).split(",")[1];
     try{
-      var r = await (await fetch(API,{method:"POST",body:JSON.stringify({
+      var r = await apiJson(await fetch(API,{method:"POST",body:JSON.stringify({
         action:"isoUploadTaiLieu", pin:getAdminPin(), maQT:ma,
         loai:document.getElementById("iso-up-loai").value,
         tenTaiLieu:document.getElementById("iso-up-ten").value.trim()||f.name,
         maBieu:document.getElementById("iso-up-mabieu").value.trim(),
         fileName:f.name, mimeType:f.type||"application/octet-stream", base64:b64,
         nguoiUpload:"Admin"
-      })})).json();
+      })}));
       if(r.ok){ showToast("✓ Đã tải lên"); kpiDongModal("iso-modal-up"); await loadISO(true); isoChon(ma); }
       else showToast("⚠ "+(r.error||"Tải lên thất bại"));
     }catch(e){ showToast("⚠ Lỗi: "+e.message); }
@@ -4660,7 +4688,7 @@ async function isoXoaTaiLieu(id){
   if(!confirm("Xóa tài liệu này?")) return;
   var ma = ISO.chon;
   try{
-    var r = await (await fetch(API,{method:"POST",body:JSON.stringify({action:"isoXoaTaiLieu",pin:getAdminPin(),id:id})})).json();
+    var r = await apiJson(await fetch(API,{method:"POST",body:JSON.stringify({action:"isoXoaTaiLieu",pin:getAdminPin(),id:id})}));
     if(r.ok){ showToast("✓ Đã xóa"); await loadISO(true); isoChon(ma); }
   }catch(e){ showToast("⚠ Lỗi: "+e.message); }
 }
@@ -4690,7 +4718,7 @@ async function isoLuuTheoDoi(){
     trangThai:document.getElementById("iso-td-tt").value };
   if(!t.ky){ showToast("⚠ Chưa nhập kỳ"); return; }
   try{
-    var r = await (await fetch(API,{method:"POST",body:JSON.stringify({action:"isoGhiTheoDoi",theoDoi:t,nguoiGhi:t.donVi})})).json();
+    var r = await apiJson(await fetch(API,{method:"POST",body:JSON.stringify({action:"isoGhiTheoDoi",theoDoi:t,nguoiGhi:t.donVi})}));
     if(r.ok){ showToast("✓ Đã ghi nhận"+(r.ghiDe?" (cập nhật)":"")); kpiDongModal("iso-modal-td"); await loadISO(true); isoChon(ma); }
     else showToast("⚠ "+(r.error||"Ghi thất bại"));
   }catch(e){ showToast("⚠ Lỗi: "+e.message); }
@@ -4756,7 +4784,7 @@ function v19bTai(){
   else { var m2=String(ky).match(/^(\d{4})-(\d{1,2})/); if(m2) thang=m2[1]+"-"+("0"+m2[2]).slice(-2); }
 
   fetch(API + "?xeploai3=1&ky=" + encodeURIComponent(ky) + "&thang=" + encodeURIComponent(thang))
-    .then(function(r){ return r.json(); })
+    .then(function(r){ return apiJson(r); })
     .then(function(j){
       if(!j.ok){ wrap.innerHTML='<div class="v19-empty">Lỗi: '+(j.error||"?")+'</div>'; return; }
       V19B_DATA=j; v19bRender(j);
@@ -4948,7 +4976,7 @@ async function taiLyDoDuyet(trangThai){
   if(el) el.textContent = "Đang tải…";
   try{
     const r = await fetch(API + "?v24=lydo" + (loc ? "&trangthai=" + encodeURIComponent(loc) : ""));
-    const j = await r.json();
+    const j = await apiJson(r);
     LYDO_ROWS = j.rows || [];
     veLyDoDuyet();
     if(el) el.textContent = LYDO_ROWS.length + " bản ghi" + (loc ? " (đang lọc: chờ duyệt)" : " (tất cả)");
@@ -5035,7 +5063,7 @@ async function duyetLyDo(hang, qd){
         quyetDinh: qd, nguoiDuyet: "Văn phòng", ghiChu: ghiChu
       })
     });
-    const j = await res.json();
+    const j = await apiJson(res);
     if(!j.ok) throw new Error(j.error);
     alert(qd === "DUYET" ? "✔ Đã duyệt giải trình" : "✔ Đã từ chối giải trình");
     taiLyDoDuyet();
