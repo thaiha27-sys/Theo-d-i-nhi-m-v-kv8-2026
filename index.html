@@ -874,6 +874,15 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
 </div>
 
 <div id="tab-duyet" class="tab-content">
+  <!-- v20.4: SỨC KHỎE DỮ LIỆU (gọi backend v33 laySucKhoeDuLieu) -->
+  <div class="section admin-only-action" style="border-left:4px solid var(--navy)">
+    <div class="section-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      🩺 Sức khỏe dữ liệu
+      <button class="btn" style="background:var(--navy);color:#fff;font-size:12px;padding:5px 12px;border:none;border-radius:6px;cursor:pointer" onclick="loadSucKhoe()">🔄 Kiểm tra</button>
+      <span id="sk-time" style="font-size:11.5px;color:var(--muted)"></span>
+    </div>
+    <div id="sk-box" style="font-size:12.5px;color:var(--muted);padding:6px 0">Bấm <b>Kiểm tra</b> để rà nhanh các rủi ro dữ liệu.</div>
+  </div>
   <div class="section">
     <div class="section-title">📝 Nhiệm vụ mới chờ duyệt</div>
     <div id="duyet-nv-empty" style="display:none;color:var(--muted);font-size:13px;padding:10px 0">✅ Không có nhiệm vụ mới nào đang chờ duyệt.</div>
@@ -1158,7 +1167,8 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Số văn bản / mã sản phẩm</label>
-        <input class="form-input" id="kq-so-vb" placeholder="VD: 145/KH-HQKV8 (để trống nếu chưa có)">
+        <input class="form-input" id="kq-so-vb" placeholder="VD: 145/KH-HQKV8 ngày 30/6/2026 (để trống nếu chưa có)" onblur="kiemTraSoVBUI()">
+        <div id="kq-sovb-warn" style="display:none;margin-top:6px;background:#FEF9E7;border:1px solid #F6C343;border-radius:6px;padding:7px 10px;font-size:12px;color:#7a5800;line-height:1.5"></div>
       </div>
       <div class="form-group">
         <label class="form-label">Ngày hoàn thành thực tế *</label>
@@ -1225,7 +1235,7 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
 // ============================================================
 const APP_VERSION = "v20.1";
 const APP_BUILD   = "12/07/2026";
-console.log("%cKV8 v20.2 (03/08/2026) - chan doan loi trien khai","font-weight:700;color:#1A3A6B;font-size:13px");
+console.log("%cKV8 v20.4 (05/08/2026) - suc khoe du lieu + canh bao so VB + toc do v32","font-weight:700;color:#1A3A6B;font-size:13px");
 const API = "https://script.google.com/macros/s/AKfycbzRm_qI0sNQH7dSbM6UmAPS5ey-pMsGKiPLjXp_PEoDCPaMv6fzD1l2frG_6eK6uJvb/exec";
 
 // ============================================================
@@ -3211,22 +3221,85 @@ async function submitEditTask() {
 async function loadChoDuyet() {
   if (!isAdmin()) return;
   try {
-    // v20.3 — GỌI TUẦN TỰ, KHÔNG dùng Promise.all.
-    // Hai POST bắn đồng thời tới cùng một Web App khiến Google trả 404 ở bước
-    // chuyển hướng (script.googleusercontent.com) — đó chính là 2 lỗi 404 trong
-    // bảng điều khiển. Gọi lần lượt thì mỗi lần chỉ có 1 redirect -> hết lỗi.
-    const r1 = await apiJson(await fetch(API, { method: "POST", body: JSON.stringify({ action: "layChoDuyetNV", pin: getAdminPin() }) }));
-    const r2 = await apiJson(await fetch(API, { method: "POST", body: JSON.stringify({ action: "layChoDuyetKQ", pin: getAdminPin() }) }));
-    choDuyetNVCache = (r1.ok && r1.rows) ? r1.rows : [];
-    choDuyetKQCache = (r2.ok && r2.rows) ? r2.rows : [];
+    // v20.4 — dùng v32 "layChoDuyetTatCa" (1 lệnh thay 2 -> tải nhanh gấp đôi).
+    // Nếu backend chưa có action này (chưa deploy v33/v34) -> tự lùi về gọi tuần tự.
+    let nv = [], kq = [];
+    const d = await apiJson(await fetch(API, { method: "POST", body: JSON.stringify({ action: "layChoDuyetTatCa", pin: getAdminPin() }) }));
+    if (d && d.ok && (d.nv || d.kq)) {
+      nv = d.nv || []; kq = d.kq || [];
+    } else {
+      // Dự phòng tuần tự (tương thích bản backend cũ)
+      const r1 = await apiJson(await fetch(API, { method: "POST", body: JSON.stringify({ action: "layChoDuyetNV", pin: getAdminPin() }) }));
+      const r2 = await apiJson(await fetch(API, { method: "POST", body: JSON.stringify({ action: "layChoDuyetKQ", pin: getAdminPin() }) }));
+      nv = (r1.ok && r1.rows) ? r1.rows : [];
+      kq = (r2.ok && r2.rows) ? r2.rows : [];
+    }
+    choDuyetNVCache = nv; choDuyetKQCache = kq;
     const total = choDuyetNVCache.length + choDuyetKQCache.length;
     const badge = document.getElementById("tab-duyet-badge");
     badge.textContent = String(total);
-    badge.style.display = (isAdmin() && total > 0) ? "inline-block" : (isAdmin() ? "none" : "none");
-    if (isAdmin() && total > 0) badge.style.display = "inline-block";
+    badge.style.display = (isAdmin() && total > 0) ? "inline-block" : "none";
     renderChoDuyetNV();
     renderChoDuyetKQ();
   } catch(e) { showToast("❌ Lỗi tải danh sách chờ duyệt: " + e.message); }
+}
+
+// ═══ v20.4: SỨC KHỎE DỮ LIỆU ═══
+async function loadSucKhoe() {
+  if (!isAdmin()) { showToast("Cần đăng nhập Admin để xem sức khỏe dữ liệu."); return; }
+  const box = document.getElementById("sk-box");
+  box.innerHTML = "⏳ Đang rà dữ liệu...";
+  try {
+    const d = await apiJson(await fetch(API, { method: "POST", body: JSON.stringify({ action: "laySucKhoeDuLieu", pin: getAdminPin() }) }));
+    if (!d || !d.ok) { box.innerHTML = "❌ " + ((d && d.error) || "Không lấy được dữ liệu") + " (cần deploy backend v33/v34)."; return; }
+    renderSucKhoe(d);
+  } catch(e) { box.innerHTML = "❌ Lỗi kết nối: " + e.message; }
+}
+function _skCard(nhan, so, mau, canhBao) {
+  return '<div style="flex:1;min-width:150px;background:#fff;border:1px solid #E5E7EB;border-left:4px solid ' + mau + ';border-radius:8px;padding:10px 12px">' +
+    '<div style="font-size:22px;font-weight:800;color:' + (canhBao && so>0 ? mau : 'var(--navy)') + '">' + so + '</div>' +
+    '<div style="font-size:11.5px;color:#555;margin-top:2px">' + nhan + '</div></div>';
+}
+function _skList(tieude, ds, mau) {
+  if (!ds || !ds.length) return '';
+  const rows = ds.map(function(o){
+    return '<tr><td style="padding:4px 8px;color:#888">' + (o.dong||'') + '</td>' +
+      '<td style="padding:4px 8px">' + (o.donVi||'—') + '</td>' +
+      '<td style="padding:4px 8px">' + (o.nhiemVu||'') + (o.soVB?' · <span style="color:#888">'+o.soVB+'</span>':'') + (o.trungVoiDong?' · <span style="color:'+mau+'">trùng dòng '+o.trungVoiDong+'</span>':'') + '</td></tr>';
+  }).join('');
+  return '<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;color:'+mau+';font-weight:600">'+tieude+' ('+ds.length+')</summary>' +
+    '<table style="width:100%;font-size:11.5px;border-collapse:collapse;margin-top:4px"><thead><tr style="color:#888;text-align:left">' +
+    '<th style="padding:4px 8px;width:40px">Dòng</th><th style="padding:4px 8px;width:120px">Đơn vị</th><th style="padding:4px 8px">Nhiệm vụ</th></tr></thead><tbody>'+rows+'</tbody></table></details>';
+}
+function renderSucKhoe(d) {
+  document.getElementById("sk-time").textContent = "cập nhật " + (d.thoiDiem||"");
+  const nv = d.nv||{}, lt = d.luutru||{};
+  let h = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px">' +
+    _skCard("HT nhưng thiếu ngày (cột U)", nv.htThieuNgayU||0, "#C0392B", true) +
+    _skCard("Số VB đã ghi nhưng thiếu ngày", nv.soVBthieuNgay||0, "#C8960C", true) +
+    _skCard("Dòng nghi trùng (NV)", nv.nghiTrung||0, "#C0392B", true) +
+    _skCard("Tồn đọng liên kỳ (quá hạn)", d.tonDongLienKy||0, "#C8960C", true) +
+    _skCard("LUUTRU thiếu ngày (cột W)", lt.thieuNgayW||0, "#8E44AD", true) +
+    '</div>';
+  h += '<div style="font-size:11.5px;color:var(--muted);margin:2px 0 6px">NV đang theo dõi: <b>'+(nv.tong||0)+'</b> · đã hoàn thành: <b>'+(nv.hoanThanh||0)+'</b> · đã lưu trữ: <b>'+(lt.tong||0)+'</b>. Các chỉ số đỏ/vàng > 0 nên xử lý; <b>nghi trùng = 0</b> là dữ liệu sạch.</div>';
+  h += _skList("Việc hoàn thành nhưng thiếu ngày cột U", d.dsHtThieuNgayU, "#C0392B");
+  h += _skList("Số VB đã ghi nhưng thiếu ngày ban hành (thêm ngày là chốt được)", d.dsSoVBthieuNgay, "#C8960C");
+  h += _skList("Dòng nghi trùng trong NV", d.dsNghiTrung, "#C0392B");
+  document.getElementById("sk-box").innerHTML = h;
+}
+
+// ═══ v20.4: CẢNH BÁO MỀM Ô "SỐ VĂN BẢN" (gọi backend v33 kiemTraSoVB) ═══
+async function kiemTraSoVBUI() {
+  const inp = document.getElementById("kq-so-vb");
+  const warn = document.getElementById("kq-sovb-warn");
+  if (!inp || !warn) return;
+  const s = (inp.value||"").trim();
+  if (!s) { warn.style.display = "none"; return; }
+  try {
+    const d = await apiJson(await fetch(API, { method: "POST", body: JSON.stringify({ action: "kiemTraSoVB", soVB: s }) }));
+    if (d && d.ok && d.canhBao) { warn.textContent = "⚠ " + d.canhBao; warn.style.display = "block"; }
+    else { warn.style.display = "none"; }
+  } catch(e) { warn.style.display = "none"; }
 }
 
 function renderChoDuyetNV() {
