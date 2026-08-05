@@ -318,7 +318,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
     <button class="btn btn-outline btn-orange admin-only-action" id="btn-normalize" onclick="chuanHoaDonVi()" title="Chuẩn hóa tên đơn vị chủ trì theo danh sách 18 đơn vị KV8" style="display:none">⚙ Chuẩn hóa ĐV</button>
     <button class="btn btn-outline" id="btn-admin-toggle" onclick="openAdminLogin()">🔒 Đăng nhập Admin</button>
     <span style="font-size:10.5px;opacity:.7">⏰ 8h → dangbohqqn@gmail.com · 💾 Backup 23h30</span>
-    <span id="app-ver" title="Phiên bản giao diện đang chạy" style="font-size:10px;font-weight:700;background:rgba(255,255,255,.18);color:#fff;padding:2px 8px;border-radius:10px;margin-left:8px">v20.5</span>
+    <span id="app-ver" title="Phiên bản giao diện đang chạy" style="font-size:10px;font-weight:700;background:rgba(255,255,255,.18);color:#fff;padding:2px 8px;border-radius:10px;margin-left:8px">v20.6</span>
   </div>
 </div>
 <input type="file" id="excel-input" accept=".xlsx,.xls" style="display:none" onchange="handleExcel(event)">
@@ -1233,9 +1233,9 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
 // ============================================================
 // CẤU HÌNH
 // ============================================================
-const APP_VERSION = "v20.5";
+const APP_VERSION = "v20.6";
 const APP_BUILD   = "12/07/2026";
-console.log("%cKV8 v20.4 (05/08/2026) - suc khoe du lieu + canh bao so VB + toc do v32","font-weight:700;color:#1A3A6B;font-size:13px");
+console.log("%cKV8 v20.6 (05/08/2026) - JSONP vuot CORS 404 (doc + duyet)","font-weight:700;color:#1A3A6B;font-size:13px");
 const API = "https://script.google.com/macros/s/AKfycbzRm_qI0sNQH7dSbM6UmAPS5ey-pMsGKiPLjXp_PEoDCPaMv6fzD1l2frG_6eK6uJvb/exec";
 
 // ============================================================
@@ -1253,6 +1253,32 @@ function fetchTimeout(url, opts, ms) {
   const timer = setTimeout(() => ctl.abort(), ms);
   return fetch(url, Object.assign({}, opts, { signal: ctl.signal }))
     .finally(() => clearTimeout(timer));
+}
+
+// v20.6 — GỌI KIỂU JSONP (vượt rào CORS / chuyển hướng 404 của Apps Script).
+// Dùng <script src> nên đi theo chuyển hướng y như MỞ LINK TRỰC TIẾP (đã chứng minh chạy ~3s),
+// không dính CORS. Trả về thẳng object JSON (backend v35 bọc callback(...)).
+function apiJsonp(params, ms) {
+  ms = ms || 30000;
+  return new Promise(function (resolve, reject) {
+    var cb = "__kv8cb_" + Date.now() + "_" + Math.floor(Math.random() * 1e6);
+    var s = document.createElement("script");
+    var done = false;
+    var timer = setTimeout(function () { finish(new Error("Het thoi gian cho " + Math.round(ms/1000) + "s (JSONP)")); }, ms);
+    function cleanup() {
+      try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+      if (s && s.parentNode) s.parentNode.removeChild(s);
+      clearTimeout(timer);
+    }
+    function finish(err, data) { if (done) return; done = true; cleanup(); err ? reject(err) : resolve(data); }
+    window[cb] = function (data) { finish(null, data); };
+    var qs = Object.keys(params || {}).map(function (k) {
+      return encodeURIComponent(k) + "=" + encodeURIComponent(params[k] == null ? "" : params[k]);
+    }).join("&");
+    s.src = API + "?" + qs + (qs ? "&" : "") + "callback=" + cb + "&t=" + Date.now();
+    s.onerror = function () { finish(new Error("Khong tai duoc (JSONP onerror) - kiem tra URL /exec va deploy")); };
+    document.head.appendChild(s);
+  });
 }
 
 async function apiJson(res) {
@@ -1312,11 +1338,7 @@ async function submitAdminLogin() {
   const pin = document.getElementById("admin-pin-input").value.trim();
   if (!pin) return;
   try {
-    const res = await fetch(API, {
-      method: "POST",
-      body: JSON.stringify({ action: "dangNhapAdmin", pin: pin })
-    });
-    const data = await apiJson(res);
+    const data = await apiJsonp({ action: "dangNhapAdmin", pin: pin });
     if (data.ok) {
       sessionStorage.setItem(ADMIN_PIN_SESSION_KEY, pin);
       closeModal("modal-admin-login");
@@ -1528,9 +1550,7 @@ async function loadData(forceRefresh = false) {
   document.getElementById("sync-label").textContent = renderedFromCache ? "Đang đồng bộ..." : "Đang tải...";
   try {
     // v20.5: có timeout 18s — nếu server treo thì DỪNG và báo lỗi, không quay tròn mãi
-    const res = await fetchTimeout(API + "?t=" + Date.now(), {}, 18000);
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await apiJson(res);
+    const data = await apiJsonp({}, 30000);   // v20.6: JSONP thay fetch (vượt CORS/404)
     if (data.ok && data.rows) {
       allTasks = data.rows;
       localStorage.setItem(CACHE_KEY, JSON.stringify(allTasks));
@@ -3249,13 +3269,13 @@ async function loadChoDuyet() {
     // v20.4 — dùng v32 "layChoDuyetTatCa" (1 lệnh thay 2 -> tải nhanh gấp đôi).
     // Nếu backend chưa có action này (chưa deploy v33/v34) -> tự lùi về gọi tuần tự.
     let nv = [], kq = [];
-    const d = await apiJson(await fetch(API, { method: "POST", body: JSON.stringify({ action: "layChoDuyetTatCa", pin: getAdminPin() }) }));
+    const d = await apiJsonp({ action: "layChoDuyetTatCa", pin: getAdminPin() });
     if (d && d.ok && (d.nv || d.kq)) {
       nv = d.nv || []; kq = d.kq || [];
     } else {
       // Dự phòng tuần tự (tương thích bản backend cũ)
-      const r1 = await apiJson(await fetch(API, { method: "POST", body: JSON.stringify({ action: "layChoDuyetNV", pin: getAdminPin() }) }));
-      const r2 = await apiJson(await fetch(API, { method: "POST", body: JSON.stringify({ action: "layChoDuyetKQ", pin: getAdminPin() }) }));
+      const r1 = await apiJsonp({ action: "layChoDuyetNV", pin: getAdminPin() });
+      const r2 = await apiJsonp({ action: "layChoDuyetKQ", pin: getAdminPin() });
       nv = (r1.ok && r1.rows) ? r1.rows : [];
       kq = (r2.ok && r2.rows) ? r2.rows : [];
     }
@@ -3373,8 +3393,7 @@ async function _duyetAction(action, row, okMsg) {
   if (!requireAdminOrPrompt()) return;
   try {
     showToast("⏳ Đang xử lý...", 1500);
-    const res = await fetch(API, { method: "POST", body: JSON.stringify({ action, row, pin: getAdminPin() }) });
-    const d = await apiJson(res);
+    const d = await apiJsonp({ action: action, row: row, pin: getAdminPin() });
     if (d.ok) {
       showToast(okMsg);
       localStorage.removeItem(CACHE_KEY);
