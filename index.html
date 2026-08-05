@@ -318,7 +318,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
     <button class="btn btn-outline btn-orange admin-only-action" id="btn-normalize" onclick="chuanHoaDonVi()" title="Chuẩn hóa tên đơn vị chủ trì theo danh sách 18 đơn vị KV8" style="display:none">⚙ Chuẩn hóa ĐV</button>
     <button class="btn btn-outline" id="btn-admin-toggle" onclick="openAdminLogin()">🔒 Đăng nhập Admin</button>
     <span style="font-size:10.5px;opacity:.7">⏰ 8h → dangbohqqn@gmail.com · 💾 Backup 23h30</span>
-    <span id="app-ver" title="Phiên bản giao diện đang chạy" style="font-size:10px;font-weight:700;background:rgba(255,255,255,.18);color:#fff;padding:2px 8px;border-radius:10px;margin-left:8px">v20.1</span>
+    <span id="app-ver" title="Phiên bản giao diện đang chạy" style="font-size:10px;font-weight:700;background:rgba(255,255,255,.18);color:#fff;padding:2px 8px;border-radius:10px;margin-left:8px">v20.5</span>
   </div>
 </div>
 <input type="file" id="excel-input" accept=".xlsx,.xls" style="display:none" onchange="handleExcel(event)">
@@ -1233,7 +1233,7 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
 // ============================================================
 // CẤU HÌNH
 // ============================================================
-const APP_VERSION = "v20.1";
+const APP_VERSION = "v20.5";
 const APP_BUILD   = "12/07/2026";
 console.log("%cKV8 v20.4 (05/08/2026) - suc khoe du lieu + canh bao so VB + toc do v32","font-weight:700;color:#1A3A6B;font-size:13px");
 const API = "https://script.google.com/macros/s/AKfycbzRm_qI0sNQH7dSbM6UmAPS5ey-pMsGKiPLjXp_PEoDCPaMv6fzD1l2frG_6eK6uJvb/exec";
@@ -1245,6 +1245,16 @@ const API = "https://script.google.com/macros/s/AKfycbzRm_qI0sNQH7dSbM6UmAPS5ey-
 // TRIEN KHAI Web App -> bao thong bao de hieu thay vi
 // "Unexpected token '<', <!DOCTYPE ...".
 // ============================================================
+// v20.5 — fetch có GIỚI HẠN THỜI GIAN (chống treo khi Apps Script khởi động nguội / mạng chậm)
+let _lastApiError = "";   // v20.5: giữ lại lý do lỗi THẬT để hiển thị, không nuốt mất
+function fetchTimeout(url, opts, ms) {
+  opts = opts || {}; ms = ms || 18000;
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ms);
+  return fetch(url, Object.assign({}, opts, { signal: ctl.signal }))
+    .finally(() => clearTimeout(timer));
+}
+
 async function apiJson(res) {
   const raw = (await res.text()).trim();
   if (raw.startsWith("<") || raw.slice(0, 9).toUpperCase() === "<!DOCTYPE") {
@@ -1517,7 +1527,8 @@ async function loadData(forceRefresh = false) {
   }
   document.getElementById("sync-label").textContent = renderedFromCache ? "Đang đồng bộ..." : "Đang tải...";
   try {
-    const res = await fetch(API + "?t=" + Date.now());
+    // v20.5: có timeout 18s — nếu server treo thì DỪNG và báo lỗi, không quay tròn mãi
+    const res = await fetchTimeout(API + "?t=" + Date.now(), {}, 18000);
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await apiJson(res);
     if (data.ok && data.rows) {
@@ -1525,16 +1536,30 @@ async function loadData(forceRefresh = false) {
       localStorage.setItem(CACHE_KEY, JSON.stringify(allTasks));
       localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
       document.getElementById("sync-label").textContent = "✓ " + new Date().toLocaleTimeString("vi-VN") + " · " + allTasks.length + " NV";
+      _lastApiError = "";
       renderAll();
       if (isAdmin()) loadChoDuyet();
     } else {
-      showError("API lỗi: " + (data.error || "Không rõ"));
+      _lastApiError = data.error || "Không rõ";
+      showError("API lỗi: " + _lastApiError);
     }
   } catch(e) {
+    // v20.5: GIỮ LẠI lý do THẬT (timeout / HTML đăng nhập / URL sai / CORS) thay vì nuốt mất
+    _lastApiError = (e && e.name === "AbortError")
+      ? "Hết thời gian chờ 18s — Apps Script phản hồi quá chậm hoặc URL /exec không đúng."
+      : (e && e.message ? e.message : String(e));
+    console.error("[KV8] loadData lỗi:", _lastApiError);
     const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) { allTasks = JSON.parse(cached); renderAll(); }
-    document.getElementById("sync-label").textContent = "⚠ Lỗi kết nối – đang dùng cache";
-    showToast("⚠ Không tải được từ server. Đang hiển thị dữ liệu cũ.", 5000);
+    if (cached) {
+      // Có cache cũ → vẫn hiển thị, nhưng ghi rõ lý do lên nhãn đồng bộ
+      allTasks = JSON.parse(cached); renderAll();
+      document.getElementById("sync-label").textContent = "⚠ Dùng cache · " + _lastApiError.slice(0, 60);
+    } else {
+      // KHÔNG có cache → trước đây spinner quay mãi; nay hiện thẳng lý do lỗi
+      document.getElementById("sync-label").textContent = "⚠ Lỗi kết nối";
+      showError(_lastApiError);
+    }
+    showToast("⚠ " + _lastApiError, 8000);
   }
 }
 
