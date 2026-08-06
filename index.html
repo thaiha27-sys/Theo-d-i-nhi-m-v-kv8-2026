@@ -5553,7 +5553,7 @@ async function duyetLyDo(hang, qd){
       chiHT: document.getElementById('v38ChiHT').checked
     };
     try{
-      var res = await fetch(API, { method:'POST', body:JSON.stringify(payload) }).then(function(r){ return apiJson(r); });
+      var res = await apiJsonp(payload, 120000);   // JSONP thay fetch POST (vượt CORS/404 của Apps Script)
       btn.disabled=false;
       if(!res.ok){ msg.style.color='#c0392b'; msg.textContent='Lỗi: '+(res.error||'không rõ'); return; }
       if(res.soViec===0){ msg.style.color='#c0392b'; msg.textContent='Không có việc nào khớp bộ lọc.'; return; }
