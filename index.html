@@ -318,7 +318,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
     <button class="btn btn-outline btn-orange admin-only-action" id="btn-normalize" onclick="chuanHoaDonVi()" title="Chuẩn hóa tên đơn vị chủ trì theo danh sách 18 đơn vị KV8" style="display:none">⚙ Chuẩn hóa ĐV</button>
     <button class="btn btn-outline" id="btn-admin-toggle" onclick="openAdminLogin()">🔒 Đăng nhập Admin</button>
     <span style="font-size:10.5px;opacity:.7">⏰ 8h → dangbohqqn@gmail.com · 💾 Backup 23h30</span>
-    <span id="app-ver" title="Phiên bản giao diện đang chạy" style="font-size:10px;font-weight:700;background:rgba(255,255,255,.18);color:#fff;padding:2px 8px;border-radius:10px;margin-left:8px">v20.7</span>
+    <span id="app-ver" title="Phiên bản giao diện đang chạy" style="font-size:10px;font-weight:700;background:rgba(255,255,255,.18);color:#fff;padding:2px 8px;border-radius:10px;margin-left:8px">v20.8</span>
   </div>
 </div>
 <input type="file" id="excel-input" accept=".xlsx,.xls" style="display:none" onchange="handleExcel(event)">
@@ -883,6 +883,15 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
     </div>
     <div id="sk-box" style="font-size:12.5px;color:var(--muted);padding:6px 0">Bấm <b>Kiểm tra</b> để rà nhanh các rủi ro dữ liệu.</div>
   </div>
+  <!-- v39: ĐỐI CHIẾU KHO VB (làm giàu Người ký/Thể loại vào cột phụ) -->
+  <div class="section admin-only-action" style="border-left:4px solid #0a7d33">
+    <div class="section-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      🔗 Đối chiếu Kho văn bản đi
+      <button class="btn" style="background:#0a7d33;color:#fff;font-size:12px;padding:5px 12px;border:none;border-radius:6px;cursor:pointer" onclick="v39DoiChieuKho()">▶ Chạy đối chiếu</button>
+      <span id="v39-time" style="font-size:11.5px;color:var(--muted)"></span>
+    </div>
+    <div id="v39-box" style="font-size:12.5px;color:var(--muted);padding:6px 0">Tra Kho VB, ghi Người ký + Thể loại VB vào dữ liệu để kết xuất nhanh. Tự chạy lúc backup 23h30; bấm nút khi cần cập nhật ngay.</div>
+  </div>
   <div class="section">
     <div class="section-title">📝 Nhiệm vụ mới chờ duyệt</div>
     <div id="duyet-nv-empty" style="display:none;color:var(--muted);font-size:13px;padding:10px 0">✅ Không có nhiệm vụ mới nào đang chờ duyệt.</div>
@@ -1233,7 +1242,7 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
 // ============================================================
 // CẤU HÌNH
 // ============================================================
-const APP_VERSION = "v20.7";
+const APP_VERSION = "v20.8";
 console.log("%c[V38 READY] index v20.7 da nap - co route ket xuat loc","color:#0a7d33;font-weight:700");
 const APP_BUILD   = "12/07/2026";
 console.log("%cKV8 v20.7 (06/08/2026) - v38 ket xuat ket qua co loc","font-weight:700;color:#1A3A6B;font-size:13px");
@@ -5507,6 +5516,17 @@ async function duyetLyDo(hang, qd){
     }catch(e){ msg.style.color='#c0392b'; msg.textContent='Lỗi: '+e.message; }
   };
 
+  window.v39DoiChieuKho = async function(){
+    var box = document.getElementById('v39-box'), tm = document.getElementById('v39-time');
+    if(!getAdminPin()){ box.innerHTML='<span style="color:#c0392b">Cần đăng nhập Quản trị trước.</span>'; return; }
+    box.innerHTML='⏳ Đang đối chiếu Kho VB, vui lòng đợi (có thể mất 10–30 giây)…';
+    try{
+      var r = await apiJsonp({ action:'traKhoLamGiau', pin:getAdminPin() }, 120000);
+      if(!r || !r.ok){ box.innerHTML='<span style="color:#c0392b">Lỗi: '+((r&&r.error)||'không rõ')+'</span>'; return; }
+      box.innerHTML='✔ '+ (r.thongBao || ('Đã đối chiếu '+r.tong+' việc, khớp '+r.hit+'.'));
+      if(tm) tm.textContent='Lần cuối: '+(r.moc||'');
+    }catch(e){ box.innerHTML='<span style="color:#c0392b">Lỗi kết nối: '+e.message+'</span>'; }
+  };
   window.v38Xuat = async function(){
     var btn = document.getElementById('v38BtnXuat'), msg = document.getElementById('v38Msg');
     btn.disabled=true; msg.style.color='#0a7d33'; msg.textContent='Đang tạo file, vui lòng đợi…';
