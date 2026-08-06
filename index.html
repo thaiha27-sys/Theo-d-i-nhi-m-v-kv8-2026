@@ -5435,5 +5435,100 @@ async function duyetLyDo(hang, qd){
 </script>
 <!-- ===================== HẾT PATCH SMART ISO v2 ===================== -->
 
+
+<!-- ================================================================= -->
+<!--  PATCH v38 — KẾT XUẤT KẾT QUẢ CÓ LỌC (KỲ / ĐƠN VỊ / CÁ NHÂN)       -->
+<!--  Chi cục Hải quan khu vực VIII — DÁN NGAY TRƯỚC </body>.            -->
+<!--  Tự chèn mục menu vào #export-menu, không cần sửa nơi khác.         -->
+<!--  Dùng lại API / apiJsonp / apiJson có sẵn (không khai báo lại).     -->
+<!-- ================================================================= -->
+<div id="v38Overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;align-items:center;justify-content:center">
+  <div style="background:#fff;width:min(460px,92vw);border-radius:12px;padding:22px 24px;font-family:'Segoe UI',Arial,sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.25)">
+    <div style="font-size:17px;font-weight:700;color:#1F4E79;margin-bottom:4px">Kết xuất kết quả công việc</div>
+    <div style="font-size:12.5px;color:#667;margin-bottom:16px">Chọn tháng, đơn vị, cá nhân. Bỏ trống mục nào = lấy tất cả mục đó.</div>
+    <label style="font-size:13px;font-weight:600;color:#334">Tháng</label>
+    <select id="v38Ky" style="width:100%;padding:9px;margin:4px 0 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px"></select>
+    <label style="font-size:13px;font-weight:600;color:#334">Đơn vị (tùy chọn)</label>
+    <select id="v38DonVi" style="width:100%;padding:9px;margin:4px 0 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px"></select>
+    <label style="font-size:13px;font-weight:600;color:#334">Cá nhân (tùy chọn)</label>
+    <input id="v38CaNhan" list="v38CaNhanDS" placeholder="Gõ hoặc chọn tên… (bỏ trống = cả đơn vị)" style="width:100%;padding:9px;margin:4px 0 6px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;box-sizing:border-box">
+    <datalist id="v38CaNhanDS"></datalist>
+    <label style="font-size:13px;color:#334;display:flex;align-items:center;gap:7px;margin:10px 0 16px">
+      <input type="checkbox" id="v38ChiHT" checked> Chỉ lấy việc đã hoàn thành
+    </label>
+    <div id="v38Msg" style="font-size:13px;color:#0a7d33;min-height:18px;margin-bottom:10px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="document.getElementById('v38Overlay').style.display='none'" style="padding:9px 16px;border:1px solid #cbd5e1;background:#f1f5f9;border-radius:8px;font-size:14px;cursor:pointer">Đóng</button>
+      <button id="v38BtnXuat" onclick="v38Xuat()" style="padding:9px 18px;border:none;background:#1F4E79;color:#fff;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">⬇ Kết xuất Excel</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  // Tự chèn mục menu vào #export-menu (ngay sau mục "Kết quả theo tháng")
+  function v38GanMenu(){
+    var mn = document.getElementById('export-menu');
+    if(!mn){ return setTimeout(v38GanMenu, 500); }
+    if(document.getElementById('v38MenuItem')) return;
+    var it = document.createElement('div');
+    it.id = 'v38MenuItem';
+    it.style.cssText = 'padding:9px 16px;cursor:pointer;font-size:12.5px;display:flex;align-items:center;gap:8px';
+    it.innerHTML = '🎯 Excel – Kết quả theo LỌC (kỳ / đơn vị / cá nhân)';
+    it.onmouseover = function(){ this.style.background='#f5f5f5'; };
+    it.onmouseout  = function(){ this.style.background=''; };
+    it.onclick = v38MoModal;
+    // chèn ngay sau mục "Kết quả theo tháng" nếu tìm thấy, nếu không thì cuối menu
+    var anchor = null, kids = mn.querySelectorAll('div');
+    for(var i=0;i<kids.length;i++){ if((kids[i].textContent||'').indexOf('Kết quả theo tháng')>=0){ anchor = kids[i]; break; } }
+    if(anchor && anchor.parentNode){ anchor.parentNode.insertBefore(it, anchor.nextSibling); }
+    else { mn.appendChild(it); }
+  }
+  if(document.readyState!=='loading') v38GanMenu();
+  else document.addEventListener('DOMContentLoaded', v38GanMenu);
+
+  window.v38MoModal = async function(){
+    var mn = document.getElementById('export-menu'); if(mn) mn.style.display='none';
+    document.getElementById('v38Overlay').style.display='flex';
+    var msg = document.getElementById('v38Msg');
+    msg.style.color='#0a7d33'; msg.textContent='Đang nạp danh mục…';
+    try{
+      var m = await apiJsonp({ v38:'meta' });
+      if(!m || !m.ok){ msg.style.color='#c0392b'; msg.textContent='Lỗi nạp danh mục.'; return; }
+      document.getElementById('v38Ky').innerHTML =
+        '<option value="">— Tất cả các tháng —</option>' +
+        (m.kyList||[]).map(function(k){ var p=k.split('-'); return '<option value="'+k+'">Tháng '+p[1]+'/'+p[0]+'</option>'; }).join('');
+      document.getElementById('v38DonVi').innerHTML =
+        '<option value="">— Tất cả đơn vị —</option>' +
+        (m.donViList||[]).map(function(d){ return '<option value="'+d+'">'+d+'</option>'; }).join('');
+      document.getElementById('v38CaNhanDS').innerHTML =
+        (m.canhanList||[]).map(function(n){ return '<option value="'+n+'">'; }).join('');
+      msg.textContent='';
+    }catch(e){ msg.style.color='#c0392b'; msg.textContent='Lỗi: '+e.message; }
+  };
+
+  window.v38Xuat = async function(){
+    var btn = document.getElementById('v38BtnXuat'), msg = document.getElementById('v38Msg');
+    btn.disabled=true; msg.style.color='#0a7d33'; msg.textContent='Đang tạo file, vui lòng đợi…';
+    var payload = {
+      action:'xuatKetQuaLoc',
+      ky: document.getElementById('v38Ky').value,
+      donVi: document.getElementById('v38DonVi').value,
+      canhan: document.getElementById('v38CaNhan').value.trim(),
+      chiHT: document.getElementById('v38ChiHT').checked
+    };
+    try{
+      var res = await fetch(API, { method:'POST', body:JSON.stringify(payload) }).then(function(r){ return apiJson(r); });
+      btn.disabled=false;
+      if(!res.ok){ msg.style.color='#c0392b'; msg.textContent='Lỗi: '+(res.error||'không rõ'); return; }
+      if(res.soViec===0){ msg.style.color='#c0392b'; msg.textContent='Không có việc nào khớp bộ lọc.'; return; }
+      msg.style.color='#0a7d33'; msg.innerHTML='✔ Đã tạo ('+res.soViec+' việc). Đang mở file Excel…';
+      window.open(res.xlsxUrl, '_blank');
+    }catch(e){ btn.disabled=false; msg.style.color='#c0392b'; msg.textContent='Lỗi kết nối: '+e.message; }
+  };
+})();
+</script>
+<!-- ===================== HẾT PATCH v38 ===================== -->
+
+
 </body>
 </html>
