@@ -3723,7 +3723,7 @@ async function xuatBaoCaoFormMau(mode) {
   try {
     const res = await fetch(API, { method: "POST", body: JSON.stringify({ action: "xuatBaoCaoChuanMau", tieuDe, ky, rows }) }).then(r => apiJson(r));
     if (res.ok) {
-      window.open(res.xlsxUrl, "_blank");
+      if(res && res.b64){ v38TaiFile(res); } else if(res && res.xlsxUrl){ window.open(res.xlsxUrl, "_blank"); }
       showToast("✅ Đã tạo báo cáo (" + tasks.length + " nhiệm vụ) — đang mở file Excel để tải xuống");
     } else {
       showToast("❌ Lỗi tạo báo cáo: " + (res.error || ""));
@@ -5527,6 +5527,21 @@ async function duyetLyDo(hang, qd){
       if(tm) tm.textContent='Lần cuối: '+(r.moc||'');
     }catch(e){ box.innerHTML='<span style="color:#c0392b">Lỗi kết nối: '+e.message+'</span>'; }
   };
+  // v40: tải thẳng .xlsx từ base64 về máy (không mở tab, không tạo file Drive)
+  window.v38TaiFile = function(res){
+    try{
+      var bin = atob(res.b64);
+      var len = bin.length, bytes = new Uint8Array(len);
+      for(var i=0;i<len;i++) bytes[i] = bin.charCodeAt(i);
+      var blob = new Blob([bytes], { type: res.mime || 'application/octet-stream' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = res.fileName || 'KetQua_KV8.xlsx';
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 1500);
+      return true;
+    }catch(e){ return false; }
+  };
   window.v38Xuat = async function(){
     var btn = document.getElementById('v38BtnXuat'), msg = document.getElementById('v38Msg');
     btn.disabled=true; msg.style.color='#0a7d33'; msg.textContent='Đang tạo file, vui lòng đợi…';
@@ -5542,8 +5557,10 @@ async function duyetLyDo(hang, qd){
       btn.disabled=false;
       if(!res.ok){ msg.style.color='#c0392b'; msg.textContent='Lỗi: '+(res.error||'không rõ'); return; }
       if(res.soViec===0){ msg.style.color='#c0392b'; msg.textContent='Không có việc nào khớp bộ lọc.'; return; }
-      msg.style.color='#0a7d33'; msg.innerHTML='✔ Đã tạo ('+res.soViec+' việc). Đang mở file Excel…';
-      window.open(res.xlsxUrl, '_blank');
+      if(!res.b64){ msg.style.color='#c0392b'; msg.textContent='Lỗi: máy chủ không trả về file.'; return; }
+      var ok = v38TaiFile(res);
+      msg.style.color = ok ? '#0a7d33' : '#c0392b';
+      msg.innerHTML = ok ? ('✔ Đã tải file: '+res.fileName+' ('+res.soViec+' việc)') : 'Lỗi khi tạo file tải về.';
     }catch(e){ btn.disabled=false; msg.style.color='#c0392b'; msg.textContent='Lỗi kết nối: '+e.message; }
   };
 })();
