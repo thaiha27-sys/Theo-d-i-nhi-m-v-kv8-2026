@@ -318,7 +318,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
     <button class="btn btn-outline btn-orange admin-only-action" id="btn-normalize" onclick="chuanHoaDonVi()" title="Chuẩn hóa tên đơn vị chủ trì theo danh sách 18 đơn vị KV8" style="display:none">⚙ Chuẩn hóa ĐV</button>
     <button class="btn btn-outline" id="btn-admin-toggle" onclick="openAdminLogin()">🔒 Đăng nhập Admin</button>
     <span style="font-size:10.5px;opacity:.7">⏰ 8h → dangbohqqn@gmail.com · 💾 Backup 23h30</span>
-    <span id="app-ver" title="Phiên bản giao diện đang chạy" style="font-size:10px;font-weight:700;background:rgba(255,255,255,.18);color:#fff;padding:2px 8px;border-radius:10px;margin-left:8px">v20.8</span>
+    <span id="app-ver" title="Phiên bản giao diện đang chạy" style="font-size:10px;font-weight:700;background:rgba(255,255,255,.18);color:#fff;padding:2px 8px;border-radius:10px;margin-left:8px">v20.9</span>
   </div>
 </div>
 <input type="file" id="excel-input" accept=".xlsx,.xls" style="display:none" onchange="handleExcel(event)">
@@ -1242,10 +1242,10 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
 // ============================================================
 // CẤU HÌNH
 // ============================================================
-const APP_VERSION = "v20.8";
-console.log("%c[V38 READY] index v20.7 da nap - co route ket xuat loc","color:#0a7d33;font-weight:700");
+const APP_VERSION = "v20.9";
+console.log("%c[v41 READY] index v20.9 - tai thang .xlsx (base64), khong luu Drive; cot D lay tu cot K","color:#0a7d33;font-weight:700");
 const APP_BUILD   = "12/07/2026";
-console.log("%cKV8 v20.7 (06/08/2026) - v38 ket xuat ket qua co loc","font-weight:700;color:#1A3A6B;font-size:13px");
+console.log("%cKV8 v20.9 (07/08/2026) - v41: tai thang base64, cot D=cot K","font-weight:700;color:#1A3A6B;font-size:13px");
 const API = "https://script.google.com/macros/s/AKfycbzRm_qI0sNQH7dSbM6UmAPS5ey-pMsGKiPLjXp_PEoDCPaMv6fzD1l2frG_6eK6uJvb/exec";
 
 // ============================================================
@@ -3723,8 +3723,16 @@ async function xuatBaoCaoFormMau(mode) {
   try {
     const res = await fetch(API, { method: "POST", body: JSON.stringify({ action: "xuatBaoCaoChuanMau", tieuDe, ky, rows }) }).then(r => apiJson(r));
     if (res.ok) {
-      if(res && res.b64){ v38TaiFile(res); } else if(res && res.xlsxUrl){ window.open(res.xlsxUrl, "_blank"); }
-      showToast("✅ Đã tạo báo cáo (" + tasks.length + " nhiệm vụ) — đang mở file Excel để tải xuống");
+      if(res && res.b64){
+        var ok = v38TaiFile(res);
+        showToast(ok ? ("✅ Đã tải báo cáo (" + tasks.length + " nhiệm vụ): " + (res.fileName||"BaoCao_KV8.xlsx"))
+                     : "❌ Lỗi khi tạo file tải về");
+      } else if(res && res.xlsxUrl){
+        window.open(res.xlsxUrl, "_blank");
+        showToast("✅ Đã tạo báo cáo (" + tasks.length + " nhiệm vụ) — tải qua link");
+      } else {
+        showToast("❌ Máy chủ không trả về file");
+      }
     } else {
       showToast("❌ Lỗi tạo báo cáo: " + (res.error || ""));
     }
