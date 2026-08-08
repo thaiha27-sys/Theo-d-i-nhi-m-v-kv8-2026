@@ -5079,7 +5079,7 @@ window.v39DoiChieuKho = async function(){
 
 
 <!-- ================================================================= -->
-<!--  PATCH v43 — KẾT XUẤT 3 BÁO CÁO CHUẨN (KQ / CHẬM MUỘN / NHIỆM VỤ)  -->
+<!--  PATCH v21.1 (nền v43) — KẾT XUẤT 3 BÁO CÁO CHUẨN (KQ / CHẬM MUỘN / NHIỆM VỤ)  -->
 <!--  Chi cục Hải quan khu vực VIII                                     -->
 <!--  ---------------------------------------------------------------  -->
 <!--  Thay cho 9 mục kết xuất cũ. Bộ lọc dùng chung cho cả 3 nút:       -->
@@ -5089,9 +5089,12 @@ window.v39DoiChieuKho = async function(){
 <!--       Cột F Người ký và cột G Thể loại sản phẩm được đối chiếu      -->
 <!--       thẳng từ Kho văn bản đi lúc kết xuất. Gộp cả NV + LUUTRU.     -->
 <!--       Mẫu đích: 1-KQ.xlsx (sheet KQ, 13 cột).                       -->
-<!--   NÚT 2 · CHẬM MUỘN  → dựng tại trình duyệt theo mẫu 2-CHAM MUON.   -->
+<!--   NÚT 2 · CHẬM MUỘN  → v21.1 CHUYỂN VỀ BACKEND xuatChamMuonLoc (v44). -->
 <!--       Việc hoàn thành trễ + việc quá hạn chưa xong, TÍNH ĐẾN THỜI   -->
 <!--       ĐIỂM BẤM KẾT XUẤT (mốc giờ ghi ngay trên dòng tiêu đề).       -->
+<!--       Ngày hoàn thành chốt theo cột U → Kho VB đi → cột K, KHÔNG    -->
+<!--       lấy giờ bấm nút ở cột J. Cột G lấy sản phẩm thật ở cột K như  -->
+<!--       mẫu 1-KQ. Gộp cả NV + LUUTRU. Mẫu đích: 2-CHAM MUON.xlsx.     -->
 <!--   NÚT 3 · NHIỆM VỤ   → dựng tại trình duyệt theo mẫu 3-NV.          -->
 <!--       Việc đang thực hiện (chưa hoàn thành) trong kỳ.               -->
 <!-- ================================================================= -->
@@ -5139,7 +5142,7 @@ var KX3_META = {
   },
   cham: {
     ten: 'VIỆC CHẬM MUỘN',
-    mo:  'Việc hoàn thành trễ hạn và việc quá hạn chưa hoàn thành, <b>tính đến thời điểm bấm kết xuất</b> (mốc giờ ghi trên dòng tiêu đề của file).',
+    mo:  'Việc hoàn thành trễ hạn và việc quá hạn chưa hoàn thành, <b>tính đến thời điểm bấm kết xuất</b> (mốc giờ ghi trên dòng tiêu đề của file).<br>Ngày hoàn thành chốt theo <b>cột U → Kho văn bản đi → cột K</b> — không dùng giờ bấm nút ở cột J. Cột <b>Yêu cầu sản phẩm</b> lấy sản phẩm thật ở cột K như mẫu 1-KQ.',
     file:'2-CHAM MUON'
   },
   nv: {
@@ -5164,7 +5167,11 @@ function kx3MocGio(d){
 }
 
 /* Ngày hoàn thành thực tế đọc từ cột K ("Ngày: dd/MM/yyyy").
-   ⛔ Không bao giờ dùng ngày bấm nút để kết luận chậm. */
+   ⛔ Không bao giờ dùng ngày bấm nút / cột J để kết luận chậm.
+   ⚠ v21.1 — Trình duyệt chỉ nhận 12 cột cơ bản nên CHỈ thấy được cột K.
+     Cột U (ngày xác minh tay), Kho VB đi và sheet LUUTRU chỉ máy chủ mới đọc
+     được ⇒ các hàm dưới đây chỉ dùng để ĐẾM NHANH trong hộp thoại.
+     File chậm muộn thật do backend xuatChamMuonLoc dựng (chuẩn v22–v24). */
 function kx3NgayHT(t){
   var m = String(t.ketQua||'').match(/Ng[àa]y:\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
   if(m) return new Date(+m[3], +m[2]-1, +m[1]);
@@ -5172,18 +5179,23 @@ function kx3NgayHT(t){
 }
 function kx3LaHT(t){ return String(t._s||'').indexOf('Hoàn thành') >= 0; }
 
-/* Hoàn thành nhưng TRỄ hạn — trả về số ngày trễ (0 = không trễ) */
+/* Hoàn thành nhưng TRỄ hạn — trả về số ngày trễ (0 = không trễ/chưa chốt được) */
 function kx3SoNgayTre(t){
   if(!kx3LaHT(t)) return 0;
   var han = parseDate(t.thoiHan), ht = kx3NgayHT(t);
-  if(han && ht){
-    var d = Math.round((ht - han)/86400000);
-    return d > 0 ? d : 0;
-  }
-  /* Không chốt được ngày: chỉ tin chữ "MUỘN" do hệ thống ghi lúc báo hoàn thành */
-  return /MU[ỘO]N/i.test(String(t.ghiChu||'')) ? -1 : 0;   // -1 = trễ nhưng chưa rõ số ngày
+  if(!han || !ht) return 0;          /* thiếu bằng chứng → KHÔNG kết luận chậm */
+  var d = Math.round((ht - han)/86400000);
+  return d > 0 ? d : 0;
 }
-function kx3HTTre(t){ return kx3SoNgayTre(t) !== 0; }
+function kx3HTTre(t){ return kx3SoNgayTre(t) > 0; }
+
+/* Đã báo hoàn thành nhưng chưa chốt được ngày văn bản.
+   Chữ "MUỘN" trong cột J chỉ dùng làm CỜ NHẮC XÁC MINH, không dùng tính số ngày. */
+function kx3ChoXacMinh(t){
+  if(!kx3LaHT(t)) return false;
+  if(kx3NgayHT(t)) return false;
+  return /MU[ỘO]N/i.test(String(t.ghiChu||''));
+}
 
 /* Chưa hoàn thành và ĐÃ quá hạn — trả về số ngày quá hạn tính đến hôm nay */
 function kx3SoNgayQuaHan(t){
@@ -5270,8 +5282,11 @@ function kx3DemLai(){
                    '<br><span style="font-size:11.5px;color:#64748b">Máy chủ sẽ gộp thêm các việc đã lưu trữ nên số dòng trong file có thể nhiều hơn.</span>';
   } else if(KX3_MODE === 'cham'){
     var tre = ds.filter(kx3HTTre).length;
-    el.innerHTML = '📄 <b>' + ds.length + '</b> việc chậm muộn — trong đó ' + tre +
-                   ' việc hoàn thành trễ, ' + (ds.length - tre) + ' việc quá hạn chưa xong.';
+    var cxm = ds.filter(kx3ChoXacMinh).length;
+    el.innerHTML = '📄 <b>' + ds.length + '</b> việc chậm muộn — ' + tre +
+                   ' hoàn thành trễ, ' + (ds.length - tre - cxm) + ' quá hạn chưa xong' +
+                   (cxm ? ', ' + cxm + ' chờ xác minh ngày' : '') + '.' +
+                   '<br><span style="font-size:11.5px;color:#64748b">Máy chủ sẽ chốt lại ngày hoàn thành theo cột U → Kho VB đi → cột K và gộp thêm việc đã lưu trữ, nên số dòng trong file có thể khác con số này.</span>';
   } else {
     el.innerHTML = '📄 <b>' + ds.length + '</b> nhiệm vụ đang thực hiện khớp bộ lọc.';
   }
@@ -5284,7 +5299,7 @@ function kx3Loc(mode, f){
   if(mode === 'kq'){
     ds = ds.filter(kx3LaHT);
   } else if(mode === 'cham'){
-    ds = ds.filter(function(t){ return kx3HTTre(t) || kx3QuaHan(t); });
+    ds = ds.filter(function(t){ return kx3HTTre(t) || kx3QuaHan(t) || kx3ChoXacMinh(t); });
   } else {
     ds = ds.filter(function(t){ return !kx3LaHT(t); });
     if(f.boQuaHan) ds = ds.filter(function(t){ return !kx3QuaHan(t); });
@@ -5344,59 +5359,37 @@ function kx3Tai(res){
   }catch(e){ return false; }
 }
 
-/* ---------- DỰNG FILE .XLSX TẠI TRÌNH DUYỆT (nút 2 & 3) ---------- */
+/* ---------- DỰNG FILE .XLSX TẠI TRÌNH DUYỆT (chỉ còn nút 3 · NHIỆM VỤ) ----------
+   v21.1 — Nhánh 'cham' đã CHUYỂN VỀ MÁY CHỦ (action xuatChamMuonLoc, Code.gs v44).
+   Lý do: trình duyệt chỉ nhận 12 cột cơ bản nên không đọc được cột U (ngày xác
+   minh tay), không tra được Kho VB đi và không thấy sheet LUUTRU ⇒ buộc phải
+   đoán ngày hoàn thành từ chữ "MUỘN" ở cột J — tức GIỜ BẤM NÚT, sai nguyên tắc
+   chốt ngày chậm của v22–v24. */
 function kx3GhiFile(mode, ds, f){
   var today = new Date();
   var moc   = kx3MocGio(today);
-  var head, rows, wsData, cols, sheet, fname;
 
-  if(mode === 'cham'){
-    /* ===== Mẫu 2-CHAM MUON.xlsx — 11 cột ===== */
-    head = ['TT','NHIỆM VỤ/TRÍCH YẾU','Đơn vị tham mưu','LOẠI','Người thực hiện trực tiếp',
-            'LĐ CHI CỤC CHỈ ĐẠO','YÊU CẦU SẢN PHẨM','CĂN CỨ','MỨC ĐỘ','THỜI HẠN','GHI CHÚ'];
-    rows = ds.map(function(t,i){
-      var nTre = kx3SoNgayTre(t), nQua = kx3SoNgayQuaHan(t), loai, note = [];
-      if(nTre !== 0){
-        loai = 'Hoàn thành chậm';
-        note.push(nTre > 0 ? ('Trễ ' + nTre + ' ngày') : 'Trễ hạn (chưa chốt được ngày văn bản)');
-      } else {
-        loai = 'Quá hạn';
-        note.push('Quá hạn ' + nQua + ' ngày, chưa hoàn thành');
-      }
-      if(t.ghiChu) note.push(String(t.ghiChu).trim());
-      return [ i+1, t.nhiemVu||'', t.donVi||'', loai,
-               t.nguoiTH||'', t.lanhDao||'', t.sanPham||'', t.canCu||'',
-               t.mucDo||'', fmtDate(t.thoiHan), note.join(' · ') ];
-    });
-    wsData = [[kx3TieuDe(mode, f, moc)].concat(new Array(head.length-1).fill('')), head].concat(rows);
-    cols   = [{wch:5},{wch:46},{wch:16},{wch:17},{wch:22},{wch:26},{wch:20},{wch:30},{wch:8},{wch:13},{wch:30}];
-    sheet  = 'KQ';
-    fname  = 'HQKV8_ChamMuon';
-  } else {
-    /* ===== Mẫu 3-NV.xlsx — 11 cột, có 1 dòng trống giữa tiêu đề và tiêu đề cột ===== */
-    head = ['TT','Nhiệm vụ','Căn cứ','Đơn vị chủ trì','Lãnh đạo phụ trách','Thời hạn hoàn thành',
-            'Yêu cầu sản phẩm đầu ra','Tình trạng','Người thực hiện trực tiếp','GHI CHÚ',
-            'Sản phẩm cụ thể - số VB - ngày HT'];
-    rows = ds.map(function(t,i){
-      return [ i+1, t.nhiemVu||'', t.canCu||'', t.donVi||'', t.lanhDao||'',
-               fmtDate(t.thoiHan), t.sanPham||'', kx3SachTT(t._s),
-               t.nguoiTH||'', t.ghiChu||'', t.ketQua||'' ];
-    });
-    wsData = [[kx3TieuDe(mode, f, moc)].concat(new Array(head.length-1).fill('')),
-              new Array(head.length).fill(''), head].concat(rows);
-    cols   = [{wch:5},{wch:48},{wch:30},{wch:16},{wch:22},{wch:14},{wch:20},{wch:14},{wch:22},{wch:20},{wch:26}];
-    sheet  = 'NV';
-    fname  = 'HQKV8_NhiemVu';
-  }
+  /* ===== Mẫu 3-NV.xlsx — 11 cột, có 1 dòng trống giữa tiêu đề và tiêu đề cột ===== */
+  var head = ['TT','Nhiệm vụ','Căn cứ','Đơn vị chủ trì','Lãnh đạo phụ trách','Thời hạn hoàn thành',
+              'Yêu cầu sản phẩm đầu ra','Tình trạng','Người thực hiện trực tiếp','GHI CHÚ',
+              'Sản phẩm cụ thể - số VB - ngày HT'];
+  var rows = ds.map(function(t,i){
+    return [ i+1, t.nhiemVu||'', t.canCu||'', t.donVi||'', t.lanhDao||'',
+             fmtDate(t.thoiHan), t.sanPham||'', kx3SachTT(t._s),
+             t.nguoiTH||'', t.ghiChu||'', t.ketQua||'' ];
+  });
+  var wsData = [[kx3TieuDe('nv', f, moc)].concat(new Array(head.length-1).fill('')),
+                new Array(head.length).fill(''), head].concat(rows);
+  var cols   = [{wch:5},{wch:48},{wch:30},{wch:16},{wch:22},{wch:14},{wch:20},{wch:14},{wch:22},{wch:20},{wch:26}];
+  var sheet  = 'NV';
+  var fname  = 'HQKV8_NhiemVu';
 
   var wb = XLSX.utils.book_new();
   var ws = XLSX.utils.aoa_to_sheet(wsData);
   ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:head.length-1} }];
   ws['!cols']   = cols;
-  ws['!rows']   = (mode === 'cham')
-      ? [{hpt:32},{hpt:38}].concat(rows.map(function(){ return {hpt:46}; }))
-      : [{hpt:32},{hpt:8},{hpt:38}].concat(rows.map(function(){ return {hpt:46}; }));
-  ws['!freeze'] = (mode === 'cham') ? 'A3' : 'A4';
+  ws['!rows']   = [{hpt:32},{hpt:8},{hpt:38}].concat(rows.map(function(){ return {hpt:46}; }));
+  ws['!freeze'] = 'A4';
 
   XLSX.utils.book_append_sheet(wb, ws, sheet);
   var hau = (f.thang ? '_' + f.thang.replace('-','') : '_T' + (today.getMonth()+1))
@@ -5427,13 +5420,21 @@ function kx3Xuat(){
   var msg = document.getElementById('kx3Msg');
   var btn = document.getElementById('kx3Btn');
 
-  /* ===== NÚT 1: KẾT QUẢ — qua backend để có Người ký + Thể loại sản phẩm ===== */
-  if(KX3_MODE === 'kq'){
+  /* ===== NÚT 1 (KẾT QUẢ) + NÚT 2 (CHẬM MUỘN) — qua backend =====
+     Cả hai đều cần đọc cột U, Kho văn bản đi và sheet LUUTRU — những thứ
+     trình duyệt không có. Nút 2 dùng action xuatChamMuonLoc (Code.gs v44). */
+  if(KX3_MODE === 'kq' || KX3_MODE === 'cham'){
+    var laCham  = (KX3_MODE === 'cham');
+    var payload = laCham
+      ? { action:'xuatChamMuonLoc', ky:f.thang, donVi:f.donVi, canhan:f.canhan, lanhDao:f.lanhDao }
+      : { action:'xuatKetQuaLoc',   ky:f.thang, donVi:f.donVi, canhan:f.canhan, lanhDao:f.lanhDao, chiHT:true };
+
     btn.disabled = true;
     msg.style.color = '#0a7d33';
-    msg.textContent = 'Đang tạo file (đối chiếu Kho văn bản đi)… có thể mất 10–30 giây.';
-    var payload = { action:'xuatKetQuaLoc', ky:f.thang, donVi:f.donVi,
-                    canhan:f.canhan, lanhDao:f.lanhDao, chiHT:true };
+    msg.textContent = laCham
+      ? 'Đang tạo file (chốt ngày hoàn thành theo cột U → Kho VB đi → cột K)… có thể mất 10–30 giây.'
+      : 'Đang tạo file (đối chiếu Kho văn bản đi)… có thể mất 10–30 giây.';
+
     apiJsonp(payload, 120000).then(function(res){
       btn.disabled = false;
       if(!res || !res.ok){
@@ -5442,17 +5443,24 @@ function kx3Xuat(){
       }
       if(res.soViec === 0){
         msg.style.color = '#c0392b';
-        msg.textContent = 'Không có việc nào khớp bộ lọc.'; return;
+        msg.textContent = laCham ? 'Không có việc chậm muộn nào khớp bộ lọc.'
+                                 : 'Không có việc nào khớp bộ lọc.'; return;
       }
+      var tomTat = laCham
+        ? (res.soViec + ' việc: ' + (res.soCham||0) + ' hoàn thành chậm, ' +
+           (res.soQuaHan||0) + ' quá hạn chưa xong' +
+           (res.soTreo ? ', ' + res.soTreo + ' chờ xác minh ngày' : ''))
+        : (res.soViec + ' việc');
+
       if(res.b64){
         var ok = kx3Tai(res);
         msg.style.color = ok ? '#0a7d33' : '#c0392b';
-        msg.textContent = ok ? ('✔ Đã tải: ' + res.fileName + ' (' + res.soViec + ' việc)')
+        msg.textContent = ok ? ('✔ Đã tải: ' + res.fileName + ' (' + tomTat + ')')
                              : 'Lỗi khi tạo file tải về.';
       } else if(res.xlsxUrl){
         window.open(res.xlsxUrl, '_blank');
         msg.style.color = '#b8860b';
-        msg.textContent = '✔ Đã xuất (' + res.soViec + ' việc) — tải qua link dự phòng.';
+        msg.textContent = '✔ Đã xuất (' + tomTat + ') — tải qua link dự phòng.';
       } else {
         msg.style.color = '#c0392b';
         msg.textContent = 'Máy chủ không trả về file.';
@@ -5465,7 +5473,7 @@ function kx3Xuat(){
     return;
   }
 
-  /* ===== NÚT 2 + 3: dựng thẳng tại trình duyệt ===== */
+  /* ===== NÚT 3: dựng thẳng tại trình duyệt ===== */
   var ds = kx3Loc(KX3_MODE, f);
   if(!ds.length){
     msg.style.color = '#c0392b';
@@ -5493,7 +5501,7 @@ function kx3Xuat(){
     document.head.appendChild(s);
   } else chay();
 }
-console.log('%c[v43] Kết xuất 3 báo cáo: KẾT QUẢ / CHẬM MUỘN / NHIỆM VỤ — sẵn sàng','color:#1F4E79;font-weight:700');
+console.log('%c[v21.1] Kết xuất 3 báo cáo — KẾT QUẢ + CHẬM MUỘN dựng tại máy chủ (Code.gs v44), NHIỆM VỤ dựng tại trình duyệt','color:#1F4E79;font-weight:700');
 </script>
 <!-- ===================== HẾT PATCH v43 ===================== -->
 
