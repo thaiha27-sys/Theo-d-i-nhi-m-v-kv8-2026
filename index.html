@@ -397,6 +397,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
             <div onclick="kx3Mo(&#39;kq&#39;)" style="padding:11px 16px;cursor:pointer;font-size:12.5px;display:flex;flex-direction:column;gap:2px" onmouseover="this.style.background=&#39;#f5f5f5&#39;" onmouseout="this.style.background=&#39;&#39;"><span style="font-weight:600">📗 KẾT QUẢ công việc</span><span style="font-size:11px;color:var(--muted)">Việc đã hoàn thành · có Người ký, Thể loại SP → mẫu 1-KQ</span></div>
             <div onclick="kx3Mo(&#39;cham&#39;)" style="padding:11px 16px;cursor:pointer;font-size:12.5px;display:flex;flex-direction:column;gap:2px" onmouseover="this.style.background=&#39;#f5f5f5&#39;" onmouseout="this.style.background=&#39;&#39;"><span style="font-weight:600">📕 Việc CHẬM MUỘN</span><span style="font-size:11px;color:var(--muted)">Trễ hạn + quá hạn, tính đến lúc kết xuất → mẫu 2-CHAM MUON</span></div>
             <div onclick="kx3Mo(&#39;nv&#39;)" style="padding:11px 16px;cursor:pointer;font-size:12.5px;display:flex;flex-direction:column;gap:2px" onmouseover="this.style.background=&#39;#f5f5f5&#39;" onmouseout="this.style.background=&#39;&#39;"><span style="font-weight:600">📘 NHIỆM VỤ đang thực hiện</span><span style="font-size:11px;color:var(--muted)">Việc đang thực hiện trong kỳ → mẫu 3-NV</span></div>
+            <div onclick="kx3Mo(&#39;tmc&#39;)" style="padding:11px 16px;cursor:pointer;font-size:12.5px;display:flex;flex-direction:column;gap:2px;border-top:1px solid #f0f0f0" onmouseover="this.style.background=&#39;#f5f5f5&#39;" onmouseout="this.style.background=&#39;&#39;"><span style="font-weight:600">📙 KQ THIẾU MINH CHỨNG</span><span style="font-size:11px;color:var(--muted)">Việc đã xong, rõ có ban hành văn bản nhưng chưa nêu số/ngày → gửi đơn vị bổ sung</span></div>
           </div>
         </div>
       </div>
@@ -1236,7 +1237,7 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
 // CẤU HÌNH
 // ============================================================
 const APP_VERSION = "v21.0";
-console.log("%c[v43 READY] index v21.0 - ket xuat 3 nut: KET QUA / CHAM MUON / NHIEM VU","color:#0a7d33;font-weight:700");
+console.log("%c[v46 READY] index v21.2 - ket xuat 4 nut: KET QUA / CHAM MUON / NHIEM VU / KQ THIEU MINH CHUNG","color:#0a7d33;font-weight:700");
 const APP_BUILD   = "12/07/2026";
 console.log("%cKV8 v21.0 (08/08/2026) - v43: cot F Nguoi ky + cot G The loai tra thang tu Kho VB di","font-weight:700;color:#1A3A6B;font-size:13px");
 const API = "https://script.google.com/macros/s/AKfycbzRm_qI0sNQH7dSbM6UmAPS5ey-pMsGKiPLjXp_PEoDCPaMv6fzD1l2frG_6eK6uJvb/exec";
@@ -5120,6 +5121,10 @@ window.v39DoiChieuKho = async function(){
       <input type="checkbox" id="kx3BoQuaHan" onchange="kx3DemLai()"> Bỏ việc đã quá hạn (đã có ở báo cáo Chậm muộn)
     </label>
 
+    <label id="kx3KemKTTWrap" style="display:none;font-size:13px;color:#334;align-items:center;gap:7px;margin:12px 0 4px">
+      <input type="checkbox" id="kx3KemKTT" checked onchange="kx3DemLai()"> Kèm cả việc đã nêu số nhưng không tra thấy trong Kho VB đi
+    </label>
+
     <div id="kx3Dem" style="font-size:12.5px;color:#1F4E79;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:8px 11px;margin:12px 0 4px"></div>
 
     <div id="kx3Msg" style="font-size:13px;color:#0a7d33;min-height:20px;margin:8px 0"></div>
@@ -5149,8 +5154,54 @@ var KX3_META = {
     ten: 'NHIỆM VỤ ĐANG THỰC HIỆN',
     mo:  'Việc chưa hoàn thành tại thời điểm kết xuất, dùng để giao/đôn đốc tiếp.',
     file:'3-NV'
+  },
+  /* v46 — Nút 4 */
+  tmc: {
+    ten: 'KẾT QUẢ THIẾU MINH CHỨNG',
+    mo:  'Việc đã báo hoàn thành, <b>rõ ràng có ban hành văn bản</b> (sản phẩm là Kế hoạch, Báo cáo, Công văn, Tờ trình, Quyết định…) nhưng <b>chưa nêu số, ngày văn bản</b> làm minh chứng.<br>Việc không có sản phẩm bằng văn bản (giấy mời, hồ sơ, sổ sách, tài liệu họp, dự họp…) được <b>chấp nhận theo ngày hoàn thành</b>, không đưa vào danh sách.<br>File ra có sẵn 2 cột trống tô vàng để đơn vị điền Số VB + Ngày VB.',
+    file:'4-KQ THIEU MINH CHUNG'
   }
 };
+
+/* ═════════ v46 — ƯỚC LƯỢNG NHANH "THIẾU MINH CHỨNG" TẠI TRÌNH DUYỆT ═════════
+   Chỉ để hiện con số trong hộp thoại. File thật do máy chủ dựng (action
+   xuatThieuMinhChung) — máy chủ còn đọc được cột V (số VB đã xác minh),
+   sheet LUUTRU và Kho VB đi nên con số cuối cùng có thể khác. */
+var KX3_SP_KHONG_VB = [
+  /giấy\s*mời/i, /biên\s*bản/i, /hồ\s*sơ/i, /sổ\s*(sách|theo\s*dõi|nhật\s*ký)/i,
+  /tài\s*liệu\s*(họp|hội\s*nghị|phục\s*vụ|tập\s*huấn)/i, /bài\s*giảng/i,
+  /dự\s*(họp|hội\s*nghị|hội\s*thảo)/i, /tham\s*dự/i, /tiếp\s*(đoàn|công\s*dân)/i,
+  /kiểm\s*tra\s*(thực\s*tế|hiện\s*trường)/i, /tuần\s*tra/i, /trực\s*ban/i,
+  /niêm\s*yết/i, /cập\s*nhật\s*(dữ\s*liệu|phần\s*mềm|hệ\s*thống|danh\s*sách)/i,
+  /nhập\s*liệu/i, /phần\s*mềm|dashboard|ứng\s*dụng|phân\s*hệ/i,
+  /tin\s*bài|phóng\s*sự|clip|infographic|fanpage|zalo/i,
+  /trao\s*đổi|điện\s*thoại|email|thư\s*điện\s*tử/i,
+  /theo\s*dõi\s*thường\s*xuyên/i, /quán\s*triệt/i, /phổ\s*biến\s*(trực\s*tiếp|tại\s*cuộc\s*họp)/i
+];
+var KX3_SP_LA_VB = [
+  /nghị\s*quyết/i, /chỉ\s*thị/i, /quyết\s*định/i, /kế\s*hoạch/i, /chương\s*trình/i,
+  /kết\s*luận/i, /thông\s*báo/i, /tờ\s*trình/i, /báo\s*cáo/i, /quy\s*chế/i,
+  /quy\s*trình/i, /quy\s*định/i, /hướng\s*dẫn/i, /phương\s*án/i, /đề\s*án/i, /công\s*văn/i
+];
+function kx3CoSoVB(s){
+  s = String(s||'');
+  if(/\d{1,5}\s*[\/\-]\s*[A-Za-zĐđÀ-ỹ&]/.test(s)) return true;
+  return /(NQ|QĐ|QD|CTR|CT|KL|KH|TTR|TB|BC|HD|QC|CV)\s*(số)?\s*[:\.]?\s*\d{1,5}/i.test(s);
+}
+function kx3LaVBThat(t){
+  var moTa = String(t.sanPham||'') + ' | ' + String(t.ketQua||'') + ' | ' + String(t.nhiemVu||'');
+  for(var i=0;i<KX3_SP_KHONG_VB.length;i++) if(KX3_SP_KHONG_VB[i].test(moTa)) return false;
+  var nguon = String(t.sanPham||'') + ' ' + String(t.ketQua||'') + ' ' + String(t.nhiemVu||'');
+  for(var j=0;j<KX3_SP_LA_VB.length;j++) if(KX3_SP_LA_VB[j].test(nguon)) return true;
+  return false;
+}
+/* Trả '' nếu KHÔNG thiếu minh chứng, ngược lại trả lý do rút gọn */
+function kx3ThieuMinhChung(t){
+  if(!kx3LaHT(t)) return '';
+  if(kx3CoSoVB(t.ketQua)) return '';          /* đã nêu số — máy chủ mới tra được Kho */
+  if(!kx3LaVBThat(t)) return '';
+  return kx3NgayHT(t) ? 'chi-ngay' : 'khong-so';
+}
 
 function kx3BoDau(s){
   s = String(s||'').toLowerCase().trim().replace(/\s+/g,' ');
@@ -5209,7 +5260,7 @@ function kx3SoNgayQuaHan(t){
 function kx3QuaHan(t){ return kx3SoNgayQuaHan(t) > 0; }
 
 function kx3KyCua(t, mode){
-  var d = (mode==='kq') ? (kx3NgayHT(t) || parseDate(t.thoiHan)) : parseDate(t.thoiHan);
+  var d = (mode==='kq' || mode==='tmc') ? (kx3NgayHT(t) || parseDate(t.thoiHan)) : parseDate(t.thoiHan);
   if(!d) return '';
   return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2);
 }
@@ -5224,6 +5275,7 @@ function kx3Mo(mode){
   document.getElementById('kx3Msg').textContent   = '';
   document.getElementById('kx3Btn').disabled      = false;
   document.getElementById('kx3BoQuaHanWrap').style.display = (mode === 'nv') ? 'flex' : 'none';
+  document.getElementById('kx3KemKTTWrap').style.display   = (mode === 'tmc') ? 'flex' : 'none';   /* v46 */
   document.getElementById('kx3DoPhu').style.display        = (mode === 'kq') ? 'inline' : 'none';
 
   var kySet={}, dvSet={}, ldSet={}, cnSet={};
@@ -5257,6 +5309,7 @@ function kx3Mo(mode){
       .map(function(n){ return '<option value="'+n+'">'; }).join('');
   document.getElementById('kx3CaNhan').value = '';
   document.getElementById('kx3BoQuaHan').checked = false;
+  document.getElementById('kx3KemKTT').checked   = true;      /* v46 — mặc định bật */
 
   kx3DemLai();
   document.getElementById('kx3Overlay').style.display = 'flex';
@@ -5268,7 +5321,8 @@ function kx3LayBoLoc(){
     donVi:   document.getElementById('kx3DonVi').value,
     lanhDao: document.getElementById('kx3LanhDao').value,
     canhan:  document.getElementById('kx3CaNhan').value.trim(),
-    boQuaHan: document.getElementById('kx3BoQuaHan').checked
+    boQuaHan: document.getElementById('kx3BoQuaHan').checked,
+    kemKTT:   document.getElementById('kx3KemKTT').checked      /* v46 */
   };
 }
 
@@ -5287,6 +5341,11 @@ function kx3DemLai(){
                    ' hoàn thành trễ, ' + (ds.length - tre - cxm) + ' quá hạn chưa xong' +
                    (cxm ? ', ' + cxm + ' chờ xác minh ngày' : '') + '.' +
                    '<br><span style="font-size:11.5px;color:#64748b">Máy chủ sẽ chốt lại ngày hoàn thành theo cột U → Kho VB đi → cột K và gộp thêm việc đã lưu trữ, nên số dòng trong file có thể khác con số này.</span>';
+  } else if(KX3_MODE === 'tmc'){                  /* v46 */
+    var ks = ds.filter(function(t){ return kx3ThieuMinhChung(t) === 'khong-so'; }).length;
+    el.innerHTML = '📄 <b>' + ds.length + '</b> việc đã xong nhưng thiếu minh chứng — ' + ks +
+                   ' chưa nêu số & ngày, ' + (ds.length - ks) + ' mới có ngày.' +
+                   '<br><span style="font-size:11.5px;color:#64748b">Đây là ước lượng nhanh. Máy chủ còn đọc cột V (số VB đã xác minh), sheet lưu trữ và tra Kho VB đi nên số dòng trong file sẽ khác con số này.</span>';
   } else {
     el.innerHTML = '📄 <b>' + ds.length + '</b> nhiệm vụ đang thực hiện khớp bộ lọc.';
   }
@@ -5298,6 +5357,8 @@ function kx3Loc(mode, f){
 
   if(mode === 'kq'){
     ds = ds.filter(kx3LaHT);
+  } else if(mode === 'tmc'){                       /* v46 */
+    ds = ds.filter(function(t){ return kx3ThieuMinhChung(t) !== ''; });
   } else if(mode === 'cham'){
     ds = ds.filter(function(t){ return kx3HTTre(t) || kx3QuaHan(t) || kx3ChoXacMinh(t); });
   } else {
@@ -5423,17 +5484,26 @@ function kx3Xuat(){
   /* ===== NÚT 1 (KẾT QUẢ) + NÚT 2 (CHẬM MUỘN) — qua backend =====
      Cả hai đều cần đọc cột U, Kho văn bản đi và sheet LUUTRU — những thứ
      trình duyệt không có. Nút 2 dùng action xuatChamMuonLoc (Code.gs v44). */
-  if(KX3_MODE === 'kq' || KX3_MODE === 'cham'){
+  if(KX3_MODE === 'kq' || KX3_MODE === 'cham' || KX3_MODE === 'tmc'){
     var laCham  = (KX3_MODE === 'cham');
-    var payload = laCham
-      ? { action:'xuatChamMuonLoc', ky:f.thang, donVi:f.donVi, canhan:f.canhan, lanhDao:f.lanhDao }
-      : { action:'xuatKetQuaLoc',   ky:f.thang, donVi:f.donVi, canhan:f.canhan, lanhDao:f.lanhDao, chiHT:true };
+    var laTMC   = (KX3_MODE === 'tmc');            /* v46 */
+    var payload;
+    if(laTMC){
+      payload = { action:'xuatThieuMinhChung', ky:f.thang, donVi:f.donVi, canhan:f.canhan,
+                  lanhDao:f.lanhDao, kemKhongTraThay: f.kemKTT ? 'true' : 'false' };
+    } else if(laCham){
+      payload = { action:'xuatChamMuonLoc', ky:f.thang, donVi:f.donVi, canhan:f.canhan, lanhDao:f.lanhDao };
+    } else {
+      payload = { action:'xuatKetQuaLoc',   ky:f.thang, donVi:f.donVi, canhan:f.canhan, lanhDao:f.lanhDao, chiHT:true };
+    }
 
     btn.disabled = true;
     msg.style.color = '#0a7d33';
-    msg.textContent = laCham
-      ? 'Đang tạo file (chốt ngày hoàn thành theo cột U → Kho VB đi → cột K)… có thể mất 10–30 giây.'
-      : 'Đang tạo file (đối chiếu Kho văn bản đi)… có thể mất 10–30 giây.';
+    msg.textContent = laTMC
+      ? 'Đang rà soát minh chứng từng việc (đối chiếu Kho văn bản đi)… có thể mất 10–30 giây.'
+      : (laCham
+        ? 'Đang tạo file (chốt ngày hoàn thành theo cột U → Kho VB đi → cột K)… có thể mất 10–30 giây.'
+        : 'Đang tạo file (đối chiếu Kho văn bản đi)… có thể mất 10–30 giây.');
 
     apiJsonp(payload, 120000).then(function(res){
       btn.disabled = false;
@@ -5442,15 +5512,29 @@ function kx3Xuat(){
         msg.textContent = 'Lỗi: ' + ((res && res.error) || 'không rõ'); return;
       }
       if(res.soViec === 0){
-        msg.style.color = '#c0392b';
-        msg.textContent = laCham ? 'Không có việc chậm muộn nào khớp bộ lọc.'
-                                 : 'Không có việc nào khớp bộ lọc.'; return;
+        msg.style.color = laTMC ? '#0a7d33' : '#c0392b';
+        msg.textContent = laTMC  ? '✔ Không có việc nào thiếu minh chứng — các đơn vị đã kê khai đủ số, ngày văn bản.'
+                        : (laCham ? 'Không có việc chậm muộn nào khớp bộ lọc.'
+                                  : 'Không có việc nào khớp bộ lọc.'); return;
       }
-      var tomTat = laCham
-        ? (res.soViec + ' việc: ' + (res.soCham||0) + ' hoàn thành chậm, ' +
-           (res.soQuaHan||0) + ' quá hạn chưa xong' +
-           (res.soTreo ? ', ' + res.soTreo + ' chờ xác minh ngày' : ''))
-        : (res.soViec + ' việc');
+      var tomTat;
+      if(laTMC){
+        tomTat = res.soViec + ' việc: ' + (res.soKhongSo||0) + ' chưa nêu số & ngày, ' +
+                 (res.soChiNgay||0) + ' mới có ngày' +
+                 (res.soKhongTraThay ? ', ' + res.soKhongTraThay + ' nêu số nhưng không tra thấy trong Kho' : '') +
+                 ' · đạt yêu cầu ' + (res.soDaDat||0) + ' việc';
+      } else if(laCham){
+        tomTat = res.soViec + ' việc: ' + (res.soCham||0) + ' hoàn thành chậm, ' +
+                 (res.soQuaHan||0) + ' quá hạn chưa xong' +
+                 (res.soTreo ? ', ' + res.soTreo + ' chờ xác minh ngày' : '');
+      } else {
+        tomTat = res.soViec + ' việc';
+        if(res.nguoiTH){
+          var g = res.nguoiTH;
+          var sua = (g.dien||0) + (g.moRong||0) + (g.thay||0);
+          if(sua) tomTat += ' · cột Người thực hiện: làm đầy ' + sua + ' dòng từ Kho VB đi';
+        }
+      }
 
       if(res.b64){
         var ok = kx3Tai(res);
