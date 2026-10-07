@@ -408,12 +408,14 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
           <th style="width:36px">TT</th>
           <th style="min-width:220px">Nhiệm vụ</th>
           <th style="width:150px">Căn cứ</th>
-          <th style="width:130px">Đơn vị CT</th>
-          <th style="width:110px">Lãnh đạo PT</th>
-          <th style="width:100px">Người TH</th>
-          <th style="width:90px">Hạn</th>
-          <th style="width:58px">Mức độ</th>
-          <th style="width:160px">Tình trạng / Thao tác</th>
+          <th style="width:110px">Chủ trì</th>
+          <th style="width:100px">Lãnh đạo CC</th>
+          <th style="width:100px">LĐ đơn vị</th>
+          <th style="width:110px">Người trực tiếp</th>
+          <th style="width:84px">Hạn</th>
+          <th style="width:56px">Mức độ</th>
+          <th style="width:58px">Mã ISO</th>
+          <th style="width:170px">Tình trạng / Thao tác</th>
         </tr></thead>
         <tbody id="table-body"></tbody>
       </table>
@@ -496,22 +498,40 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
   <div class="section">
     <div class="table-toolbar">
       <select class="filter-sel" id="lt-ky" onchange="renderLuuTruTable()"><option value="">— Tất cả kỳ lưu —</option></select>
-      <input class="search-box" id="lt-search" placeholder="🔍 Tìm trong lưu trữ..." oninput="renderLuuTruTable()">
+      <select class="filter-sel" id="lt-pham-vi" onchange="renderLuuTruTable()">
+        <option value="lt">Chỉ việc đã lưu trữ</option>
+        <option value="all">Lưu trữ + việc đã xong chưa lưu trữ</option>
+      </select>
+      <input class="search-box" id="lt-search" placeholder="🔍 Tìm chung (nhiệm vụ, kết quả, tên…)" oninput="renderLuuTruTable()">
       <span id="lt-count" style="font-size:12.5px;color:var(--muted);white-space:nowrap"></span>
       <button class="btn" style="background:var(--navy);color:#fff;font-size:12px;padding:6px 12px;border:none;border-radius:6px;cursor:pointer" onclick="loadLuuTru(true)">🔄 Tải lại</button>
+      <button class="btn" style="background:#1F7A3A;color:#fff;font-size:12px;padding:6px 12px;border:none;border-radius:6px;cursor:pointer" onclick="ltXuatExcel()">⬇ Xuất Excel</button>
       <button class="btn admin-only-action" style="background:var(--gold);color:#fff;font-size:12px;padding:6px 12px;border:none;border-radius:6px;cursor:pointer" onclick="runLuuTruThang()">📦 Lưu trữ NV hoàn thành tháng trước</button>
+    </div>
+    <div class="lt49-loc">
+      <div><label>Số / ký hiệu VB ĐẾN (căn cứ)</label><input id="lt-so-den" placeholder="VD: 3775/UBND-TH hoặc 3775" oninput="renderLuuTruTable()"></div>
+      <div><label>Số / ký hiệu VB ĐI (kết quả)</label><input id="lt-so-di" placeholder="VD: 4012/HQKV8-VP" oninput="renderLuuTruTable()"></div>
+      <div><label>Đơn vị chủ trì</label><select id="lt-donvi" onchange="renderLuuTruTable()"><option value="">— Tất cả —</option></select></div>
+      <div><label>Lãnh đạo Chi cục</label><select id="lt-ld" onchange="renderLuuTruTable()"><option value="">— Tất cả —</option></select></div>
+      <div><label>Cá nhân (người TH / LĐ đơn vị)</label><input id="lt-canhan" list="lt-ds-ten" placeholder="Gõ tên, có dấu hay không đều được" oninput="renderLuuTruTable()"><datalist id="lt-ds-ten"></datalist></div>
+      <div><label>Hoàn thành từ ngày</label><input id="lt-tu" type="date" onchange="renderLuuTruTable()"></div>
+      <div><label>… đến ngày</label><input id="lt-den" type="date" onchange="renderLuuTruTable()"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn" style="background:#e2e8f0;color:#334;font-size:12px;padding:7px 12px;border:none;border-radius:6px;cursor:pointer;width:100%" onclick="ltXoaLoc()">✕ Xóa bộ lọc</button></div>
     </div>
     <div style="overflow-x:auto">
       <table class="tbl">
         <thead><tr>
           <th style="width:36px">TT</th>
-          <th style="min-width:220px">Nhiệm vụ</th>
-          <th style="width:120px">Đơn vị</th>
-          <th style="width:110px">Lãnh đạo</th>
-          <th style="width:80px">Hạn</th>
-          <th style="width:62px">Mức độ</th>
-          <th style="min-width:180px">Kết quả</th>
-          <th style="width:72px">Kỳ lưu</th>
+          <th style="min-width:200px">Nhiệm vụ</th>
+          <th style="width:170px">Căn cứ (VB đến)</th>
+          <th style="width:100px">Đơn vị</th>
+          <th style="width:95px">LĐ Chi cục</th>
+          <th style="width:95px">LĐ đơn vị</th>
+          <th style="width:100px">Người trực tiếp</th>
+          <th style="width:76px">Hạn</th>
+          <th style="width:76px">Ngày HT</th>
+          <th style="min-width:190px">VB đi / Kết quả</th>
+          <th style="width:68px">Kỳ lưu</th>
         </tr></thead>
         <tbody id="lt-body"></tbody>
       </table>
@@ -998,8 +1018,18 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
         <input class="form-input" id="edit-donvi" placeholder="Đơn vị chủ trì">
       </div>
       <div class="form-group">
-        <label class="form-label">Người thực hiện</label>
+        <label class="form-label">Người thực hiện trực tiếp</label>
         <input class="form-input" id="edit-nguoith" placeholder="Tên người thực hiện">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Lãnh đạo đơn vị</label>
+        <input class="form-input" id="edit-lddonvi" placeholder="Trưởng/Phó đơn vị phụ trách trực tiếp">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mã ISO</label>
+        <input class="form-input" id="edit-maiso" placeholder="VD: QT-08 (bỏ trống nếu không có)">
       </div>
     </div>
     <div class="form-row">
@@ -1210,6 +1240,73 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
 </div>
 
 <!-- ========= MODAL ĐỀ NGHỊ GIA HẠN (v23) ========= -->
+<div class="modal-overlay" id="modal-suakhac" onclick="closeModal('modal-suakhac',event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-suakhac')">✕</button>
+    <div class="modal-title">⚙ Sửa thông tin nhiệm vụ</div>
+    <div class="kq-task-info" id="sk2-task-info"></div>
+    <div style="font-size:11.5px;color:#555;background:#F4F7FB;border:1px solid #DCE5F0;border-radius:8px;padding:7px 10px;margin-bottom:10px;line-height:1.5">
+      Nhãn <span class="v49-nhan v49-ngay">ghi ngay</span> = cập nhật ngay khi bấm Lưu (có lưu vết giá trị cũ).
+      Nhãn <span class="v49-nhan v49-cho">chờ duyệt</span> = vào hàng chờ, Văn phòng duyệt mới đổi, phải nêu lý do.
+      <span id="sk2-ghichu-ma"></span>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Người thực hiện trực tiếp <span class="v49-nhan" data-truong="nguoiTH"></span></label>
+        <input class="form-input" id="sk2-nguoith" list="v49-ds-nguoi" placeholder="Họ tên công chức trực tiếp làm">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Lãnh đạo đơn vị <span class="v49-nhan" data-truong="ldDonVi"></span></label>
+        <input class="form-input" id="sk2-lddonvi" list="v49-ds-ld" placeholder="Trưởng/Phó đơn vị phụ trách">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Thời hạn <span class="v49-nhan" data-truong="thoiHan"></span></label>
+        <input class="form-input" id="sk2-han" type="date">
+        <div style="font-size:10.5px;color:var(--muted);margin-top:2px">Chỉ sửa khi hạn bị NHẬP SAI. Xin lùi hạn → dùng nút ⏱ Gia hạn.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mã ISO <span class="v49-nhan" data-truong="maISO"></span></label>
+        <input class="form-input" id="sk2-maiso" placeholder="VD: QT-08 · bỏ trống nếu không có">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Đơn vị chủ trì <span class="v49-nhan" data-truong="donVi"></span></label>
+        <select class="form-select" id="sk2-donvi"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Lãnh đạo Chi cục phụ trách <span class="v49-nhan" data-truong="lanhDao"></span></label>
+        <select class="form-select" id="sk2-lanhdao"></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Lý do sửa <span style="font-weight:400;color:var(--muted)">(bắt buộc nếu có mục chờ duyệt)</span></label>
+      <textarea class="form-textarea" id="sk2-lydo" style="min-height:56px" placeholder="VD: Nhập nhầm hạn theo văn bản giao; đổi người do điều động..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Người đề nghị</label>
+      <input class="form-input" id="sk2-nguoi" placeholder="Họ tên người sửa (để Văn phòng liên hệ khi cần)">
+    </div>
+    <div id="sk2-error" class="form-error"></div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeModal('modal-suakhac')">Hủy</button>
+      <button class="btn btn-save" id="btn-sk2-submit" onclick="submitSuaKhac()">💾 Lưu</button>
+    </div>
+  </div>
+</div>
+<datalist id="v49-ds-nguoi"></datalist>
+<datalist id="v49-ds-ld"></datalist>
+<style>
+.v49-nhan{display:inline-block;font-size:9.5px;font-weight:700;padding:0 5px;border-radius:4px;vertical-align:1px}
+.v49-ngay{background:#E6F4EA;color:#1F7A3A}
+.v49-cho{background:#FEF3C7;color:#8a5a00}
+.lt49-loc{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:8px 0 10px}
+.lt49-loc input,.lt49-loc select{width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #cbd5e1;border-radius:7px;font-size:12.5px}
+.lt49-loc label{font-size:11px;font-weight:600;color:#475569;display:block;margin-bottom:2px}
+.lt49-so{font-size:10.5px;color:#1A3A6B;font-weight:600;word-break:break-word}
+</style>
 <div class="modal-overlay" id="modal-giahan" onclick="closeModal('modal-giahan',event)">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('modal-giahan')">✕</button>
@@ -1236,7 +1333,7 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
 // ============================================================
 // CẤU HÌNH
 // ============================================================
-const APP_VERSION = "v21.0";
+const APP_VERSION = "v21.5";
 console.log("%c[v47 READY] index v21.3 - chong ghi nham dong: moi lenh ghi gui kem ten nhiem vu","color:#0a7d33;font-weight:700");
 function _v47DinhDanh(row) {
   const t = (allTasks || []).find(x => x.row === row) || {};
@@ -1297,6 +1394,130 @@ function v48HoiMa(thongBao){
   setTimeout(function(){ inp.focus(); }, 50);
 }
 console.log("%c[v48 READY] index v21.4 - ma truy cap don vi + lenh quan tri gui bang POST","color:#0a7d33;font-weight:700");
+
+/* ═══ v49 (07/10/2026) — NGƯỜI DÙNG SỬA THÔNG TIN NV · BẢNG 11 CỘT · KHO TRA CỨU · KẾT XUẤT CÁ NHÂN ═══ */
+const V49_SUA_THANG = ["nguoiTH", "ldDonVi"];   /* khớp V49.SUA_THANG_MAC_DINH ở máy chủ (đổi được bằng Script Property V49_SUA_THANG) */
+const V49_TEN = { thoiHan:"Thời hạn", donVi:"Đơn vị chủ trì", lanhDao:"Lãnh đạo Chi cục phụ trách",
+                  ldDonVi:"Lãnh đạo đơn vị", nguoiTH:"Người thực hiện trực tiếp", maISO:"Mã ISO" };
+const V49_DV13 = ["HQ CK QT Móng Cái","HQ CK Hoành Mô","HQ CK Bắc Phong Sinh","HQ CK cảng Hòn Gai","HQ CK cảng Cẩm Phả",
+                  "HQ CK cảng Vạn Gia","Đội KSHQ","Đội PT&KTSTQ","Văn phòng","Phòng TCCB","Phòng CNTT","Phòng QLRR","Phòng NV"];
+let curSKRow = null, curSKGoc = null;
+function v49Esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+function v49Bo(s){ s = String(s||"").toLowerCase(); try { s = s.normalize("NFD").replace(/[\u0300-\u036f]/g,""); } catch(e){} return s.replace(/đ/g,"d").replace(/\s+/g,""); }
+function v49Iso(d){ return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+function v49NgayInput(s){ const d = parseDate(s); return d ? v49Iso(d) : ""; }
+function v49NutSua(row){
+  return '<button class="btn-sm" style="background:#475569;color:#fff;border:none;padding:4px 8px;border-radius:5px;cursor:pointer;font-size:10.5px" onclick="openSuaKhac(' + row + ')" title="Sửa hạn, đơn vị chủ trì, lãnh đạo, người thực hiện, mã ISO">⚙ Sửa khác</button>';
+}
+function v49DsTen(truong, donVi){
+  const s = {};
+  (allTasks||[]).forEach(function(t){
+    if (donVi && t.donVi !== donVi) return;
+    String(t[truong]||"").split(/[,;\n]+/).forEach(function(x){ x = x.trim(); if (x && x.length <= 60 && !/^đ\/c\s*\S+$/i.test(x)) s[x] = 1; });
+  });
+  return Object.keys(s).sort(function(a,b){ return a.localeCompare(b,"vi"); });
+}
+/* Lựa chọn giữ đúng CÁCH GHI đang dùng nhiều nhất trong dữ liệu ("HQCK QT Móng Cái", "Bùi Ngọc Lợi - Phó CCT")
+   để bộ lọc đơn vị / lãnh đạo không bị tách đôi */
+function v49Dem(truong){ const c = {}; (allTasks||[]).forEach(function(t){ const v = String(t[truong]||"").trim(); if (v) c[v] = (c[v]||0) + 1; }); return c; }
+function v49DsDonVi(cur){
+  const c = v49Dem("donVi"), khoa = s => v49Bo(s).replace(/[^a-z0-9]/g, "");
+  const out = V49_DV13.map(function(dv){ let best = dv, n = 0; Object.keys(c).forEach(function(v){ if (khoa(v) === khoa(dv) && c[v] > n) { best = v; n = c[v]; } }); return best; });
+  if (cur && out.indexOf(cur) < 0) out.unshift(cur);
+  return out;
+}
+function v49DsLanhDao(cur){
+  const c = v49Dem("lanhDao");
+  const out = LD_KEYS.map(function(k){ let best = k, n = 0; Object.keys(c).forEach(function(v){ if (v.indexOf(k) === 0 && c[v] > n) { best = v; n = c[v]; } }); return best; });
+  if (cur && out.indexOf(cur) < 0) out.unshift(cur);
+  return out;
+}
+function v49Option(ds, chon){
+  return ds.map(function(v){ return '<option value="' + v49Esc(v) + '"' + (v === chon ? ' selected' : '') + '>' + v49Esc(v || "— trống —") + '</option>'; }).join("");
+}
+function openSuaKhac(row){
+  const t = allTasks.find(x => x.row === row);
+  if (!t) return;
+  curSKRow = row;
+  curSKGoc = { nguoiTH: t.nguoiTH||"", ldDonVi: t.ldDonVi||"", thoiHan: v49NgayInput(t.thoiHan), maISO: t.maISO||"",
+               donVi: t.donVi||"", lanhDao: t.lanhDao||"" };
+  document.getElementById("sk2-task-info").innerHTML = '<b>' + v49Esc(t.tt) + '. ' + v49Esc(t.nhiemVu||"") + '</b><br>' +
+    '<span style="color:var(--muted)">' + v49Esc(t.donVi||"") + ' · Hạn hiện tại: ' + v49Esc(fmtDate(t.thoiHan)) + '</span>';
+  document.getElementById("sk2-nguoith").value = curSKGoc.nguoiTH;
+  document.getElementById("sk2-lddonvi").value = curSKGoc.ldDonVi;
+  document.getElementById("sk2-han").value = curSKGoc.thoiHan;
+  document.getElementById("sk2-maiso").value = curSKGoc.maISO;
+  document.getElementById("sk2-donvi").innerHTML = v49Option(v49DsDonVi(curSKGoc.donVi), curSKGoc.donVi);
+  document.getElementById("sk2-lanhdao").innerHTML = v49Option(v49DsLanhDao(curSKGoc.lanhDao), curSKGoc.lanhDao);
+  document.getElementById("v49-ds-nguoi").innerHTML = v49DsTen("nguoiTH", t.donVi).map(n => '<option value="' + v49Esc(n) + '">').join("");
+  document.getElementById("v49-ds-ld").innerHTML = v49DsTen("ldDonVi", t.donVi).map(n => '<option value="' + v49Esc(n) + '">').join("");
+  document.getElementById("sk2-lydo").value = "";
+  try { document.getElementById("sk2-nguoi").value = localStorage.getItem("kv8_nguoi_de_nghi") || ""; } catch(e) {}
+  const admin = isAdmin();
+  document.querySelectorAll("#modal-suakhac .v49-nhan[data-truong]").forEach(function(el){
+    const ngay = admin || V49_SUA_THANG.indexOf(el.getAttribute("data-truong")) >= 0;
+    el.className = "v49-nhan " + (ngay ? "v49-ngay" : "v49-cho");
+    el.textContent = ngay ? "ghi ngay" : "chờ duyệt";
+  });
+  document.getElementById("sk2-ghichu-ma").textContent = admin
+    ? "Đang đăng nhập Admin: mọi mục ghi ngay."
+    : "Nếu hệ thống đã bật mã truy cập, sửa việc của ĐƠN VỊ KHÁC sẽ chuyển hết sang chờ duyệt.";
+  document.getElementById("sk2-error").style.display = "none";
+  document.getElementById("modal-suakhac").classList.add("open");
+}
+async function submitSuaKhac(){
+  const errEl = document.getElementById("sk2-error");
+  const moi = {
+    nguoiTH: document.getElementById("sk2-nguoith").value.trim(),
+    ldDonVi: document.getElementById("sk2-lddonvi").value.trim(),
+    thoiHan: document.getElementById("sk2-han").value.trim(),
+    maISO:   document.getElementById("sk2-maiso").value.trim(),
+    donVi:   document.getElementById("sk2-donvi").value,
+    lanhDao: document.getElementById("sk2-lanhdao").value
+  };
+  const thayDoi = {}, choDuyet = [];
+  Object.keys(moi).forEach(function(k){
+    if (moi[k] === String(curSKGoc[k]||"").trim()) return;
+    if (k === "thoiHan" && !moi[k]) return;          /* xóa trắng ô ngày = giữ nguyên */
+    thayDoi[k] = moi[k];
+    if (!isAdmin() && V49_SUA_THANG.indexOf(k) < 0) choDuyet.push(V49_TEN[k]);
+  });
+  const lyDo = document.getElementById("sk2-lydo").value.trim();
+  const nguoi = document.getElementById("sk2-nguoi").value.trim();
+  if (!Object.keys(thayDoi).length) { errEl.textContent = "⚠ Chưa thay đổi mục nào."; errEl.style.display = "block"; return; }
+  if (choDuyet.length && !lyDo) { errEl.textContent = "⚠ Cần nêu lý do sửa: " + choDuyet.join(", ") + " (phải chờ Văn phòng duyệt)."; errEl.style.display = "block"; return; }
+  try { if (nguoi) localStorage.setItem("kv8_nguoi_de_nghi", nguoi); } catch(e) {}
+  const btn = document.getElementById("btn-sk2-submit");
+  btn.textContent = "⏳ Đang lưu..."; btn.disabled = true; errEl.style.display = "none";
+  try {
+    const body = Object.assign({ action: "deXuatSuaNV", row: curSKRow, thayDoi: thayDoi, lyDo: lyDo, nguoiDeXuat: nguoi },
+                               _v47DinhDanh(curSKRow));
+    if (isAdmin()) body.pin = getAdminPin();
+    const d = await apiJson(await fetch(API, { method: "POST", body: JSON.stringify(body) }));
+    if (d.ok) {
+      closeModal("modal-suakhac");
+      let m = "";
+      if (d.apDung && d.apDung.length) m += "✅ Đã cập nhật: " + d.apDung.join("; ");
+      if (d.choDuyet && d.choDuyet.length) m += (m ? "\n" : "") + "⏳ Chờ Văn phòng duyệt: " + d.choDuyet.join("; ") + (d.ngoaiDonVi ? " (việc của đơn vị khác)" : "");
+      showToast(m || "✅ Đã lưu", 7000);
+      localStorage.removeItem(CACHE_KEY);
+      await loadData(true);
+    } else {
+      const e = String(d.error || "Lỗi không xác định");
+      errEl.textContent = "⚠ " + (/Action không hợp lệ: deXuatSuaNV/.test(e) ? "Máy chủ chưa cập nhật bản v49 — báo Văn phòng triển khai." : e);
+      errEl.style.display = "block";
+    }
+  } catch(e) { errEl.textContent = "⚠ Lỗi kết nối: " + e.message; errEl.style.display = "block"; }
+  btn.textContent = "💾 Lưu"; btn.disabled = false;
+}
+/* Số / ký hiệu văn bản trong một chuỗi (bản rút gọn của _v37BocSoHieu ở máy chủ) */
+function v49BocSo(s){
+  const out = [], seen = {}, re = /\d{1,5}\s*[\/\-]\s*[A-Za-zĐđ&][A-Za-zĐđ&0-9]+(?:\s*[\/\-]\s*[A-Za-zĐđ&][A-Za-zĐđ&0-9]*){0,2}/g;
+  let m;
+  while ((m = re.exec(String(s||""))) !== null) { const k = m[0].replace(/\s+/g,"").toUpperCase(); if (!seen[k]) { seen[k] = 1; out.push(k); } }
+  return out.join(" · ");
+}
+console.log("%c[v49 READY] index v21.5 - nguoi dung sua thong tin NV, bang 11 cot, kho tra cuu, ket xuat ca nhan","color:#0a7d33;font-weight:700");
 
 // ============================================================
 // v20.2 — DOC JSON AN TOAN + CHAN DOAN LOI TRIEN KHAI
@@ -1497,11 +1718,17 @@ function effectiveStatus(t) {
 function parseDate(s) {
   if (!s) return null;
   if (s instanceof Date) return s;
+  s = String(s).trim();
   // yyyy-MM-dd
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s + "T00:00:00");
   // dd/MM/yyyy
   const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (m) return new Date(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1]));
+  // v49: "Fri Dec 31 2027 15:00:00 GMT+0700 (Giờ Đông Dương)" (luồng gia hạn cũ) và ISO có giờ
+  if (/^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{1,2} \d{4}/.test(s) || /^\d{4}-\d{2}-\d{2}T/.test(s)) {
+    const t = new Date(s.replace(/\s*\(.*\)\s*$/, ""));
+    if (!isNaN(t)) return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  }
   return null;
 }
 
@@ -1786,7 +2013,7 @@ function renderTable() {
   }
 
   let rows = allTasks.map(t => ({...t, _s: effectiveStatus(t)}));
-  if (search) rows = rows.filter(t => (t.nhiemVu||"").toLowerCase().includes(search)||(t.donVi||"").toLowerCase().includes(search)||(t.canCu||"").toLowerCase().includes(search)||(t.ghiChu||"").toLowerCase().includes(search));
+  if (search) rows = rows.filter(t => (t.nhiemVu||"").toLowerCase().includes(search)||(t.donVi||"").toLowerCase().includes(search)||(t.canCu||"").toLowerCase().includes(search)||(t.ghiChu||"").toLowerCase().includes(search)||(t.nguoiTH||"").toLowerCase().includes(search)||(t.ldDonVi||"").toLowerCase().includes(search)||(t.lanhDao||"").toLowerCase().includes(search)||(t.maISO||"").toLowerCase().includes(search));
   if (fStatus) rows = rows.filter(t => t._s === fStatus);
   if (fUnit) rows = rows.filter(t => t.donVi === fUnit);
   if (fLd) rows = rows.filter(t => normLanhDao(t.lanhDao) === fLd);
@@ -1794,7 +2021,7 @@ function renderTable() {
   document.getElementById("table-loading").style.display = "none";
   const tbody = document.getElementById("table-body");
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:30px">Không có nhiệm vụ phù hợp</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:30px">Không có nhiệm vụ phù hợp</td></tr>';
     document.getElementById("table-count").textContent = "0 nhiệm vụ";
     return;
   }
@@ -1806,14 +2033,15 @@ function renderTable() {
     const hasKQ = !!(t.ketQua && t.ketQua.trim());
     const kqShort = hasKQ ? t.ketQua.substring(0,60) + (t.ketQua.length>60?'…':'') : '';
     const canCuShort = (t.canCu||'').substring(0,50) + ((t.canCu||'').length>50?'…':'');
-    const nguoiShort = (t.nguoiTH||'—').substring(0,30);
+    const nguoiShort = v49Esc((t.nguoiTH||'—').substring(0,40));
     // Cột tình trạng + thao tác gộp
     let statusCell;
     if (s.includes("Hoàn thành")) {
       statusCell = '<div><span class="badge" style="background:' + b.bg + ';color:' + b.c + ';display:block;margin-bottom:3px">' + s + '</span>' +
         (hasKQ ? '<div style="font-size:10.5px;color:#2e7d32;line-height:1.4;margin-top:2px">' + kqShort + '</div>' : '') +
-        '<div style="display:flex;gap:3px;margin-top:4px"><button class="btn-sm btn-blue" style="font-size:10.5px" onclick="openKQModal(' + t.row + ')">✏ Sửa KQ</button>' +
-        (isAdmin() ? '<button class="btn-sm" style="background:#1A3A6B;color:#fff;border:none;padding:3px 7px;border-radius:4px;cursor:pointer;font-size:10.5px" onclick="openEditModal(' + t.row + ')" title="Sửa chi tiết (Admin)">✎</button>' : '') +
+        '<div style="display:flex;gap:3px;margin-top:4px;flex-wrap:wrap"><button class="btn-sm btn-blue" style="font-size:10.5px" onclick="openKQModal(' + t.row + ')">✏ Sửa KQ</button>' +
+        v49NutSua(t.row) +
+        (isAdmin() ? '<button class="btn-sm" style="background:#1A3A6B;color:#fff;border:none;padding:3px 7px;border-radius:4px;cursor:pointer;font-size:10.5px" onclick="openEditModal(' + t.row + ')" title="Sửa toàn bộ nhiệm vụ (Admin)">✎</button>' : '') +
         (isAdmin() ? '<button class="btn-sm" style="background:#c62828;color:#fff;border:none;padding:3px 7px;border-radius:4px;cursor:pointer;font-size:10.5px" onclick="deleteTask(' + t.row + ',\'' + (t.nhiemVu||"").replace(/'/g,"\\'").substring(0,30) + '\')">🗑</button>' : '') +
         '</div></div>';
     } else {
@@ -1824,7 +2052,8 @@ function renderTable() {
         '<div style="display:flex;gap:3px;flex-wrap:wrap">' + btnXong +
         '<button class="btn-sm btn-blue" style="font-size:11px" onclick="openKQModal(' + t.row + ')">📝 KQ</button>' +
         '<button class="btn-sm" style="background:#8a5a00;color:#fff;border:none;padding:4px 8px;border-radius:5px;cursor:pointer;font-size:11px" onclick="openGiaHan(' + t.row + ')">⏱ Gia hạn</button>' +
-        (isAdmin() ? '<button class="btn-sm" style="background:#1A3A6B;color:#fff;border:none;padding:3px 7px;border-radius:4px;cursor:pointer;font-size:10.5px" onclick="openEditModal(' + t.row + ')" title="Sửa chi tiết (Admin)">✎</button>' : '') +
+        v49NutSua(t.row) +
+        (isAdmin() ? '<button class="btn-sm" style="background:#1A3A6B;color:#fff;border:none;padding:3px 7px;border-radius:4px;cursor:pointer;font-size:10.5px" onclick="openEditModal(' + t.row + ')" title="Sửa toàn bộ nhiệm vụ (Admin)">✎</button>' : '') +
         (isAdmin() ? '<button class="btn-sm" style="background:#c62828;color:#fff;border:none;padding:3px 7px;border-radius:4px;cursor:pointer;font-size:10.5px" onclick="deleteTask(' + t.row + ',\'' + (t.nhiemVu||"").replace(/'/g,"\\'").substring(0,30) + '\')">🗑</button>' : '') +
         '</div></div>';
     }
@@ -1834,10 +2063,12 @@ function renderTable() {
         (t.nguoiTH ? '' : '') + '</td>' +
       '<td style="font-size:11px;color:#555;line-height:1.4" title="' + (t.canCu||'') + '">' + (canCuShort||"—") + '</td>' +
       '<td style="font-size:12px">' + (t.donVi||"—") + '</td>' +
-      '<td style="font-size:11.5px">' + (normLanhDao(t.lanhDao)||"—") + '</td>' +
+      '<td style="font-size:11.5px">' + v49Esc(normLanhDao(t.lanhDao)||"—") + '</td>' +
+      '<td style="font-size:11.5px">' + v49Esc(t.ldDonVi||"—") + '</td>' +
       '<td style="font-size:11px;color:#555">' + nguoiShort + '</td>' +
       '<td style="font-size:12px;font-weight:600;color:' + (s.includes("Trễ")?COLORS.tre:s.includes("Sắp")?COLORS.sap:"inherit") + '">' + fmtDate(t.thoiHan) + '</td>' +
       '<td style="text-align:center">' + mucDoBadge(t.mucDo) + '</td>' +
+      '<td style="text-align:center;font-size:11px;font-weight:600;color:#1A3A6B">' + v49Esc(t.maISO||"—") + '</td>' +
       '<td style="vertical-align:top">' + statusCell + '</td>' +
     '</tr>';
   }).join("");
@@ -2563,6 +2794,7 @@ function closeModal(id, e) {
   document.getElementById(id).classList.remove("open");
   if (id === "modal-kq") curKQRow = null;
   if (id === "modal-giahan") curGHRow = null;   // v23
+  if (id === "modal-suakhac") curSKRow = null;  // v49
 }
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") { closeModal("modal-add"); closeModal("modal-kq"); closeModal("modal-admin-login"); closeModal("modal-edit"); }
@@ -3286,7 +3518,9 @@ function openEditModal(row) {
   document.getElementById("edit-cancu").value = t.canCu || "";
   document.getElementById("edit-donvi").value = t.donVi || "";
   document.getElementById("edit-lanhdao").value = t.lanhDao || "";
-  document.getElementById("edit-thoihan").value = (parseDate(t.thoiHan) ? parseDate(t.thoiHan).toISOString().substring(0,10) : "");
+  document.getElementById("edit-thoihan").value = v49NgayInput(t.thoiHan);   /* v49: toISOString() lùi 1 ngày theo giờ VN */
+  document.getElementById("edit-lddonvi").value = t.ldDonVi || "";
+  document.getElementById("edit-maiso").value = t.maISO || "";
   document.getElementById("edit-sanpham").value = t.sanPham || "";
   document.getElementById("edit-nguoith").value = t.nguoiTH || "";
   document.getElementById("edit-ghichu").value = t.ghiChu || "";
@@ -3305,7 +3539,9 @@ async function submitEditTask() {
     sanPham: document.getElementById("edit-sanpham").value.trim(),
     nguoiTH: document.getElementById("edit-nguoith").value.trim(),
     ghiChu: document.getElementById("edit-ghichu").value.trim(),
-    mucDo: document.getElementById("edit-mucdo").value
+    mucDo: document.getElementById("edit-mucdo").value,
+    ldDonVi: document.getElementById("edit-lddonvi").value.trim(),
+    maISO: document.getElementById("edit-maiso").value.trim()
   };
   if (!fields.nhiemVu || !fields.donVi) { showToast("⚠ Tên nhiệm vụ và Đơn vị không được để trống"); return; }
   try {
@@ -3433,7 +3669,7 @@ function renderChoDuyetKQ() {
   const empty = document.getElementById("duyet-kq-empty");
   if (!choDuyetKQCache.length) { list.innerHTML = ""; empty.style.display = "block"; return; }
   empty.style.display = "none";
-  list.innerHTML = choDuyetKQCache.map(t => (
+  list.innerHTML = choDuyetKQCache.map(t => t.loai === "suaNV" ? v49TheSua(t) : (
     '<div style="border:1px solid #E5E7EB;border-radius:8px;padding:10px 14px;margin-bottom:8px;background:#F9FAFB">' +
     '<div style="font-weight:600;font-size:13px;color:var(--navy)">#' + t.rowGoc + ' · ' + (t.nhiemVu||"—") + (t.hanDeNghi ? ' <span style="background:#F6C343;color:#000;padding:1px 6px;border-radius:4px;font-size:10px">⏱ XIN GIA HẠN</span>' : '') + '</div>' +
     '<div style="font-size:11.5px;color:#555;margin-top:4px;line-height:1.5">' +
@@ -3448,6 +3684,27 @@ function renderChoDuyetKQ() {
       '<button class="btn-sm" style="background:#c62828;color:#fff;border:none;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px" onclick="rejectKQ(' + t.row + ')">✕ Từ chối</button>' +
     '</div></div>'
   )).join("");
+}
+
+function v49TheSua(t) {
+  let g = {};
+  try { g = JSON.parse(t.moTa || "{}"); } catch(e) {}
+  const dong = Object.keys(g).map(function(k){
+    return '<tr><td style="padding:2px 8px 2px 0;color:#555;white-space:nowrap">' + v49Esc(V49_TEN[k]||k) + '</td>' +
+      '<td style="padding:2px 8px;color:#b91c1c;text-decoration:line-through">' + v49Esc(g[k].cu||"trống") + '</td>' +
+      '<td style="padding:2px 8px;color:#15803d;font-weight:600">→ ' + v49Esc(g[k].moi||"trống") + '</td></tr>';
+  }).join("");
+  return '<div style="border:1px solid #CBD5E1;border-left:4px solid #475569;border-radius:8px;padding:10px 14px;margin-bottom:8px;background:#F8FAFC">' +
+    '<div style="font-weight:600;font-size:13px;color:var(--navy)">#' + v49Esc(t.rowGoc) + ' · ' + v49Esc(t.nhiemVu||"—") +
+      ' <span style="background:#475569;color:#fff;padding:1px 6px;border-radius:4px;font-size:10px">⚙ ĐỀ NGHỊ SỬA THÔNG TIN</span></div>' +
+    '<div style="font-size:11.5px;color:#555;margin-top:4px;line-height:1.5"><b>Đơn vị:</b> ' + v49Esc(t.donVi||"—") + '</div>' +
+    '<table style="font-size:12px;margin:4px 0">' + dong + '</table>' +
+    '<div style="font-size:11.5px;line-height:1.5">' + (t.lyDo ? '<b style="color:#b26a00">Lý do:</b> <span style="color:#b26a00">' + v49Esc(t.lyDo) + '</span><br>' : '') +
+      '<b>Người đề nghị:</b> ' + v49Esc(t.nguoiDeXuat||"—") + (t.thoiGianDeXuat ? ' · ' + v49Esc(t.thoiGianDeXuat) : '') + '</div>' +
+    '<div style="display:flex;gap:6px;margin-top:8px">' +
+      '<button class="btn-sm btn-green" onclick="approveKQ(' + t.row + ')">✓ Duyệt</button>' +
+      '<button class="btn-sm" style="background:#c62828;color:#fff;border:none;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px" onclick="rejectKQ(' + t.row + ')">✕ Từ chối</button>' +
+    '</div></div>';
 }
 
 function _v47ThamSoCho(action, row) {
@@ -3672,26 +3929,98 @@ async function loadLuuTru(force) {
   } catch(e) { showToast("❌ Lỗi kết nối: " + e.message); }
   document.getElementById("lt-loading").style.display = "none";
 }
+function ltNguon() {
+  let rows = ((ltData && ltData.rows) || []).map(function(r){       /* máy chủ cũ (trước v49) chưa trả số VB ⇒ tự bóc */
+    return (r.soDen !== undefined) ? r : Object.assign({}, r, { soDen: v49BocSo(r.canCu), soDi: v49BocSo(r.ketQua) });
+  });
+  if ((document.getElementById("lt-pham-vi")||{}).value === "all") {
+    (allTasks||[]).forEach(function(t){
+      if (!effectiveStatus(t).includes("Hoàn thành")) return;
+      rows.push(Object.assign({}, t, { kyLuu: "Đang theo dõi", soDen: v49BocSo(t.canCu), soDi: v49BocSo(t.ketQua), _nv: true }));
+    });
+  }
+  return rows;
+}
+function ltNapBoChon() {
+  const rows = ltNguon(), dv = {}, ld = {}, ten = {};
+  rows.forEach(function(r){
+    if (r.donVi) dv[r.donVi] = 1;
+    const l = normLanhDao(r.lanhDao); if (l) ld[l] = 1;
+    [r.nguoiTH, r.ldDonVi].forEach(function(s){ String(s||"").split(/[,;\n]+/).forEach(function(x){ x = x.trim(); if (x && x.length <= 60) ten[x] = 1; }); });
+  });
+  function nap(id, obj) {
+    const el = document.getElementById(id); if (!el) return;
+    const cur = el.value;
+    el.innerHTML = '<option value="">— Tất cả —</option>' + Object.keys(obj).sort((a,b)=>a.localeCompare(b,"vi")).map(v => '<option value="' + v49Esc(v) + '">' + v49Esc(v) + '</option>').join("");
+    el.value = cur;
+  }
+  nap("lt-donvi", dv); nap("lt-ld", ld);
+  document.getElementById("lt-ds-ten").innerHTML = Object.keys(ten).sort((a,b)=>a.localeCompare(b,"vi")).map(v => '<option value="' + v49Esc(v) + '">').join("");
+}
+function ltLoc() {
+  const g = id => (document.getElementById(id) ? document.getElementById(id).value : "");
+  const ky = g("lt-ky"), q = v49Bo(g("lt-search")), soDen = v49Bo(g("lt-so-den")), soDi = v49Bo(g("lt-so-di")),
+        dv = g("lt-donvi"), ld = g("lt-ld"), cn = v49Bo(g("lt-canhan")), tu = parseDate(g("lt-tu")), den = parseDate(g("lt-den"));
+  return ltNguon().filter(function(r){
+    if (ky && r.kyLuu !== ky && !(r._nv)) return false;
+    if (ky && r._nv) return false;
+    if (dv && r.donVi !== dv) return false;
+    if (ld && normLanhDao(r.lanhDao) !== ld) return false;
+    if (soDen && v49Bo((r.soDen||"") + " " + (r.canCu||"")).indexOf(soDen) < 0) return false;
+    if (soDi && v49Bo((r.soDi||"") + " " + (r.soVBdc||"") + " " + (r.ketQua||"")).indexOf(soDi) < 0) return false;
+    if (cn && v49Bo((r.nguoiTH||"") + "|" + (r.ldDonVi||"")).indexOf(cn) < 0) return false;
+    if (tu || den) {
+      const h = parseDate(r.ngayHT);
+      if (!h) return false;
+      if (tu && h < tu) return false;
+      if (den && h > den) return false;
+    }
+    if (q && v49Bo([r.nhiemVu, r.donVi, r.ketQua, r.nguoiTH, r.ldDonVi, r.lanhDao, r.canCu, r.ghiChu, r.sanPham].join("|")).indexOf(q) < 0) return false;
+    return true;
+  });
+}
 function renderLuuTruTable() {
   if (!ltData) return;
-  const ky = document.getElementById("lt-ky").value;
-  const q = (document.getElementById("lt-search").value || "").toLowerCase();
-  let rows = ltData.rows || [];
-  if (ky) rows = rows.filter(r => r.kyLuu === ky);
-  if (q) rows = rows.filter(r => (r.nhiemVu||"").toLowerCase().includes(q) || (r.donVi||"").toLowerCase().includes(q) || (r.ketQua||"").toLowerCase().includes(q) || (r.nguoiTH||"").toLowerCase().includes(q));
-  document.getElementById("lt-count").textContent = rows.length + " nhiệm vụ lưu trữ";
-  document.getElementById("lt-body").innerHTML = rows.length ? rows.map(r =>
-    '<tr>' +
-    '<td style="text-align:center;color:var(--muted);font-size:11px">' + (r.tt || "") + '</td>' +
-    '<td style="font-size:12.5px;font-weight:600;line-height:1.4">' + (r.nhiemVu || "") + (r.nguoiTH ? '<div style="font-size:10.5px;color:var(--muted);font-weight:400">' + r.nguoiTH + '</div>' : '') + '</td>' +
-    '<td style="font-size:12px">' + (r.donVi || "") + '</td>' +
-    '<td style="font-size:11.5px">' + (normLanhDao(r.lanhDao) || "—") + '</td>' +
-    '<td style="font-size:11.5px">' + fmtDate(r.thoiHan) + '</td>' +
-    '<td style="text-align:center">' + mucDoBadge(r.mucDo) + '</td>' +
-    '<td style="font-size:11px;color:#2e7d32;line-height:1.4">' + (r.ketQua || "") + '</td>' +
-    '<td style="text-align:center;font-size:11.5px;font-weight:700;color:var(--navy)">' + (r.kyLuu || "") + '</td>' +
+  ltNapBoChon();
+  const rows = ltLoc(), HIEN = 500;
+  document.getElementById("lt-count").textContent = rows.length + " nhiệm vụ" + (rows.length > HIEN ? " (hiện " + HIEN + " dòng đầu — Xuất Excel để lấy đủ)" : "");
+  document.getElementById("lt-body").innerHTML = rows.length ? rows.slice(0, HIEN).map(r =>
+    '<tr' + (r._nv ? ' style="background:#F6FBF7"' : '') + '>' +
+    '<td style="text-align:center;color:var(--muted);font-size:11px">' + v49Esc(r.tt || "") + '</td>' +
+    '<td style="font-size:12.5px;font-weight:600;line-height:1.4">' + v49Esc(r.nhiemVu || "") + (r.maISO ? ' <span style="font-size:10px;color:#1A3A6B;font-weight:700">[' + v49Esc(r.maISO) + ']</span>' : '') + '</td>' +
+    '<td style="font-size:11px;line-height:1.4">' + (r.soDen ? '<div class="lt49-so">📥 ' + v49Esc(r.soDen) + '</div>' : '') + '<span style="color:#555">' + v49Esc((r.canCu||"").substring(0,110)) + ((r.canCu||"").length>110?'…':'') + '</span></td>' +
+    '<td style="font-size:12px">' + v49Esc(r.donVi || "") + '</td>' +
+    '<td style="font-size:11.5px">' + v49Esc(normLanhDao(r.lanhDao) || "—") + '</td>' +
+    '<td style="font-size:11.5px">' + v49Esc(r.ldDonVi || "—") + '</td>' +
+    '<td style="font-size:11.5px">' + v49Esc(r.nguoiTH || "—") + '</td>' +
+    '<td style="font-size:11.5px">' + v49Esc(fmtDate(r.thoiHan)) + '</td>' +
+    '<td style="font-size:11.5px">' + (r.ngayHT ? v49Esc(fmtDate(r.ngayHT)) : '<span style="color:var(--muted)">—</span>') + '</td>' +
+    '<td style="font-size:11px;color:#2e7d32;line-height:1.4">' + (r.soDi ? '<div class="lt49-so">📤 ' + v49Esc(r.soDi) + '</div>' : '') + v49Esc(r.ketQua || "") + '</td>' +
+    '<td style="text-align:center;font-size:11.5px;font-weight:700;color:var(--navy)">' + v49Esc(r.kyLuu || "") + '</td>' +
     '</tr>'
-  ).join("") : '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:26px">Chưa có nhiệm vụ trong lưu trữ' + (ky ? ' kỳ ' + ky : '') + '</td></tr>';
+  ).join("") : '<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:26px">Không có nhiệm vụ khớp bộ lọc</td></tr>';
+}
+function ltXoaLoc() {
+  ["lt-ky","lt-search","lt-so-den","lt-so-di","lt-donvi","lt-ld","lt-canhan","lt-tu","lt-den"].forEach(function(id){ const el = document.getElementById(id); if (el) el.value = ""; });
+  renderLuuTruTable();
+}
+function ltXuatExcel() {
+  if (!ltData) { showToast("Chưa tải dữ liệu lưu trữ"); return; }
+  if (typeof XLSX === "undefined") { showToast("⚠ Thư viện Excel chưa tải xong, thử lại sau vài giây"); return; }
+  const rows = ltLoc();
+  const aoa = [["TT","Nhiệm vụ","Căn cứ (VB đến)","Số VB đến","Đơn vị chủ trì","Lãnh đạo Chi cục","Lãnh đạo đơn vị","Người thực hiện trực tiếp",
+                "Thời hạn","Ngày hoàn thành","Số VB đi (kết quả)","Kết quả","Mã ISO","Kỳ lưu"]];
+  rows.forEach(function(r, i){
+    aoa.push([i+1, r.nhiemVu||"", r.canCu||"", r.soDen||"", r.donVi||"", normLanhDao(r.lanhDao)||"", r.ldDonVi||"", r.nguoiTH||"",
+              fmtDate(r.thoiHan), r.ngayHT ? fmtDate(r.ngayHT) : "", r.soDi||"", r.ketQua||"", r.maISO||"", r.kyLuu||""]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"] = [{wch:5},{wch:50},{wch:40},{wch:22},{wch:18},{wch:18},{wch:18},{wch:22},{wch:11},{wch:11},{wch:24},{wch:50},{wch:8},{wch:12}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "TRA_CUU");
+  const d = new Date();
+  XLSX.writeFile(wb, "TRA_CUU_LUU_TRU_" + d.getFullYear() + String(d.getMonth()+1).padStart(2,"0") + String(d.getDate()).padStart(2,"0") + ".xlsx");
+  showToast("✅ Đã xuất " + rows.length + " dòng");
 }
 async function runLuuTruThang() {
   if (!requireAdminOrPrompt()) return;
@@ -5199,6 +5528,13 @@ window.v39DoiChieuKho = async function(){
     <label style="font-size:13px;font-weight:600;color:#334">Cá nhân (tùy chọn)</label>
     <input id="kx3CaNhan" list="kx3CaNhanDS" oninput="kx3DemLai()" placeholder="Gõ hoặc chọn tên… (bỏ trống = cả đơn vị)" style="width:100%;padding:9px;margin:4px 0 6px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;box-sizing:border-box">
     <datalist id="kx3CaNhanDS"></datalist>
+    <div id="kx3VaiTroWrap" style="display:none;margin:2px 0 10px;font-size:12.5px;color:#334">Tính theo vai trò:
+      <select id="kx3VaiTro" onchange="kx3DemLai()" style="padding:6px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;margin-left:4px">
+        <option value="">Người trực tiếp hoặc LĐ đơn vị</option>
+        <option value="th">Người thực hiện trực tiếp</option>
+        <option value="ld">Lãnh đạo đơn vị</option>
+      </select>
+    </div>
 
     <label id="kx3BoQuaHanWrap" style="display:none;font-size:13px;color:#334;align-items:center;gap:7px;margin:12px 0 4px">
       <input type="checkbox" id="kx3BoQuaHan" onchange="kx3DemLai()"> Bỏ việc đã quá hạn (đã có ở báo cáo Chậm muộn)
@@ -5372,7 +5708,12 @@ function kx3Mo(mode){
     String(t.nguoiTH||'').split(/[,;\/\n]+/).forEach(function(x){
       x = x.trim(); if(x && x.length<=40) cnSet[x] = true;
     });
+    String(t.ldDonVi||'').split(/[,;\n]+/).forEach(function(x){ x = x.trim(); if(x && x.length<=40) cnSet[x] = true; });   /* v49 */
   });
+  ((typeof ltData !== 'undefined' && ltData && ltData.rows) || []).forEach(function(t){               /* v49: tên trong lưu trữ */
+    [t.nguoiTH, t.ldDonVi].forEach(function(s){ String(s||'').split(/[,;\n]+/).forEach(function(x){ x = x.trim(); if(x && x.length<=40) cnSet[x] = true; }); });
+  });
+  if (typeof ltLoaded !== 'undefined' && !ltLoaded) { try { loadLuuTru(false); } catch(e){} }   /* nạp nền cho lần mở sau */
 
   var ky = Object.keys(kySet).sort().reverse();
   var nay = new Date(), kyNay = nay.getFullYear()+'-'+('0'+(nay.getMonth()+1)).slice(-2);
@@ -5391,6 +5732,7 @@ function kx3Mo(mode){
     Object.keys(cnSet).sort(function(a,b){return a.localeCompare(b,'vi');})
       .map(function(n){ return '<option value="'+n+'">'; }).join('');
   document.getElementById('kx3CaNhan').value = '';
+  document.getElementById('kx3VaiTro').value = '';   /* v49 */
   document.getElementById('kx3BoQuaHan').checked = false;
   document.getElementById('kx3KemKTT').checked   = true;      /* v46 — mặc định bật */
 
@@ -5404,6 +5746,7 @@ function kx3LayBoLoc(){
     donVi:   document.getElementById('kx3DonVi').value,
     lanhDao: document.getElementById('kx3LanhDao').value,
     canhan:  document.getElementById('kx3CaNhan').value.trim(),
+    vaiTro:  (KX3_MODE === 'kq' || KX3_MODE === 'nv') ? document.getElementById('kx3VaiTro').value : '',   /* v49 */
     boQuaHan: document.getElementById('kx3BoQuaHan').checked,
     kemKTT:   document.getElementById('kx3KemKTT').checked      /* v46 */
   };
@@ -5413,6 +5756,8 @@ function kx3LayBoLoc(){
 function kx3DemLai(){
   var el = document.getElementById('kx3Dem');
   if(!el) return;
+  var _w = document.getElementById('kx3VaiTroWrap');   /* v49 */
+  if(_w) _w.style.display = (document.getElementById('kx3CaNhan').value.trim() && (KX3_MODE === 'kq' || KX3_MODE === 'nv')) ? 'block' : 'none';
   var ds = kx3Loc(KX3_MODE, kx3LayBoLoc());
   if(KX3_MODE === 'kq'){
     el.innerHTML = '📄 <b>' + ds.length + '</b> việc đã hoàn thành khớp bộ lọc trong kỳ đang chạy.' +
@@ -5454,7 +5799,10 @@ function kx3Loc(mode, f){
   if(f.lanhDao) ds = ds.filter(function(t){ return normLanhDao(t.lanhDao) === f.lanhDao; });
   if(f.canhan){
     var k = kx3BoDau(f.canhan);
-    ds = ds.filter(function(t){ return kx3BoDau(t.nguoiTH).indexOf(k) >= 0; });
+    ds = ds.filter(function(t){                                  /* v49: theo vai trò */
+      var th = kx3BoDau(t.nguoiTH).indexOf(k) >= 0, ld = kx3BoDau(t.ldDonVi).indexOf(k) >= 0;
+      return f.vaiTro === 'th' ? th : (f.vaiTro === 'ld' ? ld : (th || ld));
+    });
   }
 
   if(mode === 'cham'){
@@ -5577,7 +5925,7 @@ function kx3Xuat(){
     } else if(laCham){
       payload = { action:'xuatChamMuonLoc', ky:f.thang, donVi:f.donVi, canhan:f.canhan, lanhDao:f.lanhDao };
     } else {
-      payload = { action:'xuatKetQuaLoc',   ky:f.thang, donVi:f.donVi, canhan:f.canhan, lanhDao:f.lanhDao, chiHT:true };
+      payload = { action:'xuatKetQuaLoc',   ky:f.thang, donVi:f.donVi, canhan:f.canhan, lanhDao:f.lanhDao, chiHT:true, vaiTro:f.vaiTro };
     }
 
     btn.disabled = true;
