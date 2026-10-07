@@ -1237,10 +1237,66 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
 // CẤU HÌNH
 // ============================================================
 const APP_VERSION = "v21.0";
-console.log("%c[v46 READY] index v21.2 - ket xuat 4 nut: KET QUA / CHAM MUON / NHIEM VU / KQ THIEU MINH CHUNG","color:#0a7d33;font-weight:700");
+console.log("%c[v47 READY] index v21.3 - chong ghi nham dong: moi lenh ghi gui kem ten nhiem vu","color:#0a7d33;font-weight:700");
+function _v47DinhDanh(row) {
+  const t = (allTasks || []).find(x => x.row === row) || {};
+  return { nhiemVu: t.nhiemVu || "", donVi: t.donVi || "" };
+}
 const APP_BUILD   = "12/07/2026";
 console.log("%cKV8 v21.0 (08/08/2026) - v43: cot F Nguoi ky + cot G The loai tra thang tu Kho VB di","font-weight:700;color:#1A3A6B;font-size:13px");
 const API = "https://script.google.com/macros/s/AKfycbzRm_qI0sNQH7dSbM6UmAPS5ey-pMsGKiPLjXp_PEoDCPaMv6fzD1l2frG_6eK6uJvb/exec";
+/* ═══ v48 (07/10/2026) — MÃ TRUY CẬP ĐƠN VỊ + LỆNH QUẢN TRỊ GỬI BẰNG POST ═══ */
+const V48_MX_KEY = "kv8_ma_truy_cap";
+function v48LayMa(){ try { return localStorage.getItem(V48_MX_KEY) || ""; } catch(e){ return ""; } }
+function v48LuuMa(m){ try { if (m) localStorage.setItem(V48_MX_KEY, m); else localStorage.removeItem(V48_MX_KEY); } catch(e){} }
+(function(){
+  var _f = window.fetch.bind(window);
+  window.fetch = function(url, opt){
+    try {
+      var mx = v48LayMa();
+      if (mx && typeof url === "string" && url.indexOf(API) === 0) {
+        var m = (opt && opt.method) ? String(opt.method).toUpperCase() : "GET";
+        if (m === "POST" && typeof opt.body === "string") {
+          var b = JSON.parse(opt.body);
+          if (b && typeof b === "object" && !b.mx) { b.mx = mx; opt = Object.assign({}, opt, { body: JSON.stringify(b) }); }
+        } else if (m === "GET") {
+          url += (url.indexOf("?") < 0 ? "?" : "&") + "mx=" + encodeURIComponent(mx);
+        }
+      }
+    } catch(e) { console.warn("v48 fetch", e); }
+    return _f(url, opt);
+  };
+})();
+function v48HoiMa(thongBao){
+  try { localStorage.removeItem(CACHE_KEY); } catch(e){}
+  if (document.getElementById("v48-ma-ov")) return;
+  var ov = document.createElement("div");
+  ov.id = "v48-ma-ov";
+  ov.style.cssText = "position:fixed;inset:0;background:rgba(10,25,50,.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px";
+  ov.innerHTML = '<div style="background:#fff;border-radius:14px;padding:22px 24px;width:420px;max-width:96vw">' +
+    '<div style="font-weight:700;font-size:17px;color:#1A3A6B;margin-bottom:8px">🔑 Nhập mã truy cập của đơn vị</div>' +
+    '<div style="font-size:13px;color:#555;margin-bottom:12px">Hệ thống chỉ dành cho cán bộ Chi cục. Mã do Văn phòng cấp cho từng đơn vị (dạng XXXX-XXXX). Mỗi máy chỉ cần nhập một lần.</div>' +
+    '<input id="v48-ma-in" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px;font-size:16px;letter-spacing:2px;text-transform:uppercase;border:1px solid #bbb;border-radius:8px" placeholder="XXXX-XXXX">' +
+    '<div id="v48-ma-loi" style="color:#b00020;font-size:13px;margin-top:8px;min-height:18px"></div>' +
+    '<button id="v48-ma-ok" style="margin-top:6px;width:100%;padding:10px;background:#1A3A6B;color:#fff;border:0;border-radius:8px;font-size:15px;cursor:pointer">Xác nhận</button></div>';
+  document.body.appendChild(ov);
+  var inp = document.getElementById("v48-ma-in"), loi = document.getElementById("v48-ma-loi");
+  if (thongBao) loi.textContent = thongBao;
+  async function xacNhan(){
+    var m = inp.value.trim();
+    if (!m) return;
+    loi.textContent = "Đang kiểm tra…";
+    try {
+      var d = await apiJsonp({ action: "kiemMaXem", mx: m }, 20000);
+      if (d && d.hopLe) { v48LuuMa(m); ov.remove(); showToast("✅ Mã hợp lệ — " + d.donVi); loadData(true); }
+      else loi.textContent = "Mã không đúng. Kiểm tra lại hoặc liên hệ Văn phòng.";
+    } catch(e) { loi.textContent = "Lỗi kết nối: " + e.message; }
+  }
+  document.getElementById("v48-ma-ok").onclick = xacNhan;
+  inp.addEventListener("keydown", function(e){ if (e.key === "Enter") xacNhan(); });
+  setTimeout(function(){ inp.focus(); }, 50);
+}
+console.log("%c[v48 READY] index v21.4 - ma truy cap don vi + lenh quan tri gui bang POST","color:#0a7d33;font-weight:700");
 
 // ============================================================
 // v20.2 — DOC JSON AN TOAN + CHAN DOAN LOI TRIEN KHAI
@@ -1264,6 +1320,10 @@ function fetchTimeout(url, opts, ms) {
 // không dính CORS. Trả về thẳng object JSON (backend v35 bọc callback(...)).
 function apiJsonp(params, ms) {
   ms = ms || 30000;
+  // v48: thêm mã truy cập; lệnh mang PIN đi bằng POST (máy chủ v48 chặn PIN qua GET)
+  params = Object.assign({}, params || {});
+  if (!params.mx && v48LayMa()) params.mx = v48LayMa();
+  if (params.pin) return fetch(API, { method: "POST", body: JSON.stringify(params) }).then(apiJson);
   return new Promise(function (resolve, reject) {
     var cb = "__kv8cb_" + Date.now() + "_" + Math.floor(Math.random() * 1e6);
     var s = document.createElement("script");
@@ -1351,7 +1411,7 @@ async function submitAdminLogin() {
       renderTable();
       loadChoDuyet();
     } else {
-      document.getElementById("admin-login-error").textContent = "Sai mã PIN, vui lòng thử lại.";
+      document.getElementById("admin-login-error").textContent = (data.error || "Sai mã PIN, vui lòng thử lại.");
       document.getElementById("admin-login-error").style.display = "block";
     }
   } catch (e) {
@@ -1555,6 +1615,12 @@ async function loadData(forceRefresh = false) {
   try {
     // v20.5: có timeout 18s — nếu server treo thì DỪNG và báo lỗi, không quay tròn mãi
     const data = await apiJsonp({}, 30000);   // v20.6: JSONP thay fetch (vượt CORS/404)
+    if (data && data.maLoi === "CAN_MA_XEM") {   // v48: máy chủ đòi mã truy cập
+      allTasks = []; renderAll();
+      document.getElementById("sync-label").textContent = "🔑 Cần mã truy cập";
+      v48HoiMa(v48LayMa() ? "Mã đã lưu trên máy này không còn hiệu lực." : "");
+      return;
+    }
     if (data.ok && data.rows) {
       allTasks = data.rows;
       localStorage.setItem(CACHE_KEY, JSON.stringify(allTasks));
@@ -2420,6 +2486,7 @@ async function submitKQ() {
     const res = await fetch(API, {method:"POST", body:JSON.stringify({
       action: "ghiKetQua",
       row: curKQRow,
+      ..._v47DinhDanh(curKQRow),
       soVanBan: soVB,
       ngayTH: ngayTH,
       moTa: moTa,
@@ -2461,7 +2528,7 @@ async function submitGiaHan() {
   btn.textContent = "⏳ Đang gửi..."; btn.disabled = true; errEl.style.display = "none";
   try {
     const res = await fetch(API, {method:"POST", body:JSON.stringify({
-      action: "deXuatGiaHan", row: curGHRow, hanDeNghi: hanDeNghi, lyDo: lyDo
+      action: "deXuatGiaHan", row: curGHRow, hanDeNghi: hanDeNghi, lyDo: lyDo, ..._v47DinhDanh(curGHRow)
     })});
     const d = await apiJson(res);
     if (d.ok) {
@@ -2478,7 +2545,7 @@ async function submitGiaHan() {
 async function markDone(row, name) {
   if (!confirm("Xác nhận đề xuất hoàn thành:\n" + (name||"NV #"+row) + "?\n(Sẽ chờ Admin duyệt trước khi cập nhật chính thức)")) return;
   try {
-    const res = await fetch(API, {method:"POST", body:JSON.stringify({action:"hoanThanh", row})});
+    const res = await fetch(API, {method:"POST", body:JSON.stringify({action:"hoanThanh", row, ..._v47DinhDanh(row)})});
     const d = await apiJson(res);
     if (d.ok) {
       showToast("✅ Đã gửi đề xuất hoàn thành, chờ Admin duyệt");
@@ -3197,7 +3264,7 @@ async function deleteTask(row, name) {
   if (!ok2) return;
   try {
     showToast("⏳ Đang xóa...", 2000);
-    const res = await fetch(API, { method: "POST", body: JSON.stringify({ action: "deleteTask", row, pin: getAdminPin() }) });
+    const res = await fetch(API, { method: "POST", body: JSON.stringify({ action: "deleteTask", row, ..._v47DinhDanh(row), pin: getAdminPin() }) });
     const d = await apiJson(res);
     if (d.ok) {
       showToast("✅ Đã xóa nhiệm vụ #" + row);
@@ -3243,7 +3310,7 @@ async function submitEditTask() {
   if (!fields.nhiemVu || !fields.donVi) { showToast("⚠ Tên nhiệm vụ và Đơn vị không được để trống"); return; }
   try {
     showToast("⏳ Đang lưu...", 2000);
-    const res = await fetch(API, { method: "POST", body: JSON.stringify({ action: "editTask", row, fields, pin: getAdminPin() }) });
+    const res = await fetch(API, { method: "POST", body: JSON.stringify({ action: "editTask", row, fields, nhiemVuGoc: _v47DinhDanh(row).nhiemVu, donViGoc: _v47DinhDanh(row).donVi, pin: getAdminPin() }) });
     const d = await apiJson(res);
     if (d.ok) {
       showToast("✅ Đã lưu chỉnh sửa nhiệm vụ #" + row);
@@ -3383,13 +3450,29 @@ function renderChoDuyetKQ() {
   )).join("");
 }
 
+function _v47ThamSoCho(action, row) {
+  if (action === "duyetKQ" || action === "tuChoiKQ") {
+    const t = (choDuyetKQCache || []).find(x => x.row === row) || {};
+    return { rowGoc: t.rowGoc || "", nhiemVu: t.nhiemVu || "", thoiGianDeXuat: t.thoiGianDeXuat || "" };
+  }
+  const t = (choDuyetNVCache || []).find(x => x.row === row) || {};
+  return { nhiemVu: t.nhiemVu || "", donVi: t.donVi || "" };
+}
 async function _duyetAction(action, row, okMsg) {
   if (!requireAdminOrPrompt()) return;
   try {
     showToast("⏳ Đang xử lý...", 1500);
-    const d = await apiJsonp({ action: action, row: row, pin: getAdminPin() });
+    const thamSo = Object.assign({ action: action, row: row, pin: getAdminPin() }, _v47ThamSoCho(action, row));
+    let d = await apiJsonp(thamSo);
+    if (!d.ok && d.canXacNhan) {
+      const nd = "⚠ CẦN XÁC NHẬN TRƯỚC KHI DUYỆT\n\n• " + (d.canhBao || []).join("\n\n• ") +
+                 "\n\nVẫn duyệt và ghi kết quả này?";
+      if (!confirm(nd)) { showToast("Đã dừng — kết quả vẫn nằm trong danh sách chờ duyệt"); return; }
+      thamSo.xacNhan = "1";
+      d = await apiJsonp(thamSo);
+    }
     if (d.ok) {
-      showToast(okMsg);
+      showToast(okMsg + (d.doiDong ? " · " + d.doiDong : ""), d.doiDong ? 6000 : undefined);
       localStorage.removeItem(CACHE_KEY);
       await loadChoDuyet();
       await loadData(true);
