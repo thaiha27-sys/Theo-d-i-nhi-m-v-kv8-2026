@@ -335,6 +335,31 @@ tbody tr:hover{background:#F7FAFF}
 <script>
 /* ═══════════ CẤU HÌNH ═══════════ */
 const API = "https://script.google.com/macros/s/AKfycbzRm_qI0sNQH7dSbM6UmAPS5ey-pMsGKiPLjXp_PEoDCPaMv6fzD1l2frG_6eK6uJvb/exec";
+/* ═══ v48 (07/10/2026) — MÃ TRUY CẬP ĐƠN VỊ + LỆNH QUẢN TRỊ GỬI BẰNG POST ═══ */
+const V48_MX_KEY = "kv8_ma_truy_cap";
+function v48LayMa(){ try { return localStorage.getItem(V48_MX_KEY) || ""; } catch(e){ return ""; } }
+function v48LuuMa(m){ try { if (m) localStorage.setItem(V48_MX_KEY, m); else localStorage.removeItem(V48_MX_KEY); } catch(e){} }
+(function(){
+  var _f = window.fetch.bind(window);
+  window.fetch = function(url, opt){
+    try {
+      var mx = v48LayMa();
+      if (mx && typeof url === "string" && url.indexOf(API) === 0) {
+        var m = (opt && opt.method) ? String(opt.method).toUpperCase() : "GET";
+        if (m === "POST" && typeof opt.body === "string") {
+          var b = JSON.parse(opt.body);
+          if (b && typeof b === "object" && !b.mx) { b.mx = mx; opt = Object.assign({}, opt, { body: JSON.stringify(b) }); }
+        } else if (m === "GET") {
+          url += (url.indexOf("?") < 0 ? "?" : "&") + "mx=" + encodeURIComponent(mx);
+        }
+      }
+    } catch(e) { console.warn("v48 fetch", e); }
+    return _f(url, opt);
+  };
+})();
+function v48HoiMaKpi(){ if (window._v48DaHoi) return; window._v48DaHoi = true;
+  var m = prompt("Nhập mã truy cập của đơn vị (do Văn phòng cấp, dạng XXXX-XXXX):");
+  if (m && m.trim()) { v48LuuMa(m.trim()); location.reload(); } }
 const PIN_KEY = "KV8_ADMIN_PIN";
 
 let DATA = { canhan:null, tapthe:null, cham:null, chitiet:null, meta:null };
@@ -360,6 +385,7 @@ function badgeXL(x){
 async function getJSON(qs){
   const r = await fetch(API + qs);
   const j = await r.json();
+  if(j.maLoi==="CAN_MA_XEM") v48HoiMaKpi();
   if(!j.ok) throw new Error(j.error||"Lỗi không xác định");
   return j;
 }
@@ -379,7 +405,7 @@ async function dangNhap(){
     const r = await fetch(API,{method:"POST",body:JSON.stringify({action:"dangNhapAdmin",pin:p})});
     const j = await r.json();
     if(j.ok){ sessionStorage.setItem(PIN_KEY,p); capNhatTrangThaiAdmin(); dong("ov-pin"); toast("✅ Đã đăng nhập"); }
-    else toast("❌ Sai mã PIN");
+    else toast("❌ "+(j.error||"Sai mã PIN"));
   }catch(e){ toast("Lỗi: "+e.message); }
 }
 function capNhatTrangThaiAdmin(){
