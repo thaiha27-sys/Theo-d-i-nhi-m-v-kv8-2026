@@ -908,6 +908,12 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
   </div>
   <div class="section">
     <div class="section-title">📝 Nhiệm vụ mới chờ duyệt</div>
+    <div id="duyet-nv-tb" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 10px;padding:8px 10px;background:#EEF2F7;border-radius:8px;font-size:12.5px">
+      <label style="cursor:pointer;display:flex;align-items:center;gap:5px"><input type="checkbox" id="duyet-nv-all" onchange="v50ChonTatCa(this.checked)"> Chọn tất cả</label>
+      <button class="btn-sm btn-green" onclick="v50DuyetLo(false)">✓ Duyệt các dòng đã chọn (<span id="duyet-nv-dem">0</span>)</button>
+      <button style="background:#c62828;color:#fff;border:none;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px" onclick="v50DuyetLo(true)">✕ Từ chối các dòng đã chọn</button>
+      <span style="color:var(--muted);font-size:11.5px">Mỗi lượt tối đa 50 dòng; máy chủ định danh từng việc theo tên + đơn vị, không theo số dòng.</span>
+    </div>
     <div id="duyet-nv-empty" style="display:none;color:var(--muted);font-size:13px;padding:10px 0">✅ Không có nhiệm vụ mới nào đang chờ duyệt.</div>
     <div id="duyet-nv-list"></div>
   </div>
@@ -1333,7 +1339,7 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
 // ============================================================
 // CẤU HÌNH
 // ============================================================
-const APP_VERSION = "v21.5";
+const APP_VERSION = "v21.6";
 console.log("%c[v47 READY] index v21.3 - chong ghi nham dong: moi lenh ghi gui kem ten nhiem vu","color:#0a7d33;font-weight:700");
 function _v47DinhDanh(row) {
   const t = (allTasks || []).find(x => x.row === row) || {};
@@ -1517,6 +1523,7 @@ function v49BocSo(s){
   while ((m = re.exec(String(s||""))) !== null) { const k = m[0].replace(/\s+/g,"").toUpperCase(); if (!seen[k]) { seen[k] = 1; out.push(k); } }
   return out.join(" · ");
 }
+console.log("%c[v50 READY] index v21.6 - duyet nhieu dong, nhap Excel du cot, tai lai it hon","color:#0a7d33;font-weight:700");
 console.log("%c[v49 READY] index v21.5 - nguoi dung sua thong tin NV, bang 11 cot, kho tra cuu, ket xuat ca nhan","color:#0a7d33;font-weight:700");
 
 // ============================================================
@@ -1826,6 +1833,7 @@ function switchTab(id) {
 // ============================================================
 // LOAD DATA
 // ============================================================
+let v50BoQuaCho = false;   // v50: hàng chờ vừa được duyetNVLo trả về — loadData khỏi tải lại
 async function loadData(forceRefresh = false) {
   // v17: hiển thị NGAY từ cache (nếu có) rồi mới đồng bộ nền → trang mở tức thì
   let renderedFromCache = false;
@@ -1855,7 +1863,8 @@ async function loadData(forceRefresh = false) {
       document.getElementById("sync-label").textContent = "✓ " + new Date().toLocaleTimeString("vi-VN") + " · " + allTasks.length + " NV";
       _lastApiError = "";
       renderAll();
-      if (isAdmin()) loadChoDuyet();
+      if (isAdmin() && !v50BoQuaCho) loadChoDuyet();
+      v50BoQuaCho = false;
     } else {
       _lastApiError = data.error || "Không rõ";
       showError("API lỗi: " + _lastApiError);
@@ -2831,6 +2840,24 @@ function _excelDateToStr(v) {
   return String(v || "").trim();
 }
 
+/* v50: sheet đầu tiên có dòng tiêu đề chứa cả "nhiệm vụ" và "đơn vị"; ưu tiên sheet tên "NV" */
+function v50ChonSheet(wb) {
+  const doc = n => XLSX.utils.sheet_to_json(wb.Sheets[n], {header:1, defval:"", raw:true});
+  const coTieuDe = raw => raw.slice(0, 15).some(r => { const h = r.map(_normHeader);
+    return h.some(x => x.includes("nhiem vu")) && h.some(x => x.includes("don vi")); });
+  const ten = wb.SheetNames.slice().sort((a, b) => (b.trim().toUpperCase() === "NV") - (a.trim().toUpperCase() === "NV"));
+  for (const n of ten) { const raw = doc(n); if (coTieuDe(raw)) return raw; }
+  return doc(wb.SheetNames[0]);
+}
+function v50MucDo(v) {
+  const s = _normHeader(String(v == null ? "" : v));
+  if (/^[123]$/.test(s)) return Number(s);
+  if (s.includes("kho")) return 3;
+  if (s.includes("trung binh")) return 2;
+  if (s.includes("de")) return 1;
+  return "";
+}
+
 function _matchCol(headers, keywords) {
   // Tìm cột: thử exact trước, rồi includes bất kỳ keyword
   for (const kw of keywords) {
@@ -3224,8 +3251,7 @@ async function handleExcel(e) {
     try {
       // --- 1. Đọc workbook ---
       const wb = XLSX.read(ev.target.result, {type:"array", cellDates:false});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:"", raw:true});
+      const raw = v50ChonSheet(wb);   // v50: mẫu HQ cửa khẩu có sheet HƯỚNG DẪN đứng đầu
 
       // --- 2. Tìm dòng header (tìm dòng có cả "nhiệm vụ" lẫn "đơn vị") ---
       let hdrIdx = -1;
@@ -3266,7 +3292,12 @@ async function handleExcel(e) {
         cc: _matchCol(headers, ["can cu", "nguon chi dao", "can cu nguon", "nguon"]),
         // Người TH (I)
         nth: _matchCol(headers, ["nguoi thuc hien truc tiep", "nguoi thuc hien", "thuc hien"]),
+        // v50: Lãnh đạo đơn vị (M) · Mức độ (L) · Mã ISO (O)
+        ldDv: _matchCol(headers, ["lanh dao don vi", "ld don vi", "lanh dao phong doi"]),
+        md:   _matchCol(headers, ["muc do"]),
+        iso:  _matchCol(headers, ["ma iso", "quy trinh iso", "iso"]),
       };
+      if (ci.ld >= 0 && ci.ld === ci.ldDv) ci.ld = -1;   // chỉ có cột "Lãnh đạo đơn vị" — đừng hiểu là LĐ Chi cục
 
       // --- 4. Build batch, lọc trùng ngay tại client ---
       const existKeys = new Set(
@@ -3302,6 +3333,9 @@ async function handleExcel(e) {
           sanPham:       ci.sp  >= 0 ? String(r[ci.sp]  || "").trim() : "",
           nguonChiDao:   ci.cc  >= 0 ? String(r[ci.cc]  || "").trim() : "",
           nguoiThucHien: ci.nth >= 0 ? String(r[ci.nth] || "").trim() : "",
+          ldDonVi:       ci.ldDv >= 0 ? String(r[ci.ldDv] || "").trim() : "",
+          mucDo:         ci.md   >= 0 ? v50MucDo(r[ci.md]) : "",
+          maISO:         ci.iso  >= 0 ? String(r[ci.iso] || "").trim() : "",
         });
       }
 
@@ -3338,6 +3372,7 @@ async function handleExcel(e) {
       if (d.ok) {
         let toastMsg = "✅ Đã gửi " + d.successCount + "/" + batch.length + " nhiệm vụ vào hàng chờ duyệt";
         if (d.skipCount > 0) toastMsg += " · Bỏ qua " + d.skipCount + " trùng trên server";
+        if (d.canhBao > 0) toastMsg += " · " + d.canhBao + " dòng có ghi chú/cảnh báo (xem tab Duyệt)";
         showToast(toastMsg, 5000);
         localStorage.removeItem(CACHE_KEY);
         await loadData(true);
@@ -3647,21 +3682,35 @@ async function kiemTraSoVBUI() {
 function renderChoDuyetNV() {
   const list = document.getElementById("duyet-nv-list");
   const empty = document.getElementById("duyet-nv-empty");
-  if (!choDuyetNVCache.length) { list.innerHTML = ""; empty.style.display = "block"; return; }
+  const tb = document.getElementById("duyet-nv-tb");
+  const conRow = new Set(choDuyetNVCache.map(t => t.row));
+  v50Chon = new Set([...v50Chon].filter(r => conRow.has(r)));
+  v50DemChon();
+  if (!choDuyetNVCache.length) { list.innerHTML = ""; empty.style.display = "block"; if (tb) tb.style.display = "none"; return; }
   empty.style.display = "none";
-  list.innerHTML = choDuyetNVCache.map(t => (
-    '<div style="border:1px solid #E5E7EB;border-radius:8px;padding:10px 14px;margin-bottom:8px;background:#F9FAFB">' +
-    '<div style="font-weight:600;font-size:13px;color:var(--navy)">' + (t.nhiemVu||"—") + '</div>' +
+  if (tb) tb.style.display = "flex";
+  const all = document.getElementById("duyet-nv-all");
+  if (all) all.checked = v50Chon.size > 0 && v50Chon.size === choDuyetNVCache.length;
+  const E = v49Esc, MD = { 1: "Dễ", 2: "Trung bình", 3: "Khó" };
+  list.innerHTML = choDuyetNVCache.map(t => {
+    const canh = String(t.ghiChu || "");
+    return '<div style="border:1px solid ' + (canh.indexOf("⚠") >= 0 ? '#F59E0B' : '#E5E7EB') + ';border-radius:8px;padding:10px 14px;margin-bottom:8px;background:#F9FAFB">' +
+    '<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer">' +
+      '<input type="checkbox" style="margin-top:3px" ' + (v50Chon.has(t.row) ? 'checked ' : '') + 'onchange="v50ChonMot(' + Number(t.row) + ',this.checked)">' +
+      '<span style="font-weight:600;font-size:13px;color:var(--navy)">' + E(t.nhiemVu || "—") + '</span></label>' +
     '<div style="font-size:11.5px;color:#555;margin-top:4px;line-height:1.5">' +
-      '<b>Đơn vị:</b> ' + (t.donVi||"—") + ' · <b>Lãnh đạo:</b> ' + (t.lanhDao||"—") + ' · <b>Hạn:</b> ' + fmtDate(t.thoiHan) + '<br>' +
-      '<b>Căn cứ:</b> ' + (t.canCu||"—") + (t.sanPham ? ' · <b>Sản phẩm:</b> ' + t.sanPham : '') + '<br>' +
-      '<b>Người đề xuất:</b> ' + (t.nguoiDeXuat||"—") + (t.thoiGianDeXuat ? ' · ' + t.thoiGianDeXuat : '') +
+      '<b>Đơn vị:</b> ' + E(t.donVi || "—") + ' · <b>Lãnh đạo:</b> ' + E(t.lanhDao || "—") + ' · <b>Hạn:</b> ' + E(fmtDate(t.thoiHan)) +
+      (t.ldDonVi ? ' · <b>LĐ đơn vị:</b> ' + E(t.ldDonVi) : '') + (t.mucDo ? ' · <b>Mức độ:</b> ' + E(MD[t.mucDo] || t.mucDo) : '') +
+      (t.maISO ? ' · <b>ISO:</b> ' + E(t.maISO) : '') + '<br>' +
+      '<b>Căn cứ:</b> ' + E(t.canCu || "—") + (t.sanPham ? ' · <b>Sản phẩm:</b> ' + E(t.sanPham) : '') + (t.nguoiTH ? ' · <b>Người TH:</b> ' + E(t.nguoiTH) : '') + '<br>' +
+      (canh ? '<span style="color:#b26a00">' + E(canh) + '</span><br>' : '') +
+      '<b>Người đề xuất:</b> ' + E(t.nguoiDeXuat || "—") + (t.thoiGianDeXuat ? ' · ' + E(t.thoiGianDeXuat) : '') +
     '</div>' +
     '<div style="display:flex;gap:6px;margin-top:8px">' +
-      '<button class="btn-sm btn-green" onclick="approveNV(' + t.row + ')">✓ Duyệt</button>' +
-      '<button class="btn-sm" style="background:#c62828;color:#fff;border:none;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px" onclick="rejectNV(' + t.row + ')">✕ Từ chối</button>' +
-    '</div></div>'
-  )).join("");
+      '<button class="btn-sm btn-green" onclick="approveNV(' + Number(t.row) + ')">✓ Duyệt</button>' +
+      '<button class="btn-sm" style="background:#c62828;color:#fff;border:none;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px" onclick="rejectNV(' + Number(t.row) + ')">✕ Từ chối</button>' +
+    '</div></div>';
+  }).join("");
 }
 
 function renderChoDuyetKQ() {
@@ -3730,9 +3779,10 @@ async function _duyetAction(action, row, okMsg) {
     }
     if (d.ok) {
       showToast(okMsg + (d.doiDong ? " · " + d.doiDong : ""), d.doiDong ? 6000 : undefined);
+      v50BoKhoiCho(action, row);                         // v50: bỏ tại chỗ, không chờ tải lại
+      if (action === "tuChoiNV") return;                 // v50: từ chối việc mới không đổi danh sách NV
       localStorage.removeItem(CACHE_KEY);
-      await loadChoDuyet();
-      await loadData(true);
+      await loadData(true);                              // v50: loadData tự tải lại hàng chờ — bỏ lượt loadChoDuyet thừa
     } else { showToast("❌ Lỗi: " + (d.error || "Không xử lý được")); }
   } catch(e) { showToast("❌ Lỗi kết nối: " + e.message); }
 }
@@ -3740,6 +3790,69 @@ function approveNV(row) { _duyetAction("duyetNV", row, "✅ Đã duyệt nhiệm
 function rejectNV(row)  { _duyetAction("tuChoiNV", row, "✅ Đã từ chối đề xuất"); }
 function approveKQ(row) { _duyetAction("duyetKQ", row, "✅ Đã duyệt kết quả"); }
 function rejectKQ(row)  { _duyetAction("tuChoiKQ", row, "✅ Đã từ chối kết quả"); }
+
+/* ═══ v50: duyệt / từ chối NHIỀU nhiệm vụ một lượt ═══ */
+let v50Chon = new Set();
+function v50DemChon() { const e = document.getElementById("duyet-nv-dem"); if (e) e.textContent = String(v50Chon.size); }
+function v50ChonMot(row, ok) { ok ? v50Chon.add(row) : v50Chon.delete(row); v50DemChon(); }
+function v50ChonTatCa(ok) { v50Chon = new Set(ok ? choDuyetNVCache.map(t => t.row) : []); renderChoDuyetNV(); }
+function v50Badge() {
+  const total = choDuyetNVCache.length + choDuyetKQCache.length;
+  const badge = document.getElementById("tab-duyet-badge");
+  if (!badge) return;
+  badge.textContent = String(total);
+  badge.style.display = (isAdmin() && total > 0) ? "inline-block" : "none";
+}
+/* Bỏ một dòng khỏi hàng chờ ngay trên giao diện; các dòng dưới dồn lên 1 (máy chủ xóa hàng thật) */
+function v50BoKhoiCho(action, row) {
+  const nv = (action === "duyetNV" || action === "tuChoiNV");
+  const ds = (nv ? choDuyetNVCache : choDuyetKQCache).filter(x => x.row !== row)
+    .map(x => (x.row > row ? Object.assign({}, x, { row: x.row - 1 }) : x));
+  if (nv) { choDuyetNVCache = ds; v50Chon = new Set(); } else choDuyetKQCache = ds;
+  v50Badge(); renderChoDuyetNV(); renderChoDuyetKQ();
+}
+async function v50DuyetLo(tuChoi) {
+  if (!requireAdminOrPrompt()) return;
+  const ds = choDuyetNVCache.filter(t => v50Chon.has(t.row)).map(t => ({ row: t.row, nhiemVu: t.nhiemVu, donVi: t.donVi }));
+  if (!ds.length) { showToast("Chưa chọn nhiệm vụ nào"); return; }
+  if (!confirm((tuChoi ? "TỪ CHỐI " : "DUYỆT ") + ds.length + " nhiệm vụ đã chọn?")) return;
+  let dat = 0, cho = null;
+  const loi = [];
+  for (let i = 0; i < ds.length; i += 50) {
+    showToast("⏳ Đang xử lý " + Math.min(i + 50, ds.length) + "/" + ds.length + "...", 4000);
+    let d;
+    try { d = await apiJsonp({ action: "duyetNVLo", pin: getAdminPin(), tuChoi: tuChoi ? "1" : "", ds: ds.slice(i, i + 50) }); }
+    catch (e) { showToast("❌ Lỗi kết nối: " + e.message); break; }
+    if (!d.ok && /Action không hợp lệ/.test(d.error || "")) { await v50DuyetLoCu(ds.slice(i), tuChoi, dat); return; }
+    if (!d.ok) { showToast("❌ " + (d.error || "Không xử lý được")); break; }
+    dat += d.soDat || 0;
+    (d.ketQua || []).forEach(k => { if (!k.ok) loi.push(String(k.nhiemVu || "").slice(0, 70) + " — " + k.loi); });
+    if (d.choDuyet && d.choDuyet.ok) cho = d.choDuyet;
+  }
+  v50Chon = new Set();
+  if (cho) { choDuyetNVCache = cho.nv || []; choDuyetKQCache = cho.kq || []; v50Badge(); renderChoDuyetNV(); renderChoDuyetKQ(); }
+  else await loadChoDuyet();
+  showToast("✅ Đã " + (tuChoi ? "từ chối " : "duyệt ") + dat + "/" + ds.length + " nhiệm vụ" + (loi.length ? " · " + loi.length + " dòng không xử lý" : ""), 6000);
+  if (loi.length) alert("Các dòng KHÔNG xử lý (đã giữ nguyên trong hàng chờ):\n\n• " + loi.join("\n• "));
+  if (!tuChoi && dat) { localStorage.removeItem(CACHE_KEY); v50BoQuaCho = true; await loadData(true); }
+}
+/* Máy chủ chưa Deploy v50: duyệt lần lượt từng dòng, từ dòng LỚN xuống dòng NHỎ (bẫy 8 — duyetNV xóa dòng làm dồn chỉ số) */
+async function v50DuyetLoCu(ds, tuChoi, datTruoc) {
+  let dat = datTruoc || 0;
+  const sx = ds.slice().sort((a, b) => b.row - a.row);
+  for (let i = 0; i < sx.length; i++) {
+    showToast("⏳ (máy chủ chưa có v50) " + (i + 1) + "/" + sx.length + "...", 3000);
+    try {
+      const d = await apiJsonp(Object.assign({ action: tuChoi ? "tuChoiNV" : "duyetNV", pin: getAdminPin() }, sx[i]));
+      if (d.ok) dat++;
+    } catch (e) {}
+  }
+  v50Chon = new Set();
+  showToast("✅ Đã " + (tuChoi ? "từ chối " : "duyệt ") + dat + " nhiệm vụ", 5000);
+  localStorage.removeItem(CACHE_KEY);
+  await loadData(true);
+  if (tuChoi) await loadChoDuyet();
+}
 
 // ============================================================
 // TOGGLE EXPORT MENU
