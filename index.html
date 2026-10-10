@@ -318,7 +318,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
     <button class="btn btn-outline btn-orange admin-only-action" id="btn-normalize" onclick="chuanHoaDonVi()" title="Chuẩn hóa tên đơn vị chủ trì theo danh sách 18 đơn vị KV8" style="display:none">⚙ Chuẩn hóa ĐV</button>
     <button class="btn btn-outline" id="btn-admin-toggle" onclick="openAdminLogin()">🔒 Đăng nhập Admin</button>
     <span style="font-size:10.5px;opacity:.7">⏰ 8h → dangbohqqn@gmail.com · 💾 Backup 23h30</span>
-    <span id="app-ver" title="Phiên bản giao diện đang chạy" style="font-size:10px;font-weight:700;background:rgba(255,255,255,.18);color:#fff;padding:2px 8px;border-radius:10px;margin-left:8px">v21.0</span>
+    <span id="app-ver" title="Phiên bản giao diện đang chạy" style="font-size:10px;font-weight:700;background:rgba(255,255,255,.18);color:#fff;padding:2px 8px;border-radius:10px;margin-left:8px">v21.7</span>
   </div>
 </div>
 <input type="file" id="excel-input" accept=".xlsx,.xls" style="display:none" onchange="handleExcel(event)">
@@ -1339,7 +1339,7 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
 // ============================================================
 // CẤU HÌNH
 // ============================================================
-const APP_VERSION = "v21.6";
+const APP_VERSION = "v21.7";
 console.log("%c[v47 READY] index v21.3 - chong ghi nham dong: moi lenh ghi gui kem ten nhiem vu","color:#0a7d33;font-weight:700");
 function _v47DinhDanh(row) {
   const t = (allTasks || []).find(x => x.row === row) || {};
@@ -1506,7 +1506,7 @@ async function submitSuaKhac(){
       if (d.apDung && d.apDung.length) m += "✅ Đã cập nhật: " + d.apDung.join("; ");
       if (d.choDuyet && d.choDuyet.length) m += (m ? "\n" : "") + "⏳ Chờ Văn phòng duyệt: " + d.choDuyet.join("; ") + (d.ngoaiDonVi ? " (việc của đơn vị khác)" : "");
       showToast(m || "✅ Đã lưu", 7000);
-      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIME_KEY);
       await loadData(true);
     } else {
       const e = String(d.error || "Lỗi không xác định");
@@ -1523,6 +1523,7 @@ function v49BocSo(s){
   while ((m = re.exec(String(s||""))) !== null) { const k = m[0].replace(/\s+/g,"").toUpperCase(); if (!seen[k]) { seen[k] = 1; out.push(k); } }
   return out.join(" · ");
 }
+console.log("%c[v51 READY] index v21.7 - thu lai khi cham, giu du lieu cu, khong chong luot tai, ten 3 cot","color:#0a7d33;font-weight:700");
 console.log("%c[v50 READY] index v21.6 - duyet nhieu dong, nhap Excel du cot, tai lai it hon","color:#0a7d33;font-weight:700");
 console.log("%c[v49 READY] index v21.5 - nguoi dung sua thong tin NV, bang 11 cot, kho tra cuu, ket xuat ca nhan","color:#0a7d33;font-weight:700");
 
@@ -1546,7 +1547,20 @@ function fetchTimeout(url, opts, ms) {
 // v20.6 — GỌI KIỂU JSONP (vượt rào CORS / chuyển hướng 404 của Apps Script).
 // Dùng <script src> nên đi theo chuyển hướng y như MỞ LINK TRỰC TIẾP (đã chứng minh chạy ~3s),
 // không dính CORS. Trả về thẳng object JSON (backend v35 bọc callback(...)).
+// v51: lệnh CHỈ ĐỌC (không action, hoặc action lay…/kiem…/xuat…/khoThongKe/khoLayKey/doPhuKQ) hết giờ ⇒ thử lại 1 lần, chờ 45s.
+// ⛔ Không thử lại lệnh ghi: lượt đầu có thể đã ghi xong, chỉ là phản hồi về chậm.
+const V51_DOC_RE = /^(lay|kiem|xuat|khoThongKe|khoLayKey|doPhuKQ)/;
 function apiJsonp(params, ms) {
+  var a = params && params.action ? String(params.action) : "";
+  var choThuLai = !(params && params.pin) && (!a || V51_DOC_RE.test(a));
+  return _v51Jsonp1(params, ms).catch(function (e) {
+    if (!choThuLai || !/Het thoi gian|JSONP onerror/.test(String(e && e.message))) throw e;
+    console.warn("[KV8 v51] máy chủ chậm, thử lại:", a || "danh sách NV", e.message);
+    if (!a) { var lb = document.getElementById("sync-label"); if (lb) lb.textContent = "⏳ Máy chủ chậm — đang thử lại…"; }
+    return _v51Jsonp1(params, Math.max(ms || 30000, 45000));
+  });
+}
+function _v51Jsonp1(params, ms) {
   ms = ms || 30000;
   // v48: thêm mã truy cập; lệnh mang PIN đi bằng POST (máy chủ v48 chặn PIN qua GET)
   params = Object.assign({}, params || {});
@@ -1834,7 +1848,21 @@ function switchTab(id) {
 // LOAD DATA
 // ============================================================
 let v50BoQuaCho = false;   // v50: hàng chờ vừa được duyetNVLo trả về — loadData khỏi tải lại
-async function loadData(forceRefresh = false) {
+// v51: không chồng lượt tải. Đang có lượt chạy: gọi thường thì dùng chung lượt đó; gọi ép (sau lệnh ghi) thì xếp hàng chạy tiếp.
+let _v51Dang = null, _v51TuThuLai = null;
+function loadData(forceRefresh = false) {
+  if (_v51Dang) {
+    if (!forceRefresh) return _v51Dang;
+    return _v51Dang.then(function () { return loadData(true); });
+  }
+  _v51Dang = _v51LoadData(forceRefresh).finally(function () { _v51Dang = null; });
+  return _v51Dang;
+}
+function v51GioCache() {
+  var ts = localStorage.getItem(CACHE_TIME_KEY) || localStorage.getItem("kv8_tasks_ts_v51");
+  return ts ? new Date(Number(ts)).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "";
+}
+async function _v51LoadData(forceRefresh = false) {
   // v17: hiển thị NGAY từ cache (nếu có) rồi mới đồng bộ nền → trang mở tức thì
   let renderedFromCache = false;
   if (!forceRefresh) {
@@ -1842,14 +1870,14 @@ async function loadData(forceRefresh = false) {
     const ts = localStorage.getItem(CACHE_TIME_KEY);
     if (cached) {
       try { allTasks = JSON.parse(cached); renderAll(); renderedFromCache = true; } catch(e) {}
-      if (renderedFromCache) document.getElementById("sync-label").textContent = "Cache · " + (ts ? new Date(Number(ts)).toLocaleTimeString("vi-VN") : "");
+      if (renderedFromCache) document.getElementById("sync-label").textContent = "Dữ liệu lúc " + v51GioCache();
       if (renderedFromCache && ts && Date.now() - Number(ts) < CACHE_TTL) return; // cache còn mới — không gọi lại server
     }
   }
-  document.getElementById("sync-label").textContent = renderedFromCache ? "Đang đồng bộ..." : "Đang tải...";
+  document.getElementById("sync-label").textContent = renderedFromCache ? ("Dữ liệu lúc " + v51GioCache() + " · đang cập nhật…") : "Đang tải...";
   try {
     // v20.5: có timeout 18s — nếu server treo thì DỪNG và báo lỗi, không quay tròn mãi
-    const data = await apiJsonp({}, 30000);   // v20.6: JSONP thay fetch (vượt CORS/404)
+    const data = await apiJsonp({}, 25000);   // v51: 25s, hết giờ thì apiJsonp tự thử lại 1 lần (45s)
     if (data && data.maLoi === "CAN_MA_XEM") {   // v48: máy chủ đòi mã truy cập
       allTasks = []; renderAll();
       document.getElementById("sync-label").textContent = "🔑 Cần mã truy cập";
@@ -1858,9 +1886,14 @@ async function loadData(forceRefresh = false) {
     }
     if (data.ok && data.rows) {
       allTasks = data.rows;
-      localStorage.setItem(CACHE_KEY, JSON.stringify(allTasks));
-      localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
-      document.getElementById("sync-label").textContent = "✓ " + new Date().toLocaleTimeString("vi-VN") + " · " + allTasks.length + " NV";
+      try {   // v51: bộ nhớ trình duyệt đầy thì vẫn hiện dữ liệu, không coi là lỗi kết nối
+        localStorage.setItem(CACHE_KEY, JSON.stringify(allTasks));
+        localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
+        localStorage.setItem("kv8_tasks_ts_v51", String(Date.now()));
+      } catch (eLuu) { console.warn("[KV8 v51] không lưu được bản dự phòng:", eLuu); }
+      if (_v51TuThuLai) { clearTimeout(_v51TuThuLai); _v51TuThuLai = null; }
+      document.getElementById("sync-label").textContent = "✓ " + new Date().toLocaleTimeString("vi-VN") + " · " + allTasks.length + " NV"
+        + (data.capNhat ? " · máy chủ dựng " + String(data.capNhat).slice(11, 16) : "");
       _lastApiError = "";
       renderAll();
       if (isAdmin() && !v50BoQuaCho) loadChoDuyet();
@@ -1879,11 +1912,12 @@ async function loadData(forceRefresh = false) {
     if (cached) {
       // Có cache cũ → vẫn hiển thị, nhưng ghi rõ lý do lên nhãn đồng bộ
       allTasks = JSON.parse(cached); renderAll();
-      document.getElementById("sync-label").textContent = "⚠ Dùng cache · " + _lastApiError.slice(0, 60);
+      document.getElementById("sync-label").textContent = "⚠ Máy chủ chậm — đang hiện dữ liệu lúc " + v51GioCache();
     } else {
       // KHÔNG có cache → trước đây spinner quay mãi; nay hiện thẳng lý do lỗi
       document.getElementById("sync-label").textContent = "⚠ Lỗi kết nối";
       showError(_lastApiError);
+      if (!_v51TuThuLai) _v51TuThuLai = setTimeout(function () { _v51TuThuLai = null; loadData(true); }, 60000);
     }
     showToast("⚠ " + _lastApiError, 8000);
   }
@@ -1891,7 +1925,8 @@ async function loadData(forceRefresh = false) {
 
 function showError(msg) {
   document.getElementById("sync-label").textContent = "⚠ " + msg;
-  document.getElementById("dashboard-loading").innerHTML = '<div style="color:var(--red);text-align:center;padding:40px">⚠ ' + msg + '<br><small style="color:var(--muted)">Kiểm tra kết nối Apps Script và deploy lại</small></div>';
+  document.getElementById("dashboard-loading").innerHTML = '<div style="color:var(--red);text-align:center;padding:40px">⚠ ' + msg + '<br><small style="color:var(--muted)">Máy chủ Google đang phản hồi chậm. Hệ thống sẽ tự thử lại sau 60 giây.</small>'
+    + '<br><button class="btn btn-outline" style="margin-top:12px" onclick="loadData(true)">🔄 Thử lại ngay</button></div>';
 }
 
 function renderAll() {
@@ -2042,7 +2077,8 @@ function renderTable() {
     const hasKQ = !!(t.ketQua && t.ketQua.trim());
     const kqShort = hasKQ ? t.ketQua.substring(0,60) + (t.ketQua.length>60?'…':'') : '';
     const canCuShort = (t.canCu||'').substring(0,50) + ((t.canCu||'').length>50?'…':'');
-    const nguoiShort = v49Esc((t.nguoiTH||'—').substring(0,40));
+    const nguoiShort = t.nguoiTH ? v49Esc(t.nguoiTH.substring(0,40))
+      : (/^(Các |Lãnh đạo Chi cục)/.test(t.donVi||"") ? "—" : '<i style="color:#B45309" title="Chưa có người thực hiện trực tiếp — đơn vị cập nhật bằng nút Sửa khác. Trong lúc chờ, trách nhiệm tính cho Lãnh đạo đơn vị.">chờ đơn vị phân công</i>');
     // Cột tình trạng + thao tác gộp
     let statusCell;
     if (s.includes("Hoàn thành")) {
@@ -2635,7 +2671,7 @@ async function submitAdd() {
     if (j.ok) {
       closeModal("modal-add");
       showToast("✅ Đã gửi đề xuất nhiệm vụ mới, chờ Admin duyệt");
-      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIME_KEY);
       await loadData(true);
     } else { errEl.textContent = "⚠ " + (j.error||"Lỗi không xác định"); errEl.style.display = "block"; }
   } catch(e) { errEl.textContent = "⚠ Lỗi kết nối: " + e.message; errEl.style.display = "block"; }
@@ -2738,7 +2774,7 @@ async function submitKQ() {
       closeModal("modal-kq");
       showToast(d.canhBao ? ("✅ Đã gửi — ⚠ " + d.canhBao) : "✅ Đã gửi đề xuất kết quả, chờ Admin duyệt");
       bcLoaded = false;
-      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIME_KEY);
       await loadData(true);
     } else { errEl.textContent = "⚠ " + (d.error||"Lỗi không xác định"); errEl.style.display = "block"; }
   } catch(e) { errEl.textContent = "⚠ Lỗi kết nối: " + e.message; errEl.style.display = "block"; }
@@ -2789,7 +2825,7 @@ async function markDone(row, name) {
     const d = await apiJson(res);
     if (d.ok) {
       showToast("✅ Đã gửi đề xuất hoàn thành, chờ Admin duyệt");
-      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIME_KEY);
       await loadData(true);
     } else showToast("⚠ Lỗi: " + d.error);
   } catch(e) { showToast("⚠ Không thể kết nối API"); }
@@ -3097,7 +3133,7 @@ async function confirmNorm() {
     if (d.ok) {
       showToast("✅ Đã chuẩn hóa " + d.updated + " dòng đơn vị");
       closeModal("modal-norm");
-      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIME_KEY);
       await loadData(true);
     } else {
       showToast("⚠ Lỗi: " + (d.error || "Không xác định"));
@@ -3226,7 +3262,7 @@ async function confirmDedup() {
     if (d.ok) {
       showToast("✅ Đã xóa " + d.deleted + " dòng trùng");
       closeModal("modal-dedup");
-      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIME_KEY);
       await loadData(true);
     } else {
       showToast("⚠ Lỗi: " + (d.error || "Không xác định"));
@@ -3374,7 +3410,7 @@ async function handleExcel(e) {
         if (d.skipCount > 0) toastMsg += " · Bỏ qua " + d.skipCount + " trùng trên server";
         if (d.canhBao > 0) toastMsg += " · " + d.canhBao + " dòng có ghi chú/cảnh báo (xem tab Duyệt)";
         showToast(toastMsg, 5000);
-        localStorage.removeItem(CACHE_KEY);
+        localStorage.removeItem(CACHE_TIME_KEY);
         await loadData(true);
       } else {
         showToast("⚠ Lỗi server: " + d.error);
@@ -3535,7 +3571,7 @@ async function deleteTask(row, name) {
     const d = await apiJson(res);
     if (d.ok) {
       showToast("✅ Đã xóa nhiệm vụ #" + row);
-      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIME_KEY);
       await loadData(true);
     } else { showToast("❌ Lỗi: " + (d.error || "Không xóa được")); }
   } catch(e) { showToast("❌ Lỗi kết nối: " + e.message); }
@@ -3586,7 +3622,7 @@ async function submitEditTask() {
     if (d.ok) {
       showToast("✅ Đã lưu chỉnh sửa nhiệm vụ #" + row);
       closeModal("modal-edit");
-      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIME_KEY);
       await loadData(true);
     } else { showToast("❌ Lỗi: " + (d.error || "Không lưu được")); }
   } catch(e) { showToast("❌ Lỗi kết nối: " + e.message); }
@@ -3781,7 +3817,7 @@ async function _duyetAction(action, row, okMsg) {
       showToast(okMsg + (d.doiDong ? " · " + d.doiDong : ""), d.doiDong ? 6000 : undefined);
       v50BoKhoiCho(action, row);                         // v50: bỏ tại chỗ, không chờ tải lại
       if (action === "tuChoiNV") return;                 // v50: từ chối việc mới không đổi danh sách NV
-      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIME_KEY);
       await loadData(true);                              // v50: loadData tự tải lại hàng chờ — bỏ lượt loadChoDuyet thừa
     } else { showToast("❌ Lỗi: " + (d.error || "Không xử lý được")); }
   } catch(e) { showToast("❌ Lỗi kết nối: " + e.message); }
@@ -3834,7 +3870,7 @@ async function v50DuyetLo(tuChoi) {
   else await loadChoDuyet();
   showToast("✅ Đã " + (tuChoi ? "từ chối " : "duyệt ") + dat + "/" + ds.length + " nhiệm vụ" + (loi.length ? " · " + loi.length + " dòng không xử lý" : ""), 6000);
   if (loi.length) alert("Các dòng KHÔNG xử lý (đã giữ nguyên trong hàng chờ):\n\n• " + loi.join("\n• "));
-  if (!tuChoi && dat) { localStorage.removeItem(CACHE_KEY); v50BoQuaCho = true; await loadData(true); }
+  if (!tuChoi && dat) { localStorage.removeItem(CACHE_TIME_KEY); v50BoQuaCho = true; await loadData(true); }
 }
 /* Máy chủ chưa Deploy v50: duyệt lần lượt từng dòng, từ dòng LỚN xuống dòng NHỎ (bẫy 8 — duyetNV xóa dòng làm dồn chỉ số) */
 async function v50DuyetLoCu(ds, tuChoi, datTruoc) {
@@ -3849,7 +3885,7 @@ async function v50DuyetLoCu(ds, tuChoi, datTruoc) {
   }
   v50Chon = new Set();
   showToast("✅ Đã " + (tuChoi ? "từ chối " : "duyệt ") + dat + " nhiệm vụ", 5000);
-  localStorage.removeItem(CACHE_KEY);
+  localStorage.removeItem(CACHE_TIME_KEY);
   await loadData(true);
   if (tuChoi) await loadChoDuyet();
 }
@@ -3923,7 +3959,7 @@ function renderKPIQuyDoi() {
   const tasks = allTasks.map(t => ({...t, _s: effectiveStatus(t)}));
   const per = {};
   tasks.forEach(t => {
-    const names = (t.nguoiTH || "").split(/[,;]+/).map(s => s.trim()).filter(Boolean);
+    const names = v52NguoiChiuTN(t).split(/[,;]+/).map(s => s.trim()).filter(Boolean);   // v52-tên: trống ⇒ LĐ đơn vị
     names.forEach(n => {
       if (!per[n]) per[n] = { tong:0, ht:0, d:{1:0,2:0,3:0}, diem:0 };
       per[n].tong++;
@@ -3957,6 +3993,11 @@ function renderKPIQuyDoi() {
 // ============================================================
 // v17 — TIN NHẮN ZALO NHẮC VIỆC (đến hạn trong 3 ngày tới)
 // ============================================================
+// v52-tên: người chịu trách nhiệm cá nhân = người trực tiếp; chưa có ⇒ Lãnh đạo đơn vị (họ tên, bỏ chức danh)
+function v52NguoiChiuTN(t) {
+  if (t.nguoiTH) return t.nguoiTH;
+  return String(t.ldDonVi || "").replace(/\s*[-(–,].*$/, "").trim();
+}
 function openZaloModal() {
   if (!allTasks.length) { showToast("⏳ Dữ liệu chưa tải xong, vui lòng thử lại"); return; }
   zaloScopeChange();
@@ -3971,7 +4012,7 @@ function zaloScopeChange() {
   } else {
     let opts = [];
     if (scope === "donvi") opts = [...new Set(allTasks.map(t => t.donVi).filter(Boolean))].sort();
-    else if (scope === "nguoi") opts = [...new Set(allTasks.flatMap(t => (t.nguoiTH||"").split(/[,;]+/)).map(s => s.trim()).filter(Boolean))].sort();
+    else if (scope === "nguoi") opts = [...new Set(allTasks.flatMap(t => v52NguoiChiuTN(t).split(/[,;]+/)).map(s => s.trim()).filter(Boolean))].sort();
     else if (scope === "lanhdao") opts = LD_KEYS.slice();
     opts.forEach(v => { const o = document.createElement("option"); o.value = o.textContent = v; sel.appendChild(o); });
   }
@@ -3986,7 +4027,7 @@ function zaloTasksSapDenHan(scope, target, incLate) {
     const trongHan = incLate ? diff <= 3 : (diff >= 0 && diff <= 3);
     if (!trongHan) return false;
     if (scope === "donvi")   return t.donVi === target;
-    if (scope === "nguoi")   return (t.nguoiTH || "").includes(target);
+    if (scope === "nguoi")   return v52NguoiChiuTN(t).includes(target);
     if (scope === "lanhdao") return normLanhDao(t.lanhDao) === target;
     return true;
   }).sort((a,b) => (parseDate(a.thoiHan)||0) - (parseDate(b.thoiHan)||0));
@@ -4144,7 +4185,7 @@ async function runLuuTruThang() {
     const d = await apiJson(res);
     if (d.ok) {
       showToast("✅ Đã lưu trữ " + d.moved + " nhiệm vụ hoàn thành tháng trước");
-      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIME_KEY);
       ltLoaded = false;
       await loadData(true);
       loadLuuTru(true);
