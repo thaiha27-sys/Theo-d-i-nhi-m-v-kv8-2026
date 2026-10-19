@@ -318,7 +318,7 @@ body{font-family:'Segoe UI',sans-serif;background:var(--light);color:var(--text)
     <button class="btn btn-outline btn-orange admin-only-action" id="btn-normalize" onclick="chuanHoaDonVi()" title="Chuẩn hóa tên đơn vị chủ trì theo danh sách 18 đơn vị KV8" style="display:none">⚙ Chuẩn hóa ĐV</button>
     <button class="btn btn-outline" id="btn-admin-toggle" onclick="openAdminLogin()">🔒 Đăng nhập Admin</button>
     <span style="font-size:10.5px;opacity:.7">⏰ 8h → dangbohqqn@gmail.com · 💾 Backup 23h30</span>
-    <span id="app-ver" title="Phiên bản giao diện đang chạy" style="font-size:10px;font-weight:700;background:rgba(255,255,255,.18);color:#fff;padding:2px 8px;border-radius:10px;margin-left:8px">v21.7</span>
+    <span id="app-ver" title="Phiên bản giao diện đang chạy" style="font-size:10px;font-weight:700;background:rgba(255,255,255,.18);color:#fff;padding:2px 8px;border-radius:10px;margin-left:8px">v21.8</span>
   </div>
 </div>
 <input type="file" id="excel-input" accept=".xlsx,.xls" style="display:none" onchange="handleExcel(event)">
@@ -1206,8 +1206,9 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Số văn bản / mã sản phẩm</label>
-        <input class="form-input" id="kq-so-vb" placeholder="VD: 145/KH-HQKV8 ngày 30/6/2026 (để trống nếu chưa có)" onblur="kiemTraSoVBUI()">
+        <input class="form-input" id="kq-so-vb" placeholder="VD: 145/KH-HQKV8 ngày 30/6/2026" onblur="kiemTraSoVBUI();v52KiemKQUI()" oninput="v52CapNhatKhongVB()">
         <div id="kq-sovb-warn" style="display:none;margin-top:6px;background:#FEF9E7;border:1px solid #F6C343;border-radius:6px;padding:7px 10px;font-size:12px;color:#7a5800;line-height:1.5"></div>
+        <div id="kq-v52-box" style="display:none;margin-top:6px;border:1px solid #BAE6FD;border-radius:6px;padding:7px 10px;font-size:12px;line-height:1.5"></div>
       </div>
       <div class="form-group">
         <label class="form-label">Ngày hoàn thành thực tế *</label>
@@ -1227,6 +1228,23 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
     <div class="form-group">
       <label class="form-label">Mô tả kết quả cụ thể *</label>
       <textarea class="form-textarea" id="kq-input" placeholder="Đã ban hành / nộp báo cáo / ký kết / hoàn thành..." style="min-height:80px"></textarea>
+    </div>
+    <div class="form-group" id="kq-khongvb-group" style="display:none">
+      <label class="form-label">Không có số văn bản — lý do <span style="color:#c0392b">*</span></label>
+      <select class="form-input" id="kq-khongvb">
+        <option value="">— Chọn lý do không ban hành văn bản —</option>
+        <option>Không thuộc đối tượng / không phải thực hiện</option>
+        <option>Đã dự họp, hội nghị theo giấy mời</option>
+        <option>Đã cập nhật, báo cáo trên phần mềm/hệ thống chuyên ngành</option>
+        <option>Đã thực hiện, không phát sinh văn bản</option>
+        <option>Văn bản do đơn vị khác chủ trì ban hành</option>
+      </select>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">Có văn bản sản phẩm thì ghi số văn bản ở ô trên — Văn phòng đối chiếu theo số này.</div>
+    </div>
+    <div class="form-group" id="kq-giaitrinh-group" style="display:none">
+      <label class="form-label" style="color:#b91c1c">Giải trình: văn bản này là sản phẩm của nhiệm vụ như thế nào? <span style="color:#c0392b">*</span></label>
+      <textarea class="form-textarea" id="kq-giaitrinh" placeholder="VD: Kế hoạch được ban hành kèm công văn này (mục 2); hoặc: đã nhập nhầm số, số đúng là ..." style="min-height:56px"></textarea>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">Văn phòng đọc giải trình khi duyệt. Kết quả không khớp mà không giải trình sẽ bị trả lại.</div>
     </div>
     <div class="form-group" id="kq-lydo-group">
       <label class="form-label" id="kq-lydo-label">Lý do chậm / chưa hoàn thành <span style="color:var(--muted);font-weight:400">(bắt buộc nếu quá hạn)</span></label>
@@ -1339,7 +1357,7 @@ Lưu hồ sơ | Văn thư | Sau khi xong | BM-04"></textarea>
 // ============================================================
 // CẤU HÌNH
 // ============================================================
-const APP_VERSION = "v21.7";
+const APP_VERSION = "v21.8";
 console.log("%c[v47 READY] index v21.3 - chong ghi nham dong: moi lenh ghi gui kem ten nhiem vu","color:#0a7d33;font-weight:700");
 function _v47DinhDanh(row) {
   const t = (allTasks || []).find(x => x.row === row) || {};
@@ -1523,6 +1541,7 @@ function v49BocSo(s){
   while ((m = re.exec(String(s||""))) !== null) { const k = m[0].replace(/\s+/g,"").toUpperCase(); if (!seen[k]) { seen[k] = 1; out.push(k); } }
   return out.join(" · ");
 }
+console.log("%c[v52 READY] index v21.8 - kiem soat ket qua khong khop nhiem vu","color:#0a7d33;font-weight:700");
 console.log("%c[v51 READY] index v21.7 - thu lai khi cham, giu du lieu cu, khong chong luot tai, ten 3 cot","color:#0a7d33;font-weight:700");
 console.log("%c[v50 READY] index v21.6 - duyet nhieu dong, nhap Excel du cot, tai lai it hon","color:#0a7d33;font-weight:700");
 console.log("%c[v49 READY] index v21.5 - nguoi dung sua thong tin NV, bang 11 cot, kho tra cuu, ket xuat ca nhan","color:#0a7d33;font-weight:700");
@@ -2694,6 +2713,7 @@ function openKQModal(row) {
   document.getElementById("kq-input").value = "";
   document.getElementById("kq-lydo").value = "";
   document.getElementById("kq-so-vb").value = "";
+  v52Reset();
   // v22.2: KHÔNG điền sẵn ngày hôm nay.
   // Trước đây điền sẵn khiến người nhập không sửa -> ngày NHẬP LIỆU bị ghi thành
   // ngày THỰC HIỆN, làm sai số ngày chậm (đơn vị làm đúng hạn nhưng nhập muộn
@@ -2756,6 +2776,9 @@ async function submitKQ() {
   if (!moTa)   { errEl.textContent = "⚠ Vui lòng nhập mô tả kết quả"; errEl.style.display = "block"; return; }
   const _dlMuon = (typeof curKQDeadline!=="undefined" && curKQDeadline) ? parseDate(document.getElementById("kq-ngay-th").value) > curKQDeadline : false;
   if (_dlMuon && !lyDo) { errEl.textContent = "⚠ Việc quá hạn: vui lòng nhập lý do chậm / chưa hoàn thành"; errEl.style.display = "block"; return; }
+  const khongVB = (document.getElementById("kq-khongvb") || {}).value || "";
+  const giaiTrinh = ((document.getElementById("kq-giaitrinh") || {}).value || "").trim();
+  if (!soVB && !khongVB) { errEl.textContent = "⚠ Chưa có số văn bản: ghi số văn bản sản phẩm, hoặc chọn lý do không ban hành văn bản"; errEl.style.display = "block"; v52CapNhatKhongVB(); return; }
   const btn = document.getElementById("btn-kq-submit");
   btn.textContent = "⏳ Đang lưu..."; btn.disabled = true; errEl.style.display = "none";
   try {
@@ -2767,9 +2790,11 @@ async function submitKQ() {
       ngayTH: ngayTH,
       moTa: moTa,
       lyDo: lyDo,
-      danhDauHT: isDone
+      danhDauHT: isDone,
+      v52: "1", canCu: v52TaskCur().canCu || "", giaiTrinh: giaiTrinh, khongVB: khongVB
     })});
     const d = await apiJson(res);
+    if (!d.ok && d.canGiaiTrinh) v52HienCanhBao(d);
     if (d.ok) {
       closeModal("modal-kq");
       showToast(d.canhBao ? ("✅ Đã gửi — ⚠ " + d.canhBao) : "✅ Đã gửi đề xuất kết quả, chờ Admin duyệt");
@@ -2819,6 +2844,8 @@ async function submitGiaHan() {
 // MARK DONE (nhanh từ bảng)
 // ============================================================
 async function markDone(row, name) {
+  /* v52: đề xuất hoàn thành phải kèm kết quả, số văn bản (trước đây gửi trống) */
+  if (allTasks.some(x => x.row === row)) { openKQModal(row); showToast("Nhập kết quả, số văn bản để đề xuất hoàn thành"); return; }
   if (!confirm("Xác nhận đề xuất hoàn thành:\n" + (name||"NV #"+row) + "?\n(Sẽ chờ Admin duyệt trước khi cập nhật chính thức)")) return;
   try {
     const res = await fetch(API, {method:"POST", body:JSON.stringify({action:"hoanThanh", row, ..._v47DinhDanh(row)})});
@@ -3701,6 +3728,63 @@ function renderSucKhoe(d) {
   document.getElementById("sk-box").innerHTML = h;
 }
 
+// ═══ v52: KIỂM SOÁT KẾT QUẢ KHÔNG KHỚP NHIỆM VỤ ═══
+let v52LyDoTraLai = "";
+function v52TaskCur() { return allTasks.find(x => x.row === curKQRow) || {}; }
+function v52Reset() {
+  const b = document.getElementById("kq-v52-box"); if (b) { b.style.display = "none"; b.innerHTML = ""; }
+  const g = document.getElementById("kq-giaitrinh"); if (g) g.value = "";
+  const gg = document.getElementById("kq-giaitrinh-group"); if (gg) gg.style.display = "none";
+  const k = document.getElementById("kq-khongvb"); if (k) k.value = "";
+  v52CapNhatKhongVB();
+}
+function v52CapNhatKhongVB() {
+  const coSo = !!((document.getElementById("kq-so-vb") || {}).value || "").trim();
+  const g = document.getElementById("kq-khongvb-group"); if (g) g.style.display = coSo ? "none" : "block";
+}
+function v52HienCanhBao(d) {
+  const box = document.getElementById("kq-v52-box"), gg = document.getElementById("kq-giaitrinh-group");
+  if (!box) return;
+  const E = v49Esc, lech = d && (d.muc === "CAO" || d.muc === "TB");
+  let h = "";
+  ((d && d.vb) || []).forEach(v => {
+    h += '<div>📄 <b>' + E(v.skh) + '</b>' + (v.ngay ? ' ngày ' + E(v.ngay) : '') + (v.dvst ? ' · ' + E(v.dvst) : '') +
+         '<br><span style="color:#334155">' + E(v.trichYeu || "") + '</span></div>';
+  });
+  if (d && d.khongTraDuoc) h += '<div style="color:#64748b">Chưa tra được số này trong Kho văn bản đi (văn bản mới ban hành, hoặc văn bản của cơ quan khác).</div>';
+  if (lech) {
+    h += '<div style="margin-top:6px;color:#b91c1c;font-weight:600">⚠ Văn bản có dấu hiệu KHÔNG KHỚP nhiệm vụ' + (d.muc === "CAO" ? ' (mức cao)' : '') + ':</div>' +
+         '<ul style="margin:2px 0 0 18px;color:#7f1d1d">' + ((d.lyDo || d.canhBao || []).map(x => '<li>' + E(x) + '</li>').join("")) + '</ul>' +
+         '<div style="color:#7a5800">Kiểm tra lại số văn bản. Nếu đúng là sản phẩm của nhiệm vụ, ghi giải trình ở ô bên dưới.</div>';
+  }
+  if (gg) gg.style.display = lech ? "block" : "none";
+  if (!h) { box.style.display = "none"; box.innerHTML = ""; return; }
+  box.innerHTML = h;
+  box.style.background = lech ? "#FEF2F2" : "#F0F9FF";
+  box.style.borderColor = lech ? "#FCA5A5" : "#BAE6FD";
+  box.style.display = "block";
+}
+async function v52KiemKQUI() {
+  v52CapNhatKhongVB();
+  const soVB = ((document.getElementById("kq-so-vb") || {}).value || "").trim();
+  if (!soVB) { v52HienCanhBao({}); return; }
+  const t = v52TaskCur();
+  try {
+    const d = await apiJson(await fetch(API, { method: "POST", body: JSON.stringify({ action: "v52KiemKQ", soVB: soVB, moTa: "",
+      nhiemVu: t.nhiemVu || "", donVi: t.donVi || "", canCu: t.canCu || "" }) }));
+    if (d && d.ok) v52HienCanhBao(d);
+  } catch (e) {}
+}
+function v52Vien(t) { return t.muc === "CAO" ? "2px solid #DC2626" : (t.muc === "TB" ? "2px solid #F59E0B" : "1px solid #E5E7EB"); }
+function v52TheCanhBao(t) {
+  if (!t.canhBaoMay && !t.giaiTrinh) return "";
+  const E = v49Esc, mau = t.muc === "CAO" ? "#b91c1c" : "#92400e";
+  return (t.canhBaoMay ? '<div style="margin:3px 0;padding:5px 8px;border-radius:5px;background:' + (t.muc === "CAO" ? "#FEE2E2" : "#FEF3C7") + ';color:' + mau + '">' +
+            '<b>⚠ ' + (t.muc === "CAO" ? "NGHI KHÔNG KHỚP (mức cao)" : "Cần xem") + ':</b> ' + E(t.canhBaoMay) + '</div>' : '') +
+         (t.giaiTrinh ? '<b style="color:#1d4ed8">Giải trình của đơn vị:</b> ' + E(t.giaiTrinh) + '<br>'
+                      : (t.muc ? '<b style="color:#b91c1c">Đơn vị không giải trình.</b><br>' : ''));
+}
+
 // ═══ v20.4: CẢNH BÁO MỀM Ô "SỐ VĂN BẢN" (gọi backend v33 kiemTraSoVB) ═══
 async function kiemTraSoVBUI() {
   const inp = document.getElementById("kq-so-vb");
@@ -3755,13 +3839,14 @@ function renderChoDuyetKQ() {
   if (!choDuyetKQCache.length) { list.innerHTML = ""; empty.style.display = "block"; return; }
   empty.style.display = "none";
   list.innerHTML = choDuyetKQCache.map(t => t.loai === "suaNV" ? v49TheSua(t) : (
-    '<div style="border:1px solid #E5E7EB;border-radius:8px;padding:10px 14px;margin-bottom:8px;background:#F9FAFB">' +
+    '<div style="border:' + v52Vien(t) + ';border-radius:8px;padding:10px 14px;margin-bottom:8px;background:#F9FAFB">' +
     '<div style="font-weight:600;font-size:13px;color:var(--navy)">#' + t.rowGoc + ' · ' + (t.nhiemVu||"—") + (t.hanDeNghi ? ' <span style="background:#F6C343;color:#000;padding:1px 6px;border-radius:4px;font-size:10px">⏱ XIN GIA HẠN</span>' : '') + '</div>' +
     '<div style="font-size:11.5px;color:#555;margin-top:4px;line-height:1.5">' +
       '<b>Đơn vị:</b> ' + (t.donVi||"—") + (t.danhDauHT ? ' · <span style="color:#2e7d32;font-weight:600">Đề xuất đánh dấu Hoàn thành</span>' : '') + '<br>' +
       (t.soVanBan ? '<b>Số văn bản:</b> ' + t.soVanBan + ' · ' : '') + (t.ngayTH ? '<b>Ngày TH:</b> ' + fmtDate(t.ngayTH) : '') + '<br>' +
       (t.hanDeNghi ? '<b>Hạn đề nghị:</b> ' + fmtDate(t.hanDeNghi) + '<br>' : '<b>Mô tả/kết quả:</b> ' + (t.moTa||"—") + '<br>') +
       (t.lyDo ? '<b style="color:#b26a00">Lý do:</b> <span style="color:#b26a00">' + t.lyDo + '</span><br>' : '') +
+      v52TheCanhBao(t) +
       '<b>Người đề xuất:</b> ' + (t.nguoiDeXuat||"—") + (t.thoiGianDeXuat ? ' · ' + t.thoiGianDeXuat : '') +
     '</div>' +
     '<div style="display:flex;gap:6px;margin-top:8px">' +
@@ -3795,7 +3880,8 @@ function v49TheSua(t) {
 function _v47ThamSoCho(action, row) {
   if (action === "duyetKQ" || action === "tuChoiKQ") {
     const t = (choDuyetKQCache || []).find(x => x.row === row) || {};
-    return { rowGoc: t.rowGoc || "", nhiemVu: t.nhiemVu || "", thoiGianDeXuat: t.thoiGianDeXuat || "" };
+    return { rowGoc: t.rowGoc || "", nhiemVu: t.nhiemVu || "", thoiGianDeXuat: t.thoiGianDeXuat || "",
+             lyDoTraLai: action === "tuChoiKQ" ? v52LyDoTraLai : "" };
   }
   const t = (choDuyetNVCache || []).find(x => x.row === row) || {};
   return { nhiemVu: t.nhiemVu || "", donVi: t.donVi || "" };
@@ -3825,7 +3911,14 @@ async function _duyetAction(action, row, okMsg) {
 function approveNV(row) { _duyetAction("duyetNV", row, "✅ Đã duyệt nhiệm vụ mới"); }
 function rejectNV(row)  { _duyetAction("tuChoiNV", row, "✅ Đã từ chối đề xuất"); }
 function approveKQ(row) { _duyetAction("duyetKQ", row, "✅ Đã duyệt kết quả"); }
-function rejectKQ(row)  { _duyetAction("tuChoiKQ", row, "✅ Đã từ chối kết quả"); }
+function rejectKQ(row)  {
+  const t = (choDuyetKQCache || []).find(x => x.row === row) || {};
+  const ly = prompt("Lý do trả lại kết quả" + (t.nhiemVu ? " «" + String(t.nhiemVu).slice(0, 80) + "»" : "") +
+                    "\n(đơn vị sẽ thấy ở cột Ghi chú của nhiệm vụ):", t.muc ? "Văn bản kê khai không khớp nhiệm vụ" : "");
+  if (ly === null) return;
+  v52LyDoTraLai = ly.trim();
+  _duyetAction("tuChoiKQ", row, "✅ Đã trả lại kết quả");
+}
 
 /* ═══ v50: duyệt / từ chối NHIỀU nhiệm vụ một lượt ═══ */
 let v50Chon = new Set();
